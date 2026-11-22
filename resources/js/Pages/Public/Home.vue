@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import SplitText from '../../Components/StaticHome/SplitText.vue'
+import LanguageSwitcher from '../../Components/LanguageSwitcher.vue'
 import { useI18n } from '../../composables/useI18n'
 import '../../../css/pcdr-home.css'
 
@@ -15,12 +16,19 @@ const header = ref(null)
 const heroArt = ref(null)
 const navOpen = ref(false)
 
+watch(navOpen, (open) => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.toggle('pcdr-menu-open', open)
+    }
+})
+
 const content = {
     ar: {
         skip: 'تخطَّ إلى المحتوى',
         navAria: 'القائمة الرئيسية',
         langShort: 'EN',
         langLabel: 'Switch to English',
+        langRowLabel: 'اللغة',
         partner: 'كن شريكاً',
         logoAlt: 'شعار جمعية العمل التشاركي في الأزمات والكوارث – قطاع غزة',
         nav: [
@@ -144,6 +152,7 @@ const content = {
         navAria: 'Main navigation',
         langShort: 'ع',
         langLabel: 'التبديل إلى العربية',
+        langRowLabel: 'Language',
         partner: 'Partner with us',
         logoAlt: 'PCDR logo – Participatory Action in Crises and Disasters – Gaza Strip',
         nav: [
@@ -294,6 +303,7 @@ function cleanupMotion() {
     document.documentElement.classList.remove('js', 'ready')
     document.documentElement.style.removeProperty('scroll-behavior')
     document.documentElement.style.removeProperty('scroll-padding-top')
+    document.body.classList.remove('pcdr-menu-open')
 }
 
 function setupMotion() {
@@ -485,23 +495,23 @@ onBeforeUnmount(cleanupMotion)
                     <b>PCDR</b>
                 </a>
 
-                <nav id="nav" :class="{ open: navOpen }" :aria-label="copy.navAria" @click="navOpen = false">
-                    <ul>
+                <nav id="nav" :class="{ open: navOpen }" :aria-label="copy.navAria">
+                    <ul class="nav-links">
                         <li v-for="link in copy.nav" :key="link.href">
-                            <a :href="link.href">{{ link.label }}</a>
-                        </li>
-                        <li class="nav-lang">
-                            <Link class="lang" :href="alternateUrl(otherLocale)" :aria-label="copy.langLabel">
-                                {{ copy.langShort }}
-                            </Link>
+                            <a :href="link.href" @click="navOpen = false">{{ link.label }}</a>
                         </li>
                     </ul>
+                    <div class="nav-panel-extra">
+                        <a class="btn btn-primary nav-panel-cta" href="#partners" @click="navOpen = false">{{ copy.partner }}</a>
+                        <div class="nav-lang-row">
+                            <span class="nav-lang-label">{{ copy.langRowLabel }}</span>
+                            <LanguageSwitcher />
+                        </div>
+                    </div>
                 </nav>
 
                 <div class="actions">
-                    <Link class="lang" :href="alternateUrl(otherLocale)" :aria-label="copy.langLabel">
-                        {{ copy.langShort }}
-                    </Link>
+                    <LanguageSwitcher class="actions-lang" />
                     <a class="btn btn-primary hide-sm" href="#partners">{{ copy.partner }}</a>
                     <button
                         id="burger"
