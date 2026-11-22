@@ -10,7 +10,7 @@ const { t, localPath } = useI18n()
 </script>
 
 <template>
-    <nav class="breadcrumbs" :aria-label="t('breadcrumb') || 'Breadcrumb'">
+    <nav class="ps-breadcrumbs" :aria-label="t('breadcrumb') || 'Breadcrumb'">
         <Link :href="localPath()">{{ t('navigation.home') }}</Link>
         <template v-for="item in items" :key="`${item.label}-${item.url || ''}`">
             <span aria-hidden="true">/</span>

@@ -273,7 +273,24 @@ const content = {
     },
 }
 
-const { locale, direction, alternateUrl } = useI18n()
+const { locale, direction, alternateUrl, localPath } = useI18n()
+
+function routeFor(anchor) {
+    const routes = {
+        '#top': localPath(),
+        '#about': localPath('about'),
+        '#areas': localPath('strategic-areas'),
+        '#programs': localPath('programs'),
+        '#targets': localPath('about/direction'),
+        '#knowledge': localPath('publications'),
+        '#contact': localPath('contact'),
+        '#partners': localPath('partnerships'),
+        '#footer': localPath('contact'),
+        '#community': localPath('get-involved'),
+    }
+
+    return routes[anchor] || anchor
+}
 
 const copy = computed(() => content[locale.value] || content.ar)
 const otherLocale = computed(() => (locale.value === 'ar' ? 'en' : 'ar'))
@@ -490,7 +507,7 @@ onBeforeUnmount(cleanupMotion)
 
         <header ref="header" class="site-header">
             <div class="container bar">
-                <a class="brand" href="#top" aria-label="PCDR">
+                <a class="brand" :href="routeFor('#top')" aria-label="PCDR">
                     <img :src="logoSmall" width="52" height="52" :alt="copy.logoAlt">
                     <b>PCDR</b>
                 </a>
@@ -498,11 +515,11 @@ onBeforeUnmount(cleanupMotion)
                 <nav id="nav" :class="{ open: navOpen }" :aria-label="copy.navAria">
                     <ul class="nav-links">
                         <li v-for="link in copy.nav" :key="link.href">
-                            <a :href="link.href" @click="navOpen = false">{{ link.label }}</a>
+                            <a :href="routeFor(link.href)" @click="navOpen = false">{{ link.label }}</a>
                         </li>
                     </ul>
                     <div class="nav-panel-extra">
-                        <a class="btn btn-primary nav-panel-cta" href="#partners" @click="navOpen = false">{{ copy.partner }}</a>
+                        <a class="btn btn-primary nav-panel-cta" :href="routeFor('#partners')" @click="navOpen = false">{{ copy.partner }}</a>
                         <div class="nav-lang-row">
                             <span class="nav-lang-label">{{ copy.langRowLabel }}</span>
                             <LanguageSwitcher />
@@ -512,7 +529,7 @@ onBeforeUnmount(cleanupMotion)
 
                 <div class="actions">
                     <LanguageSwitcher class="actions-lang" />
-                    <a class="btn btn-primary hide-sm" href="#partners">{{ copy.partner }}</a>
+                    <a class="btn btn-primary hide-sm" :href="routeFor('#partners')">{{ copy.partner }}</a>
                     <button
                         id="burger"
                         class="burger"
@@ -536,8 +553,8 @@ onBeforeUnmount(cleanupMotion)
                         <h1 data-split><SplitText :text="copy.hero.title" /></h1>
                         <p class="lead fx">{{ copy.hero.lead }}</p>
                         <div class="cta-row fx">
-                            <a class="btn btn-primary" href="#approach">{{ copy.hero.discover }}</a>
-                            <a class="btn btn-ghost" href="#partners">{{ copy.hero.partner }}</a>
+                            <a class="btn btn-primary" :href="routeFor('#about')">{{ copy.hero.discover }}</a>
+                            <a class="btn btn-ghost" :href="routeFor('#partners')">{{ copy.hero.partner }}</a>
                         </div>
                     </div>
 
@@ -612,7 +629,7 @@ onBeforeUnmount(cleanupMotion)
                             :key="tile"
                             class="tile rv"
                             :class="`t${index + 1}`"
-                            href="#areas"
+                            :href="routeFor('#programs')"
                         >
                             <small>{{ String(index + 1).padStart(2, '0') }}</small>
                             <h3>{{ tile }}</h3>
@@ -683,9 +700,9 @@ onBeforeUnmount(cleanupMotion)
                     <h2 data-split class="rv"><SplitText :text="copy.cta.title" /></h2>
                     <p class="rv lead">{{ copy.cta.lead }}</p>
                     <div class="cta-row rv">
-                        <a class="btn btn-primary" href="#footer">{{ copy.cta.contact }}</a>
-                        <a class="btn btn-ghost" href="#community">{{ copy.cta.volunteer }}</a>
-                        <a class="btn btn-ghost" href="#areas">{{ copy.cta.explore }}</a>
+                        <a class="btn btn-primary" :href="routeFor('#footer')">{{ copy.cta.contact }}</a>
+                        <a class="btn btn-ghost" :href="routeFor('#community')">{{ copy.cta.volunteer }}</a>
+                        <a class="btn btn-ghost" :href="routeFor('#areas')">{{ copy.cta.explore }}</a>
                     </div>
                 </div>
             </section>
@@ -694,17 +711,17 @@ onBeforeUnmount(cleanupMotion)
         <footer class="site-footer" id="footer">
             <div class="container fgrid">
                 <div>
-                    <a class="brand" href="#top">
+                    <a class="brand" :href="routeFor('#top')">
                         <img :src="logoSmall" width="56" height="56" alt="شعار PCDR">
                         <b>PCDR</b>
                     </a>
                     <p>{{ copy.footer.description }}</p>
                 </div>
                 <ul>
-                    <li><a href="#about">{{ copy.nav[1].label }}</a></li>
-                    <li><a href="#areas">{{ copy.nav[2].label }}</a></li>
-                    <li><a href="#programs">{{ copy.nav[3].label }}</a></li>
-                    <li><a href="#targets">{{ copy.nav[4].label }}</a></li>
+                    <li><a :href="routeFor('#about')">{{ copy.nav[1].label }}</a></li>
+                    <li><a :href="routeFor('#areas')">{{ copy.nav[2].label }}</a></li>
+                    <li><a :href="routeFor('#programs')">{{ copy.nav[3].label }}</a></li>
+                    <li><a :href="routeFor('#targets')">{{ copy.nav[4].label }}</a></li>
                 </ul>
                 <div>
                     <h3>{{ copy.footer.contactTitle }}</h3>

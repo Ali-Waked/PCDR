@@ -6,9 +6,9 @@ defineProps({
 </script>
 
 <template>
-    <div class="empty-state">
-        <p v-if="title" style="font-weight: 700; color: var(--brand-navy-deep); margin: 0 0 0.35rem">{{ title }}</p>
-        <p v-if="body" style="margin-inline: auto">{{ body }}</p>
+    <div class="ps-empty">
+        <h3 v-if="title">{{ title }}</h3>
+        <p v-if="body">{{ body }}</p>
         <slot />
     </div>
 </template>

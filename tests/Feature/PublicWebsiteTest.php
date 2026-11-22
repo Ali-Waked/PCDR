@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Models\Publication;
 use App\Models\StrategicPillar;
 use App\Models\VolunteerInquiry;
+use Database\Seeders\WebsiteSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -536,6 +537,107 @@ final class PublicWebsiteTest extends TestCase
                 'homepage',
             ],
         ];
+    }
+
+    #[DataProvider('localeProvider')]
+    public function test_all_public_destinations_render_with_the_shared_shell(string $locale, string $direction): void
+    {
+        $routes = [
+            'about' => 'Public/About',
+            'about/vision' => 'Public/About',
+            'about/mission' => 'Public/About',
+            'about/values' => 'Public/About',
+            'about/direction' => 'Public/About',
+            'about/groups' => 'Public/About',
+            'about/approach' => 'Public/About',
+            'strategic-areas' => 'Public/Pillars/Index',
+            'programs' => 'Public/Programs/Index',
+            'news' => 'Public/News/Index',
+            'publications' => 'Public/Publications/Index',
+            'transparency' => 'Public/Transparency',
+            'partnerships' => 'Public/Partnerships',
+            'get-involved' => 'Public/Involve',
+            'contact' => 'Public/Contact',
+        ];
+
+        foreach ($routes as $path => $component) {
+            $response = $this->get("/{$locale}/{$path}");
+            $response->assertOk();
+            $this->assertStringContainsString(
+                '<html lang="'.$locale.'" dir="'.$direction.'" data-locale="'.$locale.'">',
+                (string) $response->getContent(),
+            );
+            $this->assertSame($component, $this->inertiaPage($response)['component']);
+        }
+    }
+
+    public function test_about_focus_routes_are_distinct_pages_with_focus_seo(): void
+    {
+        $foci = ['overview', 'vision', 'mission', 'values', 'direction', 'groups', 'approach'];
+        $titles = [];
+
+        foreach ($foci as $focus) {
+            $path = $focus === 'overview' ? '/en/about' : "/en/about/{$focus}";
+            $page = $this->inertiaPage($this->get($path));
+            $props = $page['props'];
+
+            $this->assertSame('Public/About', $page['component']);
+            $this->assertSame($focus, $props['focus']);
+            $this->assertNotEmpty($props['focusTitle']);
+            $this->assertNotEmpty($props['focusDescription']);
+            $this->assertSame(url($path), $props['meta']['canonical']);
+            $titles[] = $props['meta']['title'];
+        }
+
+        $this->assertCount(count($foci), array_unique($titles));
+    }
+
+    public function test_public_navigation_exposes_all_destinations(): void
+    {
+        $this->seed(WebsiteSeeder::class);
+        $props = $this->inertiaPage($this->get('/ar/about'))['props'];
+
+        foreach (['home', 'about', 'pillars', 'programs', 'news', 'publications', 'transparency', 'partnerships', 'involve', 'contact'] as $key) {
+            $this->assertArrayHasKey($key, $props['nav']);
+        }
+
+        $this->assertCount(10, $props['navigation']['primary']);
+
+        $urls = array_column($props['navigation']['primary'], 'url');
+        $this->assertContains(url('/ar/about'), $urls);
+        $this->assertContains(url('/ar/strategic-areas'), $urls);
+    }
+
+    public function test_public_shell_uses_seeded_primary_menu(): void
+    {
+        foreach (['SiteHeader.vue', 'SiteFooter.vue'] as $component) {
+            $source = (string) file_get_contents(resource_path('js/Components/Public/'.$component));
+            $this->assertStringContainsString('navigation?.primary', $source, $component.' must read the seeded primary menu.');
+        }
+    }
+
+    public function test_approved_homepage_baseline_files_remain_byte_identical(): void
+    {
+        $expected = [
+            'css/pcdr-home.css' => '71a6d55b8fa9c425876697dc07772826ace57132ef02beb1e16824f9cdff5b40',
+            'views/app.blade.php' => '87c820c2c7ef7e5ac864df593c3af0065fef53f8c6e8e6f0c5336ba37f8b94cf',
+            'js/Components/LanguageSwitcher.vue' => 'd5182c3b3a9e7f8007b2ffbbdc3fa58b7c3c4c7b6754623ba7c2a9624dda03f1',
+        ];
+
+        foreach ($expected as $path => $hash) {
+            $this->assertSame($hash, hash_file('sha256', resource_path($path)), $path.' changed from the approved baseline.');
+        }
+    }
+
+    public function test_homepage_preview_links_point_to_dedicated_destinations(): void
+    {
+        $source = (string) file_get_contents(resource_path('js/Pages/Public/Home.vue'));
+
+        $this->assertStringContainsString('alternateUrl, localPath', $source);
+        $this->assertStringContainsString('routeFor(link.href)', $source);
+        $this->assertStringContainsString("localPath('about/direction')", $source);
+        $this->assertStringContainsString("localPath('get-involved')", $source);
+        $this->assertSame(1, substr_count($source, 'href="#'), 'Only the in-page skip link may remain an anchor.');
     }
 
     /** @param array<string, mixed> $fields */
