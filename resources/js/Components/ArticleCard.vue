@@ -10,16 +10,16 @@ const { t, formatDate } = useI18n()
 </script>
 
 <template>
-    <article class="article-card" v-reveal>
-        <div v-if="article.image" class="article-card__media">
+    <article class="ps-card" v-reveal>
+        <div v-if="article.image" class="ps-cover">
             <img :src="article.image" :alt="article.title" loading="lazy">
         </div>
-        <div class="meta-row" style="margin-block-start: 1rem">
-            <span v-if="article.category" class="pill">{{ article.category }}</span>
+        <div class="ps-meta">
+            <span v-if="article.category" class="ps-pill">{{ article.category }}</span>
             <span v-if="article.publishedAt">{{ formatDate(article.publishedAt) }}</span>
         </div>
-        <h3 style="margin-block: 0.6rem 0.4rem">{{ article.title }}</h3>
+        <h3>{{ article.title }}</h3>
         <p v-if="article.excerpt">{{ article.excerpt }}</p>
-        <Link :href="article.url" class="text-link">{{ t('ui.read_more') }}</Link>
+        <Link :href="article.url" class="ps-text-link">{{ t('ui.read_more') }}</Link>
     </article>
 </template>

@@ -1,8 +1,8 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import PublicLayout from '../../../Layouts/PublicLayout.vue'
-import Breadcrumbs from '../../../Components/Breadcrumbs.vue'
-import SectionHeading from '../../../Components/SectionHeading.vue'
+import PublicPageHero from '../../../Components/Public/PublicPageHero.vue'
+import PublicCta from '../../../Components/Public/PublicCta.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -10,53 +10,70 @@ const props = defineProps({
     meta: { type: Object, default: null },
 })
 
-const { t, formatDate, richText, localPath } = useI18n()
+const { t, localPath, formatDate, richText } = useI18n()
 </script>
 
 <template>
-    <PublicLayout :meta="meta">
-        <section class="page-hero">
-            <div class="container-public">
-                <Breadcrumbs :items="[
-                    { label: t('navigation.publications'), url: localPath('publications') },
-                    { label: publication.title },
-                ]" />
-                <div class="meta-row" style="margin-block-end: 0.8rem">
-                    <span v-if="publication.category" class="pill">{{ publication.category }}</span>
-                    <span v-if="publication.date">{{ formatDate(publication.date) }}</span>
-                    <span v-if="publication.version">v{{ publication.version }}</span>
-                    <span v-if="publication.restricted" class="pill pill--restricted">{{ t('document_restricted') }}</span>
+    <PublicLayout :meta="meta" page-class="publications-page">
+        <PublicPageHero
+            variant="sand"
+            :eyebrow="props.publication.category || t('nav.publications')"
+            :title="props.publication.title"
+            :lede="props.publication.description || ''"
+            :crumbs="[
+                { label: t('nav.publications'), url: localPath('publications') },
+                { label: props.publication.title },
+            ]"
+            index="06"
+            :badge="t('documents')"
+        >
+            <div class="ps-meta">
+                <span v-if="props.publication.date">{{ formatDate(props.publication.date) }}</span>
+                <span v-if="props.publication.version">v{{ props.publication.version }}</span>
+                <span v-if="props.publication.restricted" class="ps-pill">{{ t('document_restricted') }}</span>
+            </div>
+        </PublicPageHero>
+
+        <section class="ps-section">
+            <div class="ps-container">
+                <div class="ps-form-card" style="max-inline-size: 860px">
+                    <p class="ps-eyebrow">{{ t('nav.publications') }}</p>
+                    <h2>{{ t('documents') }}</h2>
+                    <div class="ps-article ps-lede" style="white-space: pre-line">{{ richText(props.publication.description) }}</div>
+                    <div class="ps-rows">
+                        <div v-if="props.publication.pillar" class="ps-row">
+                            <span class="ps-row__num">01</span>
+                            <h3>{{ t('ui.strategic_direction') }}</h3>
+                            <p>{{ props.publication.pillar }}</p>
+                        </div>
+                        <div v-if="props.publication.date" class="ps-row">
+                            <span class="ps-row__num">02</span>
+                            <h3>{{ t('published_on') }}</h3>
+                            <p>{{ formatDate(props.publication.date) }}</p>
+                        </div>
+                    </div>
+
+                    <div class="ps-actions">
+                        <a v-if="props.publication.downloadUrl" class="ps-btn ps-btn-primary" :href="props.publication.downloadUrl" download>
+                            {{ t('download_document') }}
+                        </a>
+                        <div v-else-if="props.publication.restricted" class="ps-notice">
+                            {{ t('restricted_notice') }}
+                            <Link :href="localPath('contact')" class="ps-text-link">{{ t('nav.contact') }}</Link>
+                        </div>
+                        <p v-else class="ps-notice">{{ t('file_not_available') }}</p>
+                    </div>
                 </div>
-                <h1 class="display-2">{{ publication.title }}</h1>
-                <p v-if="publication.description" class="lede">{{ publication.description }}</p>
             </div>
         </section>
 
-        <section class="section-block">
-            <div class="container-public">
-                <div class="cms-card" style="max-inline-size: 800px">
-                    <SectionHeading :title="t('documents')" />
-                    <p v-if="publication.description" class="prose-editorial" style="white-space: pre-line">{{ richText(publication.description) }}</p>
-                    <dl style="display: grid; gap: 0.75rem; margin-block: 1rem">
-                        <div v-if="publication.pillar">
-                            <dt class="small-caps">{{ t('ui.strategic_direction') }}</dt>
-                            <dd style="margin: 0">{{ publication.pillar }}</dd>
-                        </div>
-                        <div v-if="publication.date">
-                            <dt class="small-caps">{{ t('published_on') }}</dt>
-                            <dd style="margin: 0">{{ formatDate(publication.date) }}</dd>
-                        </div>
-                    </dl>
-                    <a v-if="publication.downloadUrl" class="btn btn-primary" :href="publication.downloadUrl" download>
-                        {{ t('download_document') }}
-                    </a>
-                    <div v-else-if="publication.restricted" class="notice">
-                        {{ t('restricted_notice') }}
-                        <Link :href="localPath('contact')" class="text-link">{{ t('navigation.contact') }}</Link>
-                    </div>
-                    <p v-else class="notice">{{ t('file_not_available') }}</p>
-                </div>
-            </div>
-        </section>
+        <PublicCta
+            :title="t('ui.back_to_list')"
+            :lede="t('transparency_intro')"
+            :actions="[
+                { label: t('ui.back_to_list'), url: localPath('publications'), primary: true },
+                { label: t('nav.transparency'), url: localPath('transparency'), primary: false },
+            ]"
+        />
     </PublicLayout>
 </template>

@@ -1,7 +1,7 @@
 <script setup>
 import PublicLayout from '../../Layouts/PublicLayout.vue'
-import Breadcrumbs from '../../Components/Breadcrumbs.vue'
-import SectionHeading from '../../Components/SectionHeading.vue'
+import PublicPageHero from '../../Components/Public/PublicPageHero.vue'
+import PublicCta from '../../Components/Public/PublicCta.vue'
 import { useI18n } from '../../composables/useI18n'
 
 const props = defineProps({
@@ -9,24 +9,31 @@ const props = defineProps({
     meta: { type: Object, default: null },
 })
 
-const { t, richText } = useI18n()
+const { t, localPath, richText, site } = useI18n()
+const closingActions = [
+    { label: t('back_home'), url: localPath(), primary: true },
+    { label: t('nav.contact'), url: localPath('contact'), primary: false },
+]
 </script>
 
 <template>
-    <PublicLayout :meta="meta">
-        <section class="page-hero">
-            <div class="container-public">
-                <Breadcrumbs :items="[{ label: page.title }]" />
-                <h1 class="display-2">{{ page.title }}</h1>
-                <p v-if="page.summary" class="lede">{{ page.summary }}</p>
+    <PublicLayout :meta="meta" page-class="static-page">
+        <PublicPageHero
+            variant="sand"
+            :eyebrow="t('institution')"
+            :title="props.page.title"
+            :lede="props.page.summary || ''"
+            :crumbs="[{ label: props.page.title }]"
+            index="∞"
+            :badge="t('at_a_glance')"
+        />
+
+        <section class="ps-section">
+            <div class="ps-container">
+                <article class="ps-article ps-lede" style="white-space: pre-line">{{ richText(props.page.body) }}</article>
             </div>
         </section>
 
-        <section class="section-block">
-            <div class="container-public">
-                <SectionHeading :title="t('institution')" />
-                <div class="prose-editorial" style="white-space: pre-line; max-inline-size: 72ch">{{ richText(page.body) }}</div>
-            </div>
-        </section>
+        <PublicCta :title="t('back_home')" :lede="site.slogan" :actions="closingActions" />
     </PublicLayout>
 </template>

@@ -10,13 +10,11 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <article class="content-card" v-reveal>
-        <p v-if="program.pillar" class="small-caps">{{ program.pillar }}</p>
-        <h3 style="margin-block: 0.45rem">{{ program.title }}</h3>
+    <article class="ps-card" v-reveal>
+        <span v-if="program.pillar" class="ps-card__code">{{ program.pillar }}</span>
+        <h3>{{ program.title }}</h3>
         <p v-if="program.summary">{{ program.summary }}</p>
-        <div v-if="program.status" style="margin-block-start: 0.75rem">
-            <span class="pill" :class="`pill--${program.status}`">{{ program.status }}</span>
-        </div>
-        <Link :href="program.url" class="text-link">{{ t('ui.read_more') }}</Link>
+        <span v-if="program.status" class="ps-pill">{{ program.status }}</span>
+        <Link :href="program.url" class="ps-text-link">{{ t('ui.read_more') }}</Link>
     </article>
 </template>

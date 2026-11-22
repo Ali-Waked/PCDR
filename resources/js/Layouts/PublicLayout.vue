@@ -1,16 +1,19 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import SiteHeader from '../Components/Public/SiteHeader.vue'
 import SiteFooter from '../Components/Public/SiteFooter.vue'
 import FlashMessages from '../Components/FlashMessages.vue'
 import { useI18n } from '../composables/useI18n'
+import '../../css/public-site.css'
 
 const props = defineProps({
     meta: { type: Object, default: null },
+    pageClass: { type: String, default: '' },
 })
 
-const { t, site } = useI18n()
+const root = ref(null)
+const { t, site, locale, direction } = useI18n()
 
 const meta = computed(() => props.meta || {})
 const fallbacks = computed(() => ({
@@ -25,10 +28,20 @@ const fallbacks = computed(() => ({
 }))
 
 const resolved = computed(() => ({ ...fallbacks.value, ...meta.value }))
+
+onMounted(() => {
+    root.value?.classList.add('is-ready')
+})
 </script>
 
 <template>
-    <div class="public-shell">
+    <div
+        ref="root"
+        class="public-shell ps-animate"
+        :class="pageClass"
+        :lang="locale"
+        :dir="direction"
+    >
         <Head>
             <title>{{ resolved.title }}</title>
             <meta name="description" :content="resolved.description">

@@ -49,9 +49,9 @@ Route::get('/robots.txt', RobotsController::class)->name('robots');
 Route::prefix('{locale}')
     ->where(['locale' => 'ar|en'])
     ->group(function (): void {
+        // Single route registration: a duplicate same-URI route overwrites the
+        // method/URI match and can drop the earlier name from the route collection.
         Route::get('/', HomeController::class)->name('public.home');
-        // Backwards-compatible route name; the approved homepage serves both names.
-        Route::get('/', HomeController::class)->name('welcome');
 
         Route::get('/about', [AboutController::class, '__invoke'])->name('public.about');
         Route::get('/about/{focus}', [AboutController::class, '__invoke'])->name('public.about.focus');

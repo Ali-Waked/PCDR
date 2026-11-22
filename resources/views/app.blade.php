@@ -18,7 +18,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ \App\Support\Locale::direction(app()->getLocale()) }}" data-locale="{{ app()->getLocale() }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover">
         <meta name="color-scheme" content="light">
         <meta name="theme-color" content="#3E5172">
         <link rel="preconnect" href="https://fonts.googleapis.com">

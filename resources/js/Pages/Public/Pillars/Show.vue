@@ -1,9 +1,11 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import PublicLayout from '../../../Layouts/PublicLayout.vue'
-import Breadcrumbs from '../../../Components/Breadcrumbs.vue'
+import PublicPageHero from '../../../Components/Public/PublicPageHero.vue'
+import PublicCta from '../../../Components/Public/PublicCta.vue'
 import SectionHeading from '../../../Components/SectionHeading.vue'
 import EmptyState from '../../../Components/EmptyState.vue'
+import RelatedContent from '../../../Components/Public/RelatedContent.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -20,109 +22,85 @@ const { t, localPath } = useI18n()
 </script>
 
 <template>
-    <PublicLayout :meta="meta">
-        <section class="page-hero">
-            <div class="container-public">
-                <Breadcrumbs :items="[
-                    { label: t('navigation.pillars'), url: localPath('strategic-areas') },
-                    { label: pillar.shortTitle || pillar.title },
-                ]" />
-                <p class="eyebrow">{{ pillar.code }} · {{ t('ui.strategic_direction') }}</p>
-                <h1 class="display-2">{{ pillar.title }}</h1>
-                <p v-if="pillar.description" class="lede">{{ pillar.description }}</p>
-            </div>
-        </section>
+    <PublicLayout :meta="meta" page-class="pillars-page">
+        <PublicPageHero
+            :eyebrow="`${props.pillar.code} · ${t('ui.strategic_direction')}`"
+            :title="props.pillar.title"
+            :lede="props.pillar.description || ''"
+            :crumbs="[
+                { label: t('nav.pillars'), url: localPath('strategic-areas') },
+                { label: props.pillar.shortTitle || props.pillar.title },
+            ]"
+            :index="String(props.pillar.code).padStart(2, '0')"
+            :badge="t('ui.strategic_direction')"
+        />
 
-        <section v-if="pillar.image" class="section-block section-block--tight">
-            <div class="container-public">
-                <div class="media-cover" style="max-inline-size: 720px">
-                    <img :src="pillar.image" :alt="pillar.imageAlt || pillar.title">
+        <section v-if="props.pillar.image" class="ps-section ps-section--tight">
+            <div class="ps-container">
+                <div class="ps-cover" v-reveal>
+                    <img :src="props.pillar.image" :alt="props.pillar.imageAlt || props.pillar.title">
                 </div>
             </div>
         </section>
 
-        <section v-if="pillar.objectives?.length || pillar.targetGroups?.length" class="section-block surface-soft">
-            <div class="container-public">
-                <div class="form-grid form-grid--two">
-                    <div v-if="pillar.objectives?.length">
-                        <SectionHeading :title="t('ui.approach')" />
-                        <ul>
-                            <li v-for="(item, index) in pillar.objectives" :key="index" style="margin-block-end: 0.5rem">{{ item }}</li>
-                        </ul>
-                    </div>
-                    <div v-if="pillar.targetGroups?.length">
-                        <SectionHeading :title="t('ui.target_groups')" />
-                        <ul>
-                            <li v-for="(item, index) in pillar.targetGroups" :key="index" style="margin-block-end: 0.5rem">{{ item }}</li>
-                        </ul>
-                    </div>
+        <section v-if="props.pillar.objectives?.length || props.pillar.targetGroups?.length" class="ps-section ps-surface-sand">
+            <div class="ps-container ps-panels">
+                <div v-if="props.pillar.objectives?.length" class="ps-panel ps-panel--navy">
+                    <p class="ps-eyebrow">{{ t('ui.approach') }}</p>
+                    <h2>{{ t('ui.approach') }}</h2>
+                    <ul class="ps-mini-list">
+                        <li v-for="(item, index) in props.pillar.objectives" :key="index">{{ item }}</li>
+                    </ul>
                 </div>
-                <div class="notice" style="margin-block-start: 1.5rem">{{ t('planning_targets_notice') }}</div>
-            </div>
-        </section>
-
-        <section class="section-block">
-            <div class="container-public">
-                <div class="form-grid form-grid--two">
-                    <div>
-                        <SectionHeading :title="t('navigation.programs')" />
-                        <div v-if="programs.length" class="list-rows">
-                            <Link v-for="(item, index) in programs" :key="index" :href="item.url" class="list-row" v-reveal>
-                                <h3 style="margin: 0; font-size: 1rem">{{ item.title }}</h3>
-                                <p v-if="item.summary" style="font-size: 0.86rem">{{ item.summary }}</p>
-                            </Link>
-                        </div>
-                        <EmptyState v-else :body="t('ui.no_programs')" />
-                    </div>
-                    <div>
-                        <SectionHeading :title="t('projects')" />
-                        <div v-if="projects.length" class="list-rows">
-                            <Link v-for="(item, index) in projects" :key="index" :href="item.url" class="list-row" v-reveal>
-                                <h3 style="margin: 0; font-size: 1rem">{{ item.title }}</h3>
-                                <span class="pill" :class="`pill--${item.status.toLowerCase().replaceAll(' ', '_')}`">{{ item.status }}</span>
-                            </Link>
-                        </div>
-                        <EmptyState v-else :body="t('ui.no_results')" />
-                    </div>
+                <div v-if="props.pillar.targetGroups?.length" class="ps-panel ps-panel--sand">
+                    <p class="ps-eyebrow">{{ t('ui.target_groups') }}</p>
+                    <h2>{{ t('ui.target_groups') }}</h2>
+                    <ul class="ps-mini-list">
+                        <li v-for="(item, index) in props.pillar.targetGroups" :key="index">{{ item }}</li>
+                    </ul>
                 </div>
             </div>
         </section>
 
-        <section class="section-block surface-sand">
-            <div class="container-public">
-                <div class="form-grid form-grid--two">
-                    <div>
-                        <SectionHeading :title="t('articles')" :action-label="t('ui.view_all')" :action-url="localPath('news')" />
-                        <div v-if="articles.length" class="list-rows">
-                            <Link v-for="(item, index) in articles" :key="index" :href="item.url" class="list-row" v-reveal>
-                                <h3 style="margin: 0; font-size: 1rem">{{ item.title }}</h3>
-                            </Link>
-                        </div>
-                        <EmptyState v-else :body="t('ui.no_articles')" />
+        <section class="ps-section">
+            <div class="ps-container ps-grid ps-grid--two">
+                <div>
+                    <SectionHeading
+                        :title="t('nav.programs')"
+                        :action-label="t('ui.view_all')"
+                        :action-url="localPath('programs')"
+                    />
+                    <div v-if="programs.length" class="ps-rows">
+                        <Link v-for="(item, index) in programs" :key="index" :href="item.url" class="ps-row" v-reveal>
+                            <span class="ps-row__num">{{ String(index + 1).padStart(2, '0') }}</span>
+                            <h3>{{ item.title }}</h3>
+                            <p>{{ item.summary }}</p>
+                        </Link>
                     </div>
-                    <div>
-                        <SectionHeading :title="t('documents')" :action-label="t('ui.view_all')" :action-url="localPath('publications')" />
-                        <div v-if="publications.length" class="list-rows">
-                            <Link v-for="(item, index) in publications" :key="index" :href="item.url" class="list-row" v-reveal>
-                                <h3 style="margin: 0; font-size: 1rem">{{ item.title }}</h3>
-                            </Link>
-                        </div>
-                        <EmptyState v-else :body="t('no_documents')" />
+                    <EmptyState v-else :body="t('ui.no_programs')" />
+                </div>
+                <div>
+                    <SectionHeading :title="t('projects')" />
+                    <div v-if="projects.length" class="ps-rows">
+                        <Link v-for="(item, index) in projects" :key="index" :href="item.url" class="ps-row" v-reveal>
+                            <span class="ps-row__num">{{ String(index + 1).padStart(2, '0') }}</span>
+                            <h3>{{ item.title }}</h3>
+                            <p>{{ item.status }}</p>
+                        </Link>
                     </div>
+                    <EmptyState v-else :body="t('ui.no_results')" />
                 </div>
             </div>
         </section>
 
-        <section v-if="otherPillars.length" class="section-block">
-            <div class="container-public">
-                <SectionHeading :title="t('ui.related_content')" />
-                <div class="pillar-grid">
-                    <Link v-for="item in otherPillars" :key="item.code" :href="item.url" class="pillar-tile" v-reveal>
-                        <span class="pillar-tile__code">{{ item.code }}</span>
-                        <h3>{{ item.title }}</h3>
-                    </Link>
-                </div>
-            </div>
-        </section>
+        <RelatedContent :title="t('articles')" :items="articles" />
+        <RelatedContent :title="t('documents')" :items="publications" />
+        <RelatedContent :title="t('ui.related_content')" :items="otherPillars" />
+
+        <PublicCta
+            :title="t('nav.involve')"
+            :lede="t('planning_targets_notice')"
+            :actions="[{ label: t('nav.involve'), url: localPath('get-involved'), primary: true }]"
+        />
     </PublicLayout>
 </template>
