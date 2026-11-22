@@ -1,0 +1,370 @@
+/*
+ * Phase 5 operating layer presentation styles.
+ * Uses logical properties so the same rules work in RTL (Arabic) and LTR (English).
+ */
+
+@layer components {
+    .phase5-page {
+        display: grid;
+        gap: var(--pcdr-space-5, 1.5rem);
+    }
+
+    .phase5-page__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem 1.5rem;
+    }
+
+    .phase5-page__head h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+    }
+
+    .phase5-page__eyebrow {
+        display: block;
+        margin-block-end: 0.35rem;
+    }
+
+    .phase5-page__subtitle,
+    .phase5-section__subtitle {
+        margin: 0.4rem 0 0;
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.92rem;
+        line-height: 1.6;
+    }
+
+    .phase5-page__actions,
+    .phase5-section__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .phase5-notice {
+        margin: 0;
+    }
+
+    .phase5-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+        align-items: start;
+    }
+
+    .phase5-grid--wide {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    }
+
+    .phase5-section {
+        min-inline-size: 0;
+        overflow: hidden;
+    }
+
+    .phase5-section__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 1.1rem 1.25rem;
+        border-block-end: 1px solid var(--pcdr-border, #d9dfe7);
+    }
+
+    .phase5-section__head h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 650;
+    }
+
+    .phase5-section__body {
+        display: grid;
+        gap: 0.85rem;
+        padding: 1.25rem;
+    }
+
+    .phase5-section.is-flush .phase5-section__body {
+        padding: 0;
+    }
+
+    .phase5-stats {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    }
+
+    .phase5-stat {
+        display: grid;
+        gap: 0.2rem;
+        border: 1px solid var(--pcdr-border, #d9dfe7);
+        border-radius: 0.65rem;
+        background: var(--pcdr-surface-alt, #f6f8fb);
+        padding: 1rem 1.1rem;
+    }
+
+    .phase5-stat__value {
+        font-size: 1.65rem;
+        font-weight: 700;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .phase5-stat__label {
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.82rem;
+    }
+
+    .phase5-table-wrap {
+        display: grid;
+        gap: 0.75rem;
+        min-inline-size: 0;
+    }
+
+    .phase5-table-scroll {
+        overflow-x: auto;
+        border-block-start: 1px solid var(--pcdr-border, #d9dfe7);
+    }
+
+    .phase5-table {
+        inline-size: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+
+    .phase5-table th,
+    .phase5-table td {
+        padding: 0.75rem 0.9rem;
+        border-block-end: 1px solid var(--pcdr-border, #d9dfe7);
+        text-align: start;
+        vertical-align: top;
+    }
+
+    .phase5-table th {
+        background: var(--pcdr-surface-alt, #f6f8fb);
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .phase5-table tbody tr:hover {
+        background: color-mix(in srgb, var(--pcdr-teal-700, #0f766e) 4%, transparent);
+    }
+
+    .phase5-table.is-compact th,
+    .phase5-table.is-compact td {
+        padding: 0.5rem 0.7rem;
+    }
+
+    .phase5-table td[data-label]::before {
+        content: none;
+    }
+
+    .phase5-table-meta {
+        margin: 0;
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.82rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .phase5-flag {
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .phase5-flag.is-on {
+        color: var(--pcdr-teal-700, #0f766e);
+    }
+
+    .phase5-pagination {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .phase5-pagination__links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .phase5-pagination__links .is-disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .phase5-form__grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    }
+
+    .phase5-form__grid .is-wide {
+        grid-column: 1 / -1;
+    }
+
+    .phase5-form__actions,
+    .phase5-filters__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-block-start: 1rem;
+    }
+
+    .phase5-form.is-compact .phase5-form__grid {
+        gap: 0.65rem;
+    }
+
+    .phase5-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.75rem;
+    }
+
+    .phase5-filters .field {
+        min-inline-size: 10rem;
+        flex: 1 1 12rem;
+    }
+
+    .phase5-filters .phase5-filters__actions {
+        margin: 0;
+    }
+
+    .phase5-kv {
+        display: grid;
+        gap: 0;
+        margin: 0;
+    }
+
+    .phase5-kv > div {
+        display: grid;
+        grid-template-columns: minmax(8rem, 1fr) 2fr;
+        gap: 1rem;
+        padding-block: 0.6rem;
+        border-block-end: 1px solid var(--pcdr-border, #d9dfe7);
+    }
+
+    .phase5-kv > div:last-child {
+        border-block-end: 0;
+    }
+
+    .phase5-kv dt {
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.82rem;
+    }
+
+    .phase5-kv dd {
+        margin: 0;
+        font-size: 0.9rem;
+        overflow-wrap: anywhere;
+    }
+
+    .phase5-timeline {
+        display: grid;
+        gap: 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .phase5-timeline__item {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.75rem;
+        padding-block: 0.7rem;
+        border-block-end: 1px solid var(--pcdr-border, #d9dfe7);
+    }
+
+    .phase5-timeline__item:last-child {
+        border-block-end: 0;
+    }
+
+    .phase5-timeline__marker {
+        inline-size: 0.55rem;
+        block-size: 0.55rem;
+        margin-block-start: 0.45rem;
+        border-radius: 50%;
+        background: var(--pcdr-teal-700, #0f766e);
+    }
+
+    .phase5-timeline__title {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .phase5-timeline__meta {
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.78rem;
+    }
+
+    .phase5-inline {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .phase5-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.8rem;
+        overflow-wrap: anywhere;
+    }
+
+    .phase5-muted {
+        color: var(--pcdr-muted, #607088);
+        font-size: 0.85rem;
+    }
+
+    .phase5-gate {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.6rem 0;
+        border-block-end: 1px solid var(--pcdr-border, #d9dfe7);
+        font-size: 0.86rem;
+    }
+
+    .phase5-gate:last-child {
+        border-block-end: 0;
+    }
+
+    .phase5-gate.is-off {
+        color: var(--pcdr-muted, #607088);
+    }
+
+    .phase5-progress {
+        inline-size: 100%;
+        block-size: 0.4rem;
+        border-radius: 999px;
+        background: var(--pcdr-border, #d9dfe7);
+        overflow: hidden;
+    }
+
+    .phase5-progress > span {
+        display: block;
+        block-size: 100%;
+        background: var(--pcdr-teal-700, #0f766e);
+    }
+
+    @media (max-width: 640px) {
+        .phase5-kv > div {
+            grid-template-columns: 1fr;
+            gap: 0.15rem;
+        }
+
+        .phase5-page__head {
+            align-items: flex-start;
+        }
+    }
+}

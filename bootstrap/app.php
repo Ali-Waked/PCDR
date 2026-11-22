@@ -3,6 +3,7 @@
 use App\Exceptions\InvalidDomainTransition;
 use App\Exceptions\InvalidWorkflowTransition;
 use App\Exceptions\MediaInUseException;
+use App\Exceptions\Phase5GovernanceException;
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureCmsPermission;
@@ -37,6 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'locale' => SetWebsiteLocale::class,
         ]);
 
+        // Inbound webhooks authenticate with a timestamped HMAC signature and
+        // nonce replay protection rather than a browser CSRF token.
+        $middleware->validateCsrfTokens(except: ['webhooks/inbound/*']);
+
         $middleware->redirectGuestsTo(fn (Request $request) => route('login.show', [
             'locale' => $request->route('locale') ?? 'ar',
         ]));
@@ -45,7 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
-        $exceptions->render(function (InvalidWorkflowTransition|InvalidDomainTransition|MediaInUseException $exception, Request $request) {
+        $exceptions->render(function (InvalidWorkflowTransition|InvalidDomainTransition|MediaInUseException|Phase5GovernanceException $exception, Request $request) {
             if ($request->expectsJson() || $request->inertia()) {
                 return response()->json(['message' => $exception->getMessage()], 409);
             }

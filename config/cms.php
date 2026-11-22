@@ -71,6 +71,19 @@ return [
         'assessments.view' => 'View assessments and research',
         'reports.view' => 'View operational reports and dashboards',
         'documents.view' => 'View operational documents',
+
+        // Phase 5 institutional operating layer.
+        'workflows.view' => 'View workflows',
+        'tasks.view' => 'View tasks',
+        'collaboration.view' => 'View internal discussions',
+        'accountability.view' => 'View accountability cases',
+        'referrals.view' => 'View referrals',
+        'notifications.view' => 'View notification inbox',
+        'automations.view' => 'View automation rules',
+        'calendar.view' => 'View institutional calendar',
+        'documents.review' => 'Review routed documents',
+        'integrations.view' => 'View integration registry',
+        'dashboards.view' => 'View operations dashboard',
     ],
 
     /**

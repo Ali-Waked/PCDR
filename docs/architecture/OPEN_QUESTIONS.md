@@ -140,3 +140,9 @@ The **single authoritative production deployment gate** is `DEPLOYMENT_ARCHITECT
 | DEFERRED | 5 | OQ-22, OQ-34, OQ-41, OQ-42, OQ-43 |
 
 **[RECOMMENDATION]** No answer is fabricated in this blueprint. Where a default is proposed, it is explicitly labeled and remains reversible until approved.
+
+---
+
+## 9. Phase 5 implementation note
+
+The Phase 5 operating-layer implementation does not answer or close any question in this register. OQ-24–OQ-29 remain **[DECISION REQUIRED]** and continue to block sensitive schemas, public intake, retention, and release. OQ-49 remains **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL**; no approval permission, route, status, delegation, or officeholder was introduced. The authoritative technical scope is `docs/architecture/PHASE_5_CONTRACT.md`; older roadmap references to complaints, volunteers, careers, and tenders are not implemented or approved by this delivery.
