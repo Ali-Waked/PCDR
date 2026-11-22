@@ -38,6 +38,19 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Restricted operational documents. This disk is intentionally not
+         * linked into the public web root; downloads always pass through the
+         * signed, permission-checked controller.
+         */
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

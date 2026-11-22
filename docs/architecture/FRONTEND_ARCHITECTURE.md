@@ -191,3 +191,9 @@ graph LR
 ## 11. Frontend testing (planned)
 
 **[RECOMMENDATION]** See `TESTING_STRATEGY.md`: component tests for `Ui/` primitives, composable tests for `usePermission`/`useLocale`, and a11y smoke checks on key pages. Tool selection (e.g. Vitest + Vue Test Utils) is a later decision; no packages are installed now. The tool must be recorded before the Phase 3 quality gate 4 (`npm run build`) and component tests are treated as enforceable; an unselected tool is not a gate. `usePermission` tests must assert UI-only semantics and must verify that no restricted data is cached in browser storage.
+
+---
+
+## Phase 4 frontend addendum (2026-11-22)
+
+Five Inertia/Vue pages were added under `resources/js/Pages/Operations` (dashboard, resource index, resource form, inventory, reports) plus a small shared helper module. They reuse the existing CMS layout, Tailwind tokens, and Inertia navigation; no UI kit, second frontend, or new package was introduced. Navigation entries are permission-aware, and the production build passes. No browser, component, or accessibility automation was added.

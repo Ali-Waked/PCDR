@@ -817,3 +817,11 @@ This audit does **not** approve Phase 1, does **not** close OQ-49 or OQ-34, does
 ---
 
 **End of report.**
+
+---
+
+## 24. Phase 4 implementation addendum (2026-11-22; documentation status unchanged)
+
+This addendum records a bounded technical implementation only. It does not reopen, revise, or upgrade the audit findings above. The `F`/`P`/`Missing`/`Deferred` classifications, the Phase 1 status, OQ statuses, and ADR statuses remain exactly as recorded.
+
+The added operational layer is a generic, config-bound platform capability. It does not establish strategic plan coverage for any objective or program group, because domain-specific entities, workflows, privacy controls, authoritative content, and owner decisions are still required. OQ-24–OQ-29 remain blocking for sensitive person-linked data; OQ-49 remains **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL**. No implementation report derived from this addendum may be read as formal approval or domain acceptance.

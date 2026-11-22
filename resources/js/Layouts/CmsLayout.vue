@@ -12,10 +12,14 @@ defineProps({
 const { page, t, locale, localPath, alternateUrl } = useI18n()
 
 const user = computed(() => page.props.auth?.user || null)
-const permissions = computed(() => user.value?.permissions || [])
+const permissions = computed(() => [
+    ...(page.props.auth?.permissions || []),
+    ...(page.props.auth?.cmsPermissions || []),
+])
 
 function can(permission) {
-    return permissions.value.includes(permission) || permissions.value.includes('dashboard')
+    return permissions.value.includes('*')
+        || permissions.value.includes(permission)
 }
 
 const groups = computed(() => [
@@ -44,6 +48,21 @@ const groups = computed(() => [
             { label: t('ui.cms_homepage'), url: localPath('cms/homepage'), permission: 'homepage.view' },
             { label: t('ui.cms_settings'), url: localPath('cms/settings'), permission: 'settings.view' },
             { label: t('ui.cms_inquiries'), url: localPath('cms/inquiries'), permission: 'inquiries.view' },
+        ],
+    },
+    {
+        label: locale.value === 'ar' ? 'الوحدات التشغيلية' : 'Operational modules',
+        links: [
+            { label: locale.value === 'ar' ? 'لوحة العمليات' : 'Operations dashboard', url: localPath('operations/dashboard'), permission: 'reports.view' },
+            { label: locale.value === 'ar' ? 'المواقع' : 'Locations', url: localPath('operations/locations'), permission: 'locations.view' },
+            { label: locale.value === 'ar' ? 'التدخلات' : 'Interventions', url: localPath('operations/interventions'), permission: 'interventions.view' },
+            { label: locale.value === 'ar' ? 'التوزيعات' : 'Distributions', url: localPath('operations/distribution_plans'), permission: 'distributions.view' },
+            { label: locale.value === 'ar' ? 'المخزون' : 'Inventory', url: localPath('operations/inventory'), permission: 'inventory.view' },
+            { label: locale.value === 'ar' ? 'المتطوعون' : 'Volunteers', url: localPath('operations/volunteers'), permission: 'volunteers.view' },
+            { label: locale.value === 'ar' ? 'الشركاء' : 'Partners', url: localPath('operations/partners'), permission: 'partners.view' },
+            { label: locale.value === 'ar' ? 'المنح' : 'Grants', url: localPath('operations/grant_proposals'), permission: 'grants.view' },
+            { label: locale.value === 'ar' ? 'التقييم والقياس' : 'MEAL', url: localPath('operations/indicators'), permission: 'meal.view' },
+            { label: locale.value === 'ar' ? 'التقارير' : 'Reports', url: localPath('operations/reports'), permission: 'reports.view' },
         ],
     },
 ])
