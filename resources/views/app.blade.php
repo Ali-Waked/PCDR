@@ -1,13 +1,57 @@
+@php
+    $seoLocale = \App\Support\Locale::sanitize(request()->route('locale'));
+    $seoPath = ltrim(preg_replace('#^/(ar|en)(?=/|$)#', '', '/'.ltrim(request()->path(), '/')) ?? '', '/');
+    $seoSuffix = $seoPath ? '/'.$seoPath : '';
+    $isHome = $seoPath === '';
+    $seoTitle = $isHome
+        ? ($seoLocale === 'ar'
+            ? 'PCDR | جمعية العمل التشاركي في الأزمات والكوارث'
+            : 'PCDR | Participatory Action in Crises and Disasters')
+        : ($seoLocale === 'ar'
+            ? config('website.name.ar').' | PCDR'
+            : config('website.name.en').' | PCDR');
+    $seoDescription = $isHome && $seoLocale === 'ar'
+        ? 'من الاستجابة الإنسانية إلى التعافي والتنمية المستدامة — PCDR، قطاع غزة.'
+        : (string) config('website.description.'.$seoLocale);
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ \App\Support\Locale::direction(app()->getLocale()) }}" data-locale="{{ app()->getLocale() }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+        <meta name="theme-color" content="#3E5172">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        >
+        <title inertia>{{ $seoTitle }}</title>
+        <meta name="description" inertia content="{{ $seoDescription }}">
+        <link rel="canonical" inertia href="{{ url('/'.$seoLocale.$seoSuffix) }}">
+        <link rel="alternate" inertia hreflang="ar" href="{{ url('/ar'.$seoSuffix) }}">
+        <link rel="alternate" inertia hreflang="en" href="{{ url('/en'.$seoSuffix) }}">
+        <link rel="alternate" inertia hreflang="x-default" href="{{ url('/ar'.$seoSuffix) }}">
+        <meta property="og:type" inertia content="website">
+        <meta property="og:site_name" inertia content="PCDR">
+        <meta property="og:locale" inertia content="{{ $seoLocale }}">
+        <meta property="og:title" inertia content="{{ $seoTitle }}">
+        <meta property="og:description" inertia content="{{ $seoDescription }}">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <script type="application/ld+json">
+            {!! json_encode([
+                '@' . 'context' => 'https://schema.org',
+                '@' . 'type' => 'Organization',
+                'name' => config('website.name.'.app()->getLocale()),
+                'alternateName' => 'PCDR',
+                'url' => url('/'.app()->getLocale()),
+                'description' => config('website.description.'.app()->getLocale()),
+                'inLanguage' => config('website.locales'),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) !!}
+        </script>
         @inertiaHead
     </head>
-    <body>
+    <body class="antialiased">
         @inertia
     </body>
 </html>
