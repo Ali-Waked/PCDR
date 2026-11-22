@@ -1,6 +1,13 @@
 import { createApp, h } from 'vue'
-import { createInertiaApp } from '@inertiajs/vue3'
+import { createInertiaApp, router } from '@inertiajs/vue3'
 import '../css/app.css'
+
+function applyDocumentLocale(props = {}) {
+    const locale = props.locale || 'ar'
+    const direction = props.direction || (locale === 'ar' ? 'rtl' : 'ltr')
+    document.documentElement.lang = locale
+    document.documentElement.dir = direction
+}
 
 createInertiaApp({
     resolve: (name) => {
@@ -8,7 +15,10 @@ createInertiaApp({
         return pages[`./Pages/${name}.vue`]
     },
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
+        applyDocumentLocale(props.initialPage?.props)
+        router.on('after', (event) => applyDocumentLocale(event.detail?.page?.props))
+
+        return createApp({ render: () => h(App, props) })
             .use(plugin)
             .mount(el)
     },

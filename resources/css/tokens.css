@@ -1,0 +1,32 @@
+:root {
+    /* Immutable PCDR identity palette. */
+    --pcdr-navy: #3e5172;
+    --pcdr-teal: #71bcb7;
+    --pcdr-sand: #dac3a3;
+    --pcdr-wheat: #d7c5a1;
+    --pcdr-white: #ffffff;
+
+    /* Supporting palette. */
+    --pcdr-navy-900: #25334b;
+    --pcdr-navy-800: #30415e;
+    --pcdr-navy-700: #3e5172;
+    --pcdr-navy-100: #e9edf2;
+    --pcdr-teal-700: #397f7b;
+    --pcdr-teal-100: #eaf5f4;
+    --pcdr-sand-100: #f7f2ea;
+
+    --pcdr-ink: #1f2a3c;
+    --pcdr-muted: #5c6b82;
+    --pcdr-border: #d9dfe7;
+    --pcdr-danger: #9b2c2c;
+    --pcdr-success: #2f6f4e;
+    --pcdr-warning: #8a6116;
+
+    --pcdr-surface: var(--pcdr-white);
+    --pcdr-surface-alt: var(--pcdr-sand-100);
+    --pcdr-radius-sm: 4px;
+    --pcdr-radius-md: 8px;
+    --pcdr-radius-lg: 12px;
+    --pcdr-container: 1200px;
+    --pcdr-dashboard: 1600px;
+}

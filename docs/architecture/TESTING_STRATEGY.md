@@ -1,6 +1,6 @@
 # PCDR — Testing & Code Quality Strategy
 
-**Status:** Strategy only. No test file, package, config, or CI workflow is created in this phase.
+**Status:** Strategy baseline plus Phase 2a implementation status. Sections 1–7 are the historical Phase 1 record; Section 8 records the tests actually added for the Phase 2a technical foundation. No CI workflow, Larastan, PHPCompatibility runner, frontend test runner, or browser/a11y suite is installed. OQ-49 remains **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL** and no ADR is approved.
 
 ---
 
@@ -153,3 +153,22 @@ flowchart LR
 - No package installation, no CI file, no test creation, no coverage enforcement today.
 - No claim that tests exist beyond the two skeleton examples.
 - No browser/e2e suite added before the critical flows are implemented.
+
+---
+
+## 8. Phase 2a implementation coverage
+
+The following PHPUnit coverage was added with the Phase 2a technical foundation. These tests are backend authorization and integration evidence only; they do not approve an ADR, close an open question, or authorize Phase 3.
+
+| Test class | Coverage |
+|---|---|
+| `AuthenticationTest` | Login/logout audit, failed credentials, suspended/locked/unverified states, signed verification, reset notification/token flow, rate limiting. |
+| `RbacTest` | Role permission evaluation, cache invalidation, dynamic custom permissions, retired permissions, Platform Owner universal permissions, scoped summaries without values, default-deny and `all`/`self`/`assigned` scopes, permission sync idempotence, schema uniqueness, session invalidation on suspension. |
+| `PlatformOwnerProtectionTest` | Secure interactive bootstrap, no hardcoded credentials, second-owner refusal, last-owner protection, password absent from audit records. |
+| `AuditTrailTest` | Recursive redaction, append-only enforcement, viewer/export authorization, view/export entries without `before`/`after`. |
+| `SettingsTest` | Public allowlist, persisted updates, audit records, invalid values, unknown-key rejection. |
+| `LocalizationTest` | Root/legacy redirects, AR/RTL and EN/LTR document props, locale-aware validation. |
+| `AdminAuthorizationTest` | Permission-gated admin pages, user management, password policy validation, self-role-assignment rejection, protected permission and privilege boundaries. |
+| `ContentStatusTest` | Five required workflow states and declared transition map. |
+
+Local Phase 2a QA results: PHPUnit `44 tests, 44 passed, 251 assertions, 19.664s`; `vendor/bin/pint --dirty --format agent` passed; `npm run build` completed with 608 modules in 4.75s (non-blocking optional `fontaine` fallback notice); `composer audit` reported no security vulnerability advisories; `npm audit` found 0 vulnerabilities. No Vitest, Vue Test Utils, Playwright, or axe suite was introduced. PHP 8.3 compatibility and Larastan remain unimplemented gates, so no claim is made that they pass.

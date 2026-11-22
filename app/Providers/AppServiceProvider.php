@@ -2,23 +2,65 @@
 
 namespace App\Providers;
 
+use App\Models\AuditLog;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Models\Setting;
+use App\Models\User;
+use App\Policies\AuditLogPolicy;
+use App\Policies\PermissionPolicy;
+use App\Policies\RolePolicy;
+use App\Policies\SettingPolicy;
+use App\Policies\UserPolicy;
+use App\Services\RbacService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
+    /** @var array<class-string, class-string> */
+    protected $policies = [
+        User::class => UserPolicy::class,
+        Role::class => RolePolicy::class,
+        Permission::class => PermissionPolicy::class,
+        AuditLog::class => AuditLogPolicy::class,
+        Setting::class => SettingPolicy::class,
+    ];
+
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        foreach ($this->policies as $model => $policy) {
+            Gate::policy($model, $policy);
+        }
+
+        Gate::before(fn (User $user, string $ability): ?bool => $user->isPlatformOwner() ? true : null);
+
+        foreach (array_keys(config('permissions', [])) as $permission) {
+            Gate::define($permission, fn (User $user) => App::make(RbacService::class)->has($user, (string) $permission));
+        }
+
+        RateLimiter::for('login', function (Request $request): Limit {
+            $limit = (int) config('settings.definitions.security.login_rate_limit.default', 5);
+
+            return Limit::perMinute($limit)->by(Str::transliterate(
+                Str::lower((string) $request->input('email', '')).'|'.$request->ip(),
+            ));
+        });
+
+        RateLimiter::for('password-reset', function (Request $request): Limit {
+            return Limit::perMinute(3)->by(Str::transliterate(
+                Str::lower((string) $request->input('email', '')).'|'.$request->ip(),
+            ));
+        });
     }
 }

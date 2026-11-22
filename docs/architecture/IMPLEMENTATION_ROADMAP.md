@@ -1,6 +1,6 @@
 # PCDR — Implementation Roadmap
 
-**Status:** Planning only. This document does **not** authorize or begin implementation. Phase 1 is a review-ready submission, not approval. Every phase transition—including Phase 2a—requires recorded formal approval/authorization under OQ-49, which is **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL**. No approval rights are granted to the developer.
+**Status:** The Phase 1 documentation set is the historical design baseline; the Phase 2a technical foundation below has been implemented under explicit user authorization, **not** institutional approval. Every phase transition still requires recorded formal approval/authorization under OQ-49, which is **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL**. ADR-001–017 remain **PROPOSED**, no approval rights are granted to the developer, and Phase 3 is not authorized.
 
 ---
 
@@ -65,6 +65,24 @@
 - [ ] Demo seeder is protected or replaced before first non-local use.
 
 **Decisions needed before/during:** auth UI approach (OQ-17), default password policy values, admin locale-prefix choice (OQ-20), departments/sections (OQ-19), protected-capability holders (OQ-23), Arabic default (OQ-31).
+
+### 3.1 Phase 2a technical implementation status
+
+The implementation is a technical foundation only. It does not close an open question, approve an ADR, enable Phase 3, or add institutional facts.
+
+| Area | Status | Evidence / boundary |
+|---|---|---|
+| Authentication and account states | Implemented | Login/logout, verification notice and signed verification, reset tokens, rate limiting, active/inactive/suspended states, temporary lockout, session invalidation. Tests cover the happy paths and rejection cases. |
+| Dynamic RBAC | Implemented | Code-owned permission catalog with sync command, custom DB permissions, roles, `role_user`, `permission_role`, `role_scopes`, protected permission rules, cache invalidation. Backend middleware/policies remain the authorization authority. |
+| Platform Owner | Implemented | Single account bootstrapped through `pcdr:platform-owner:bootstrap` using environment or interactive secret input; no hardcoded credentials. Last-owner deactivation/deletion is blocked. Only technical authority is granted; no institutional role is implied. |
+| Scopes | Partially implemented | `all`, `self`, and `assigned` are implemented with default-deny; public props expose `scope_type` only. `department`/`section` are deliberately absent until OQ-19 is formally answered. |
+| Audit | Implemented | Append-only model, recursive redaction, request context, auth/RBAC/user/settings/audit-view/export events. Read/export audit entries carry no `before`/`after`. |
+| Settings | Implemented | DB settings with config-declared definitions, public allowlist, cache invalidation, validation, secret references kept only in environment documentation. Demo seeder replaced by permission sync; no demo account is created. |
+| Localization | Implemented | Arabic default, English support, locale-prefixed routes, `SetLocale`, `lang`/`dir` on the root view, AR/EN UI and validation messages. |
+| Frontend/design foundation | Implemented | Tailwind v4 tokens, motion tokens, shared UI components, layouts, accessible auth/admin shells, RTL/LTR behavior. No UI kit, GSAP, Lottie, or frontend-only authorization. |
+| Workflow vocabulary | Implemented as foundation | `config/workflows.php` and `ContentStatus` define the five required states and transitions. No content module is enabled in Phase 2a. |
+| CI/static analysis/PHP 8.3 gate | Not implemented | No CI workflow, Larastan, or PHPCompatibility runner was added. These remain Phase 2a quality-tooling tasks and are not claimed as passing gates. |
+| Production email/transport | Not implemented | Password reset and verification use framework notifications; no production transport, queue worker, or delivery health path is enabled. This remains Phase 2b scope. |
 
 ---
 

@@ -1,0 +1,46 @@
+:root {
+    --motion-duration-instant: 90ms;
+    --motion-duration-fast: 140ms;
+    --motion-duration-base: 200ms;
+    --motion-duration-slow: 320ms;
+    --motion-duration-slower: 480ms;
+    --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --motion-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+    --motion-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+    --motion-distance-xs: 4px;
+    --motion-distance-sm: 8px;
+    --motion-distance-md: 16px;
+    --motion-scale-sm: 0.98;
+    --motion-scale-base: 1;
+    --motion-scale-lg: 1.02;
+}
+
+@keyframes pcdr-enter {
+    from {
+        opacity: 0;
+        transform: translateY(var(--motion-distance-sm));
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pcdr-enter {
+    animation: pcdr-enter var(--motion-duration-base) var(--motion-ease-decelerate) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .pcdr-enter {
+        animation: none;
+    }
+}
