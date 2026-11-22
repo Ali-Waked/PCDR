@@ -516,6 +516,10 @@
 
 /* Hero -------------------------------------------------------------------- */
 .public-shell .ps-hero {
+    --m-fast: 0.2s;
+    --m-normal: 0.7s;
+    --m-slow: 1.2s;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     isolation: isolate;
     overflow: clip;
@@ -526,25 +530,28 @@
 
 .public-shell .ps-hero__grid {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: clamp(1.5rem, 3vw, 3rem);
-    align-items: end;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: clamp(1.25rem, 3vw, 3rem);
+    align-items: center;
 }
-
-.public-shell .ps-hero__copy {
-    grid-column: 1 / span 7;
-    max-inline-size: 100%;
-    padding-block-end: clamp(1rem, 2vw, 2rem);
+@media (min-width: 1100px) {
+    .public-shell .ps-hero__grid { gap: 48px; }
 }
 
 .public-shell .ps-hero__visual {
-    grid-column: 8 / -1;
     position: relative;
-    min-block-size: clamp(220px, 28vw, 380px);
+    inline-size: 200px;
+    block-size: 200px;
     display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
     overflow: visible;
+}
+
+.public-shell .ps-hero__copy {
+    min-width: 0;
+    max-inline-size: 100%;
 }
 
 .public-shell .ps-hero .ps-breadcrumbs {
@@ -553,21 +560,15 @@
     color: var(--ps-muted);
 }
 
-.public-shell .ps-hero .ps-breadcrumbs a {
-    color: var(--ps-muted);
-    text-decoration: none;
-}
-
-.public-shell .ps-hero .ps-breadcrumbs a:hover {
-    color: var(--ps-navy);
-}
+.public-shell .ps-hero .ps-breadcrumbs a { color: var(--ps-muted); text-decoration: none; }
+.public-shell .ps-hero .ps-breadcrumbs a:hover { color: var(--ps-navy); }
 
 .public-shell .ps-hero__accent {
-    inline-size: 4px;
-    block-size: 48px;
+    inline-size: 48px;
+    block-size: 4px;
     background: var(--accent, var(--ps-teal));
     margin-block-end: 1.25rem;
-    transform-origin: block-start;
+    transform-origin: inline-start;
 }
 
 .public-shell .ps-hero__title {
@@ -579,6 +580,15 @@
     margin: 0;
     text-wrap: balance;
 }
+
+.public-shell .ps-hero__word {
+    display: inline-block;
+    overflow: clip;
+    vertical-align: top;
+    padding-block-end: 0.08em;
+}
+.public-shell .ps-hero__word + .ps-hero__word { margin-inline-start: 0.28em; }
+.public-shell .ps-hero__word-inner { display: inline-block; }
 
 .public-shell .ps-hero__lead {
     max-inline-size: 60ch;
@@ -595,56 +605,356 @@
     margin-block-start: 1.75rem;
 }
 
-.public-shell .ps-hero__motif {
-    inline-size: min(100%, 420px);
-    block-size: auto;
-    opacity: 0.16;
-    color: var(--ps-navy-900);
-    margin-inline-end: -5%;
-    margin-block-end: -5%;
-}
-
 .public-shell .ps-hero__photo {
     margin: 0;
     inline-size: min(100%, 460px);
-    margin-inline-end: -5%;
 }
-
 .public-shell .ps-hero__photo img {
     display: block;
     inline-size: 100%;
-    block-size: auto;
     aspect-ratio: 4 / 5;
     object-fit: cover;
     background: #e9edf2;
 }
-
 .public-shell .ps-hero__caption {
     margin-block-start: 0.5rem;
     font-size: 0.78rem;
     color: var(--ps-muted);
 }
 
-.js-motion .public-shell .ps-hero__accent {
-    animation: ps-bar-grow 0.7s var(--ps-ease-em) both;
+/* HeroMotif --------------------------------------------------------------- */
+.hero-motif {
+    --px: 0px;
+    --py: 0px;
+    position: relative;
+    inline-size: 200px;
+    block-size: 200px;
+    flex: 0 0 auto;
+    transform: translate3d(var(--px), var(--py), 0);
+    transition: transform 0.4s ease;
+    will-change: transform;
+}
+.hero-motif.is-intro-done { will-change: auto; }
+.hero-motif__svg {
+    inline-size: 100%;
+    block-size: 100%;
+    display: block;
+    overflow: visible;
+}
+.hero-motif__photo {
+    margin: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+}
+.hero-motif__photo img { inline-size: 100%; block-size: 100%; object-fit: cover; aspect-ratio: 4 / 5; display: block; }
+
+.hm-stroke {
+    stroke: rgba(62, 81, 114, 0.88);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    fill: none;
+}
+@media (max-width: 720px) {
+    .hero-motif .hm-stroke { stroke: rgba(62, 81, 114, 0.6); }
+}
+.hm-stroke--accent { stroke: #71BCB7; stroke-opacity: 1; }
+.hm-stroke--wheat { stroke: #BFA472; stroke-opacity: 1; }
+.hm-art--olive .hm-stroke--accent,
+.hm-art--scales .hm-stroke--accent,
+.hm-art--book .hm-stroke--accent,
+.hm-art--contact .hm-stroke--accent,
+.hm-art--envelope .hm-stroke--accent { stroke: #71BCB7; }
+.hm-art--sun .hm-stroke--accent { stroke: #DAC3A3; }
+.hm-art--hands .hm-stroke--accent { stroke: #DAC3A3; }
+
+.hm-fill { opacity: 1; }
+.hm-fill--sand { fill: #DAC3A3; }
+.hm-fill--teal { fill: #71BCB7; }
+.hm-fill--teal-25 { fill: rgba(113, 188, 183, 0.25); }
+.hm-fill--wheat { fill: #BFA472; }
+
+/* Draw-in: default visible (no JS/reduced motion). Animated when motion allowed. */
+@media (prefers-reduced-motion: no-preference) {
+    .public-shell .hm-intro {
+        opacity: 0;
+        transform: translateY(16px);
+        animation: hm-fade-up var(--m-normal) var(--ease-out) both;
+        animation-delay: var(--hm-delay, 0s);
+    }
+    .public-shell .ps-hero__accent.hm-accent-bar {
+        opacity: 0;
+        transform: scaleX(0);
+        transform-origin: inline-start;
+        animation: hm-bar-x 0.5s var(--ease-out) both;
+        animation-delay: var(--hm-delay, .1s);
+    }
+    [dir="rtl"] .public-shell .ps-hero__accent.hm-accent-bar { transform-origin: inline-start; }
+
+    .public-shell .ps-hero__word.hm-intro {
+        opacity: 1;
+        transform: none;
+        animation: none;
+    }
+    .public-shell .ps-hero__word.hm-intro .ps-hero__word-inner {
+        opacity: 0;
+        transform: translateY(110%);
+        animation: hm-word-rise var(--m-normal) var(--ease-out) both;
+        animation-delay: var(--hm-delay, .2s);
+    }
+
+    .hero-motif:not(.is-reduced) .hm-draw {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        animation: hm-draw 0.9s var(--ease-out) both;
+        animation-delay: calc(var(--i, 0) * 70ms + 0.35s);
+        will-change: stroke-dashoffset;
+    }
+    .hero-motif:not(.is-reduced) .hm-fill {
+        opacity: 0;
+        animation: hm-fill-in 0.45s ease-out both;
+        animation-delay: calc(var(--i, 0) * 70ms + 0.95s);
+    }
+    .hero-motif:not(.is-reduced) .hm-lens.hm-fill { animation-delay: 1.2s; }
+    .hero-motif:not(.is-reduced) .hm-dot.hm-fill { animation-delay: 1.1s; }
+
+    /* Idle animations */
+    .hero-motif--olive:not(.is-reduced) .hm-idle-sway {
+        transform-origin: 100px 180px;
+        animation: hm-sway 7s ease-in-out 1.8s infinite alternate;
+        animation-play-state: var(--hm-play, running);
+    }
+    .hero-motif--olive:not(.is-reduced) .hm-leaf.hm-intro {
+        opacity: 1; transform: none;
+        animation: hm-leaf-in 0.5s var(--ease-out) both;
+        animation-delay: calc(var(--i, 0) * 90ms + 0.45s);
+    }
+
+    .hero-motif--sun:not(.is-reduced) .hm-ray {
+        animation: hm-draw 0.9s var(--ease-out) both, hm-ray-wave 4s ease-in-out 1.8s infinite;
+        animation-delay: calc(var(--i, 0) * 70ms + 0.35s), calc(var(--ray, 0) * 150ms + 1.8s);
+        animation-play-state: running, var(--hm-play, running);
+    }
+    .hero-motif--sun:not(.is-reduced) .hm-sun-rise {
+        opacity: 1; transform: none;
+        animation: hm-sun-rise 0.9s var(--ease-out) 0.35s both;
+    }
+
+    .hero-motif--wheat:not(.is-reduced) .hm-idle-sway {
+        transform-origin: 100px 178px;
+        animation: hm-sway-2 6s ease-in-out 1.8s infinite alternate;
+        animation-play-state: var(--hm-play, running);
+    }
+    .hero-motif--wheat:not(.is-reduced) .hm-grain.hm-intro {
+        opacity: 1; transform: none;
+        animation: hm-grain-pop 0.45s var(--ease-out) both;
+        animation-delay: calc(var(--i, 0) * 80ms + 0.45s);
+    }
+
+    .hero-motif--drop:not(.is-reduced) .hm-drop-fall {
+        opacity: 1; transform: none;
+        animation: hm-drop-fall 0.8s ease-in 0.35s both, hm-drop-bob 6s ease-in-out 2.2s infinite;
+        animation-play-state: running, var(--hm-play, running);
+    }
+    .hero-motif--drop:not(.is-reduced) .hm-ripple {
+        transform-origin: 100px 167px;
+        animation: hm-draw 0.9s var(--ease-out) both, hm-ripple 6s ease-out 1.3s infinite;
+        animation-delay: calc(var(--i, 0) * 70ms + 0.35s), 1.3s;
+        animation-play-state: running, var(--hm-play, running);
+    }
+    .hero-motif--drop:not(.is-reduced) .hm-ripple--2 { animation-delay: calc(var(--i, 0) * 70ms + 0.35s), 1.5s; }
+
+    .hero-motif--book:not(.is-reduced) .hm-page-turn {
+        opacity: 1; transform: none;
+        transform-origin: 100px 100px;
+        animation: hm-page-turn 8s ease-in-out 2s infinite;
+        animation-play-state: var(--hm-play, running);
+    }
+
+    .hero-motif--scales:not(.is-reduced) .hm-balance {
+        opacity: 1; transform: none;
+        transform-origin: 100px 44px;
+        animation: hm-balance 1.2s var(--ease-out) 0.35s both, hm-balance-breathe 5s ease-in-out 2s infinite;
+        animation-play-state: running, var(--hm-play, running);
+    }
+
+    .hero-motif--rings:not(.is-reduced) .hm-ring-left {
+        opacity: 1; transform: none;
+        animation: hm-ring-left 1.1s cubic-bezier(0.16,1,0.3,1) 0.35s both, hm-rings-drift-l 5s ease-in-out 1.8s infinite alternate;
+        animation-play-state: running, var(--hm-play, running);
+    }
+    .hero-motif--rings:not(.is-reduced) .hm-ring-right {
+        opacity: 1; transform: none;
+        animation: hm-ring-right 1.1s cubic-bezier(0.16,1,0.3,1) 0.35s both, hm-rings-drift-r 5s ease-in-out 1.8s infinite alternate;
+        animation-play-state: running, var(--hm-play, running);
+    }
+    .hero-motif--rings:not(.is-reduced) .hm-rings-drop {
+        opacity: 1; transform: none;
+        transform-origin: 100px 100px;
+        animation: hm-drop-spring 0.5s cubic-bezier(0.34,1.56,0.64,1) 1.1s both;
+    }
+    .hero-motif--rings:not(.is-reduced) .hm-rings-ripple {
+        opacity: 0;
+        transform-origin: 100px 100px;
+        animation: hm-draw 0.6s var(--ease-out) 0.7s both, hm-rings-ripple 0.5s ease-out 1.1s both;
+    }
+
+    .hero-motif--hands:not(.is-reduced) .hm-hand-left {
+        opacity: 1; transform: none;
+        animation: hm-hand-rise 0.9s var(--ease-out) 0.1s both, hm-hand-breathe 5s ease-in-out 1.8s infinite;
+        animation-play-state: running, var(--hm-play, running);
+    }
+    .hero-motif--hands:not(.is-reduced) .hm-hand-right {
+        opacity: 1; transform: none;
+        animation: hm-hand-rise 0.9s var(--ease-out) 0.22s both, hm-hand-breathe 5s ease-in-out 1.8s infinite;
+        animation-play-state: running, var(--hm-play, running);
+    }
+    [dir="rtl"] .hero-motif--hands:not(.is-reduced) .hm-hand-left {
+        animation-delay: 0.22s, 1.8s;
+    }
+    [dir="rtl"] .hero-motif--hands:not(.is-reduced) .hm-hand-right {
+        animation-delay: 0.1s, 1.8s;
+    }
+    .hero-motif--hands:not(.is-reduced) .hm-seedling-sway {
+        opacity: 1; transform: none;
+        transform-origin: 100px 138px;
+        animation: hm-seedling-sway 6s ease-in-out 1.8s infinite alternate;
+        animation-play-state: var(--hm-play, running);
+    }
+    .hero-motif--hands:not(.is-reduced) .hm-seedling-stem {
+        animation: hm-draw 0.7s var(--ease-out) 0.45s both;
+    }
+    .hero-motif--hands:not(.is-reduced) .hm-leaf-l {
+        opacity: 1; transform: none;
+        transform-origin: 100px 96px;
+        animation: hm-leaf-unfold-l 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both;
+    }
+    .hero-motif--hands:not(.is-reduced) .hm-leaf-r {
+        opacity: 1; transform: none;
+        transform-origin: 100px 96px;
+        animation: hm-leaf-unfold-r 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both;
+    }
+    .hero-motif--hands:not(.is-reduced) .hm-leaf-l .hm-fill,
+    .hero-motif--hands:not(.is-reduced) .hm-leaf-r .hm-fill {
+        animation: none;
+        opacity: 1;
+    }
+    .hero-motif--hands:not(.is-reduced) .hm-sun-dot.hm-intro {
+        opacity: 0; transform: none;
+        animation: hm-fill-in 0.35s ease-out 1.25s both;
+    }
+
+    .hero-motif--envelope:not(.is-reduced) .hm-letter {
+        opacity: 1; transform: none;
+        animation: hm-letter-rise 0.9s var(--ease-out) 0.5s both;
+    }
+    .hero-motif--envelope:not(.is-reduced) .hm-flap {
+        opacity: 1; transform: none;
+        transform-origin: 100px 86px;
+        animation: hm-flap 9s ease-in-out 2s infinite;
+        animation-play-state: var(--hm-play, running);
+    }
 }
 
-.js-motion .public-shell .ps-hero__motif path,
-.js-motion .public-shell .ps-hero__motif line,
-.js-motion .public-shell .ps-hero__motif circle,
-.js-motion .public-shell .ps-hero__motif rect {
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 1000;
-    animation: ps-draw 1.8s var(--ps-ease-em) 0.2s forwards;
+@media (prefers-reduced-motion: reduce) {
+    .hero-motif, .hero-motif * {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+        stroke-dashoffset: 0 !important;
+        stroke-dasharray: none !important;
+    }
 }
 
-@keyframes ps-bar-grow {
-    from { transform: scaleY(0); opacity: 0; }
-    to { transform: scaleY(1); opacity: 1; }
+/* Scroll-driven subtle parallax/fade */
+@supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+        .public-shell .ps-hero__visual {
+            animation: hm-scroll-fade linear both;
+            animation-timeline: view();
+            animation-range: exit 0% exit 100%;
+        }
+    }
 }
+@keyframes hm-scroll-fade { to { opacity: 0.6; transform: translateY(24px); } }
 
-@keyframes ps-draw {
-    to { stroke-dashoffset: 0; }
+@keyframes hm-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hm-bar-x { from { opacity: 0; transform: scaleX(0); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes hm-word-rise { from { opacity: 0; transform: translateY(110%); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hm-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes hm-fill-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hm-sway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+@keyframes hm-sway-2 { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+@keyframes hm-leaf-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes hm-ray-wave { 0%,100% { opacity: 0.45; } 50% { opacity: 0.9; } }
+@keyframes hm-sun-rise { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes hm-grain-pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes hm-drop-fall { 0% { transform: translateY(-60px); opacity: 0; } 70% { opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes hm-drop-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes hm-ripple { 0% { opacity: 0.6; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+@keyframes hm-page-turn { 0%,85%,100% { transform: rotate(0deg); } 92% { transform: rotate(-3deg); } }
+@keyframes hm-balance { 0% { transform: rotate(8deg); } 60% { transform: rotate(-3deg); } 100% { transform: rotate(0deg); } }
+@keyframes hm-balance-breathe { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(0.6deg); } }
+@keyframes hm-ring-left { from { transform: translateX(-36px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes hm-ring-right { from { transform: translateX(36px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes hm-rings-drift-l { from { transform: translateX(0); } to { transform: translateX(-2px); } }
+@keyframes hm-rings-drift-r { from { transform: translateX(0); } to { transform: translateX(2px); } }
+@keyframes hm-drop-spring { 0% { opacity: 0; transform: scale(0); } 60% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes hm-rings-ripple { 0% { opacity: 0.5; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+@keyframes hm-hand-rise { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes hm-hand-breathe { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes hm-seedling-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+@keyframes hm-leaf-unfold-l { from { opacity: 0; transform: scale(0.3) rotate(-25deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes hm-leaf-unfold-r { from { opacity: 0; transform: scale(0.3) rotate(25deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes hm-letter-rise { from { transform: translateY(18px); } to { transform: translateY(-8px); } }
+@keyframes hm-flap { 0%,88%,100% { transform: rotateX(0deg); } 93% { transform: rotateX(25deg); } }
+
+@media (max-width: 720px) {
+    .public-shell .ps-hero {
+        padding-block: calc(var(--ps-hh) + 24px) 32px;
+        min-height: 0;
+    }
+    .public-shell .ps-hero__grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+        align-items: start;
+    }
+    .public-shell .ps-hero__copy { display: contents; }
+    .public-shell .ps-hero__crumbs {
+        order: 1;
+        margin: 0 0 16px;
+    }
+    .public-shell .ps-hero .ps-breadcrumbs { margin-block-end: 0; }
+    .public-shell .ps-hero__visual {
+        order: 2;
+        justify-self: start;
+        align-self: start;
+        inline-size: 140px;
+        block-size: 140px;
+        margin: 0 0 16px;
+    }
+    .hero-motif { inline-size: 140px; block-size: 140px; }
+    .public-shell .ps-hero__accent {
+        order: 3;
+        margin: 0 0 12px;
+    }
+    .public-shell .ps-hero__title {
+        order: 4;
+        max-inline-size: 100%;
+        margin: 0 0 12px;
+    }
+    .public-shell .ps-hero__lead {
+        order: 5;
+        margin: 0;
+    }
+    .public-shell .ps-hero__actions {
+        order: 6;
+        margin: 20px 0 0;
+    }
 }
 
 /* Sub-navigation ---------------------------------------------------------- */
@@ -1481,22 +1791,7 @@
 }
 
 /* Motion ------------------------------------------------------------------ */
-.public-shell.ps-animate .ps-hero__copy > * {
-    opacity: 0;
-    transform: translateY(24px);
-}
-
-.public-shell.ps-animate.is-ready .ps-hero__copy > * {
-    opacity: 1;
-    transform: none;
-    transition: opacity 1s var(--ps-ease-em), transform 1s var(--ps-ease-em);
-}
-
-.public-shell.ps-animate.is-ready .ps-hero__copy > :nth-child(1) { transition-delay: 0s; }
-.public-shell.ps-animate.is-ready .ps-hero__copy > :nth-child(2) { transition-delay: 0.1s; }
-.public-shell.ps-animate.is-ready .ps-hero__copy > :nth-child(3) { transition-delay: 0.2s; }
-.public-shell.ps-animate.is-ready .ps-hero__copy > :nth-child(4) { transition-delay: 0.3s; }
-.public-shell.ps-animate.is-ready .ps-hero__copy > :nth-child(5) { transition-delay: 0.4s; }
+/* Hero choreography is handled by .hm-intro / HeroMotif component. */
 
 
 
@@ -1608,43 +1903,7 @@
     }
 }
 
-@media (max-width: 1100px) {
-    .public-shell .ps-hero__copy {
-        grid-column: 1 / span 7;
-    }
 
-    .public-shell .ps-hero__visual {
-        grid-column: 8 / -1;
-        min-block-size: 200px;
-    }
-}
-
-@media (max-width: 860px) {
-    .public-shell .ps-hero__grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    .public-shell .ps-hero__copy,
-    .public-shell .ps-hero__visual {
-        grid-column: 1 / -1;
-    }
-
-    .public-shell .ps-hero__visual {
-        min-block-size: 160px;
-        justify-content: flex-start;
-    }
-
-    .public-shell .ps-hero__motif {
-        inline-size: min(70vw, 280px);
-        margin-inline-end: 0;
-    }
-
-    .public-shell .ps-hero__photo {
-        margin-inline-end: 0;
-        inline-size: min(100%, 360px);
-    }
-}
 
 @media (min-width: 601px) and (max-width: 1100px) {
     .public-shell .ps-nav__list {
