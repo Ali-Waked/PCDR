@@ -1,10 +1,14 @@
 <?php
 
+use App\Exceptions\InvalidWorkflowTransition;
+use App\Exceptions\MediaInUseException;
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EnsureAccountActive;
+use App\Http\Middleware\EnsureCmsPermission;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetWebsiteLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,7 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            // Settings/user-aware locale first; the route segment wins when present.
             SetLocale::class,
+            SetWebsiteLocale::class,
             HandleInertiaRequests::class,
             AddSecurityHeaders::class,
         ]);
@@ -26,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'account.active' => EnsureAccountActive::class,
             'permission' => RequirePermission::class,
+            'cms' => EnsureCmsPermission::class,
+            'locale' => SetWebsiteLocale::class,
         ]);
 
         $middleware->redirectGuestsTo(fn (Request $request) => route('login.show', [
@@ -36,4 +44,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        $exceptions->render(function (InvalidWorkflowTransition|MediaInUseException $exception, Request $request) {
+            if ($request->expectsJson() || $request->inertia()) {
+                return response()->json(['message' => $exception->getMessage()], 409);
+            }
+
+            return back()->with('flash', ['error' => $exception->getMessage()])->setStatusCode(409);
+        });
     })->create();

@@ -17,7 +17,7 @@ class SettingsTest extends TestCase
         $this->get('/ar')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Welcome')
+                ->component('Public/Home')
                 ->where('settings.public', fn ($public) => $public->get('general.site_name') === 'PCDR'
                     && $public->get('localization.default_locale') === 'ar'
                     && ! $public->has('security.login_rate_limit')

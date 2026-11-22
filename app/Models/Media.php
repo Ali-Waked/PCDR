@@ -1,0 +1,98 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use App\Enums\MediaType;
+use App\Models\Concerns\HasTranslations;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
+
+class Media extends Model
+{
+    use HasFactory;
+    use HasTranslations;
+    use SoftDeletes;
+
+    protected $fillable = [
+        'uuid', 'disk', 'path', 'type', 'mime_type', 'extension', 'size_bytes',
+        'width', 'height', 'checksum', 'original_name', 'is_restricted', 'uploaded_by',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'type' => MediaType::class,
+            'is_restricted' => 'boolean',
+            'size_bytes' => 'integer',
+            'width' => 'integer',
+            'height' => 'integer',
+        ];
+    }
+
+    public function translationModel(): string
+    {
+        return MediaTranslation::class;
+    }
+
+    public function translationForeignKey(): string
+    {
+        return 'media_id';
+    }
+
+    public function uploader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function scopeImages(Builder $query): Builder
+    {
+        return $query->where('type', MediaType::Image->value);
+    }
+
+    public function scopeDocuments(Builder $query): Builder
+    {
+        return $query->where('type', MediaType::Document->value);
+    }
+
+    public function scopePublic(Builder $query): Builder
+    {
+        return $query->where('is_restricted', false);
+    }
+
+    public function scopeRestricted(Builder $query): Builder
+    {
+        return $query->where('is_restricted', true);
+    }
+
+    public function isImage(): bool
+    {
+        return $this->type === MediaType::Image;
+    }
+
+    public function url(): string
+    {
+        if ($this->disk === config('website.uploads.private_disk')) {
+            return route('public.media.download', [
+                'locale' => app()->getLocale(),
+                'uuid' => $this->uuid,
+            ]);
+        }
+
+        return Storage::disk($this->disk)->url($this->path);
+    }
+
+    public function humanSize(): string
+    {
+        $bytes = (int) $this->size_bytes;
+
+        return $bytes >= 1024 * 1024
+            ? round($bytes / (1024 * 1024), 1).' MB'
+            : round(max($bytes, 1) / 1024, 1).' KB';
+    }
+}

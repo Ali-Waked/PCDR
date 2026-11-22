@@ -10,12 +10,10 @@ class ExampleTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * A basic test example.
+     * The root path redirects to the configured default locale.
      */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_the_root_path_redirects_to_the_default_locale(): void
     {
-        $response = $this->get('/');
-
-        $response->assertRedirect('/ar');
+        $this->get('/')->assertRedirect('/'.config('website.default_locale', 'ar'));
     }
 }
