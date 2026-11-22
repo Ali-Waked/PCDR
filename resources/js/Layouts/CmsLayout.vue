@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useI18n } from '../composables/useI18n'
 import FlashMessages from '../Components/FlashMessages.vue'
+import { label as phase5Label } from '../Components/Phase5/phase5'
 
 defineProps({
     title: { type: String, default: '' },
@@ -63,6 +64,23 @@ const groups = computed(() => [
             { label: locale.value === 'ar' ? 'المنح' : 'Grants', url: localPath('operations/grant_proposals'), permission: 'grants.view' },
             { label: locale.value === 'ar' ? 'التقييم والقياس' : 'MEAL', url: localPath('operations/indicators'), permission: 'meal.view' },
             { label: locale.value === 'ar' ? 'التقارير' : 'Reports', url: localPath('operations/reports'), permission: 'reports.view' },
+        ],
+    },
+    {
+        label: locale.value === 'ar' ? 'الطبقة التشغيلية الخامسة' : 'Phase 5 operating layer',
+        links: [
+            { label: phase5Label('dashboard', locale.value), url: localPath('operations/phase5/dashboard'), permission: 'dashboards.view' },
+            { label: phase5Label('workflows', locale.value), url: localPath('operations/phase5/workflows'), permission: 'workflows.view' },
+            { label: phase5Label('tasks', locale.value), url: localPath('operations/phase5/tasks'), permission: 'tasks.view' },
+            { label: phase5Label('accountability', locale.value), url: localPath('operations/phase5/accountability'), permission: 'accountability.view' },
+            { label: phase5Label('referrals', locale.value), url: localPath('operations/phase5/referrals'), permission: 'referrals.view' },
+            { label: phase5Label('notifications', locale.value), url: localPath('operations/phase5/notifications'), permission: 'notifications.view' },
+            { label: phase5Label('automations', locale.value), url: localPath('operations/phase5/automations'), permission: 'automations.view' },
+            { label: phase5Label('calendar', locale.value), url: localPath('operations/phase5/calendar'), permission: 'calendar.view' },
+            { label: phase5Label('document_reviews', locale.value), url: localPath('operations/phase5/document-reviews'), permission: 'documents.review' },
+            { label: phase5Label('integrations', locale.value), url: localPath('operations/phase5/integrations'), permission: 'integrations.view' },
+            { label: phase5Label('webhooks', locale.value), url: localPath('operations/phase5/webhooks/endpoints'), permission: 'integrations.view' },
+            { label: phase5Label('activity', locale.value), url: localPath('operations/phase5/activity'), permission: 'dashboards.view' },
         ],
     },
 ])

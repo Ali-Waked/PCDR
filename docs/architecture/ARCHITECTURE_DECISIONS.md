@@ -216,3 +216,9 @@ All 17 ADRs are **PROPOSED**, not accepted. No decision owner or approval date h
 | ADR-015 | Testing strategy | PROPOSED — pending human approval | TBD (OQ-49 PARTIALLY RESOLVED — PENDING FORMAL APPROVAL) | 2026-11-21 | Not recorded |
 | ADR-016 | Provider-neutral deployment | PROPOSED — pending human approval | TBD (OQ-49 PARTIALLY RESOLVED — PENDING FORMAL APPROVAL) | 2026-11-21 | Not recorded |
 | ADR-017 | Audit logging | PROPOSED — pending human approval | TBD (OQ-49 PARTIALLY RESOLVED — PENDING FORMAL APPROVAL) | 2026-11-21 | Not recorded |
+
+---
+
+## Phase 5 implementation note
+
+The Phase 5 implementation introduced no new ADR and accepted no existing ADR. All 17 ADRs remain **PROPOSED** pending formal approval under OQ-49. The technical controls and contract in `docs/architecture/PHASE_5_CONTRACT.md` are implementation constraints only; they do not grant institutional authority, approve a phase transition, or close an open question.

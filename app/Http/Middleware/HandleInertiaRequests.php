@@ -62,6 +62,7 @@ class HandleInertiaRequests extends Middleware
             'navigation' => app(NavigationService::class)->all($locale),
             'ui' => fn () => __('website.ui', [], $locale),
             'nav' => fn () => __('website.navigation', [], $locale),
+            'phase5' => fn () => __('phase5', [], $locale),
             'publicationCategories' => fn () => __('website.publication.categories', [], $locale),
             'flash' => [
                 'success' => fn () => $request->session()->get('success') ?? $request->session()->get('flash.success'),

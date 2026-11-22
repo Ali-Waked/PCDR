@@ -168,6 +168,8 @@ The implementation is a technical foundation only. It does not close an open que
 
 ## 7. Phase 5 — Accountability & participation
 
+> **Delivery note:** The scope below is the older engineering roadmap. The technical delivery on branch `phase-5-workflows-communications-integrations` is governed by `docs/architecture/PHASE_5_CONTRACT.md`, which covers workflows, tasks, collaboration, non-identifying accountability, referrals, document review, notifications, automation, calendar, dashboards, integrations, and webhooks. Complaints intake, volunteers, careers, tenders, public forms, anonymous submissions, and sensitive/beneficiary data are intentionally out of scope until OQ-24–OQ-29 and OQ-49 are formally resolved. Nothing in this section was implemented or approved by that delivery.
+
 **Scope**
 
 - Complaints intake, triage, assignment, response thread, resolution.

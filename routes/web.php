@@ -24,6 +24,7 @@ use App\Http\Controllers\Cms\ProgramController as CmsProgramController;
 use App\Http\Controllers\Cms\ProjectController as CmsProjectController;
 use App\Http\Controllers\Cms\PublicationController as CmsPublicationController;
 use App\Http\Controllers\Cms\SettingController;
+use App\Http\Controllers\Phase5\WebhookController;
 use App\Http\Controllers\Public\AboutController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\InquiryController as PublicInquiryController;
@@ -45,6 +46,13 @@ Route::get('/login', fn () => redirect()->route('login.show', ['locale' => 'ar']
 Route::get('/forgot-password', fn () => redirect()->route('password.request', ['locale' => 'ar']));
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/robots.txt', RobotsController::class)->name('robots');
+
+// Signed, rate-limited inbound webhook receiver. CSRF is replaced by HMAC
+// verification inside the controller and the route fails closed when webhooks
+// are disabled in config/phase5.php.
+Route::post('/webhooks/inbound/{integration:key}', [WebhookController::class, 'inbound'])
+    ->middleware('throttle:30,1')
+    ->name('phase5.webhooks.inbound');
 
 Route::prefix('{locale}')
     ->where(['locale' => 'ar|en'])
@@ -238,5 +246,8 @@ Route::prefix('{locale}')
 
         // Phase 4 institutional operational modules.
         require __DIR__.'/operations.php';
+
+        // Phase 5 institutional operating layer.
+        require __DIR__.'/phase5.php';
 
     });

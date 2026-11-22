@@ -134,4 +134,58 @@ return [
     'documents.view' => ['module' => 'operations', 'label' => 'View operational document links', 'protected' => false],
     'documents.upload' => ['module' => 'operations', 'label' => 'Attach operational documents', 'protected' => false],
     'documents.download' => ['module' => 'operations', 'label' => 'Download operational documents', 'protected' => false],
+
+    /*
+     * Phase 5 institutional operating layer. These are technical capabilities
+     * only. No `*.approve` key is defined or seeded: OQ-49 remains pending
+     * formal authority and delegation. Sensitive accountability capabilities
+     * are separately gated and are not assigned to any default role.
+     */
+    'workflows.view' => ['module' => 'phase5', 'label' => 'View workflows', 'protected' => false],
+    'workflows.create' => ['module' => 'phase5', 'label' => 'Configure workflows', 'protected' => false],
+    'workflows.update' => ['module' => 'phase5', 'label' => 'Update workflow definitions', 'protected' => false],
+    'workflows.transition' => ['module' => 'phase5', 'label' => 'Advance workflow instances', 'protected' => false],
+
+    'tasks.view' => ['module' => 'phase5', 'label' => 'View tasks', 'protected' => false],
+    'tasks.create' => ['module' => 'phase5', 'label' => 'Create tasks', 'protected' => false],
+    'tasks.update' => ['module' => 'phase5', 'label' => 'Update tasks', 'protected' => false],
+    'tasks.delete' => ['module' => 'phase5', 'label' => 'Archive tasks', 'protected' => false],
+    'tasks.assign' => ['module' => 'phase5', 'label' => 'Assign tasks', 'protected' => false],
+    'tasks.transition' => ['module' => 'phase5', 'label' => 'Change task status', 'protected' => false],
+
+    'collaboration.view' => ['module' => 'phase5', 'label' => 'View internal discussions', 'protected' => false],
+    'collaboration.comment' => ['module' => 'phase5', 'label' => 'Add internal comments', 'protected' => false],
+    'collaboration.mention' => ['module' => 'phase5', 'label' => 'Mention colleagues', 'protected' => false],
+    'collaboration.moderate' => ['module' => 'phase5', 'label' => 'Moderate internal discussions', 'protected' => false],
+
+    'accountability.create' => ['module' => 'phase5', 'label' => 'Submit feedback through authorized channels', 'protected' => false],
+    'accountability.view' => ['module' => 'phase5', 'label' => 'View accountability cases', 'protected' => false],
+    'accountability.update' => ['module' => 'phase5', 'label' => 'Update accountability cases', 'protected' => false],
+    'accountability.assign' => ['module' => 'phase5', 'label' => 'Assign accountability cases', 'protected' => false],
+    'accountability.view_sensitive' => ['module' => 'phase5', 'label' => 'View sensitive accountability notes', 'protected' => false],
+
+    'referrals.view' => ['module' => 'phase5', 'label' => 'View referrals', 'protected' => false],
+    'referrals.create' => ['module' => 'phase5', 'label' => 'Create non-identifying referrals', 'protected' => false],
+    'referrals.update' => ['module' => 'phase5', 'label' => 'Update referrals', 'protected' => false],
+    'referrals.transition' => ['module' => 'phase5', 'label' => 'Change referral status', 'protected' => false],
+
+    'notifications.view' => ['module' => 'phase5', 'label' => 'View notification inbox', 'protected' => false],
+    'notifications.preferences' => ['module' => 'phase5', 'label' => 'Manage notification preferences', 'protected' => false],
+
+    'automations.view' => ['module' => 'phase5', 'label' => 'View automation rules', 'protected' => false],
+    'automations.create' => ['module' => 'phase5', 'label' => 'Configure automation rules', 'protected' => false],
+    'automations.update' => ['module' => 'phase5', 'label' => 'Update automation rules', 'protected' => false],
+    'automations.execute' => ['module' => 'phase5', 'label' => 'Run or retry automation executions', 'protected' => false],
+
+    'calendar.view' => ['module' => 'phase5', 'label' => 'View institutional calendar', 'protected' => false],
+
+    'documents.review' => ['module' => 'phase5', 'label' => 'Review routed documents', 'protected' => false],
+    'documents.submit_review' => ['module' => 'phase5', 'label' => 'Submit documents for technical review', 'protected' => false],
+
+    'integrations.view' => ['module' => 'phase5', 'label' => 'View integration registry', 'protected' => false],
+    'integrations.create' => ['module' => 'phase5', 'label' => 'Register integrations', 'protected' => false],
+    'integrations.update' => ['module' => 'phase5', 'label' => 'Update integration configuration', 'protected' => false],
+    'integrations.retry' => ['module' => 'phase5', 'label' => 'Retry webhook deliveries', 'protected' => false],
+
+    'dashboards.view' => ['module' => 'phase5', 'label' => 'View institutional operations dashboard', 'protected' => false],
 ];
