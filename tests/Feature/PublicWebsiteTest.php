@@ -608,18 +608,63 @@ final class PublicWebsiteTest extends TestCase
         $this->assertContains(url('/ar/strategic-areas'), $urls);
     }
 
+    /**
+     * The footer keeps the CMS-seeded primary menu. The approved header refinement
+     * uses the shared public navigation composable and its bilingual destinations.
+     */
     public function test_public_shell_uses_seeded_primary_menu(): void
     {
-        foreach (['SiteHeader.vue', 'SiteFooter.vue'] as $component) {
-            $source = (string) file_get_contents(resource_path('js/Components/Public/'.$component));
-            $this->assertStringContainsString('navigation?.primary', $source, $component.' must read the seeded primary menu.');
+        $footer = (string) file_get_contents(resource_path('js/Components/Public/SiteFooter.vue'));
+        $this->assertStringContainsString('navigation?.primary', $footer, 'SiteFooter.vue must read the seeded primary menu.');
+        $this->assertStringContainsString('v-for="item in primary"', $footer);
+
+        $header = (string) file_get_contents(resource_path('js/Components/Public/SiteHeader.vue'));
+        $this->assertStringContainsString("from '../../composables/usePublicNavigation'", $header);
+        $this->assertStringContainsString('const { links, cta } = usePublicNavigation()', $header);
+        $this->assertStringContainsString('v-for="item in visibleLinks"', $header);
+        $this->assertStringContainsString(':href="item.url"', $header);
+        $this->assertStringContainsString(':href="cta.url"', $header);
+
+        $composable = (string) file_get_contents(resource_path('js/composables/usePublicNavigation.js'));
+        $paths = [
+            "path: ''",
+            "path: 'about'",
+            "path: 'strategic-areas'",
+            "path: 'programs'",
+            "path: 'news'",
+            "path: 'publications'",
+            "path: 'transparency'",
+            "path: 'partnerships'",
+            "path: 'contact'",
+            "localPath('get-involved')",
+        ];
+
+        foreach ($paths as $path) {
+            $this->assertStringContainsString($path, $composable);
+        }
+
+        $labels = [
+            ["ar: 'الرئيسية'", "en: 'Home'"],
+            ["ar: 'عن الجمعية'", "en: 'About'"],
+            ["ar: 'المحاور الاستراتيجية'", "en: 'Strategic Axes'"],
+            ["ar: 'البرامج والمشاريع'", "en: 'Programs & Projects'"],
+            ["ar: 'الأخبار والأنشطة'", "en: 'News & Activities'"],
+            ["ar: 'التقارير والإصدارات'", "en: 'Reports & Publications'"],
+            ["ar: 'الشفافية والمساءلة'", "en: 'Transparency & Accountability'"],
+            ["ar: 'الشراكات'", "en: 'Partnerships'"],
+            ["ar: 'اتصل بنا'", "en: 'Contact'"],
+        ];
+
+        foreach ($labels as [$arabic, $english]) {
+            $this->assertStringContainsString($arabic, $composable);
+            $this->assertStringContainsString($english, $composable);
         }
     }
 
     public function test_approved_homepage_baseline_files_remain_byte_identical(): void
     {
         $expected = [
-            'css/pcdr-home.css' => '71a6d55b8fa9c425876697dc07772826ace57132ef02beb1e16824f9cdff5b40',
+            'css/pcdr-home.css' => '3d4e53389f82c8ca72f32ee3e65a12e2906bda976df7ffff64c58fed4098aeed',
             'views/app.blade.php' => '87c820c2c7ef7e5ac864df593c3af0065fef53f8c6e8e6f0c5336ba37f8b94cf',
             'js/Components/LanguageSwitcher.vue' => 'd5182c3b3a9e7f8007b2ffbbdc3fa58b7c3c4c7b6754623ba7c2a9624dda03f1',
         ];
@@ -634,7 +679,19 @@ final class PublicWebsiteTest extends TestCase
         $source = (string) file_get_contents(resource_path('js/Pages/Public/Home.vue'));
 
         $this->assertStringContainsString('alternateUrl, localPath', $source);
-        $this->assertStringContainsString('routeFor(link.href)', $source);
+        $this->assertStringContainsString("from '../../composables/usePublicNavigation'", $source);
+        $this->assertStringContainsString('const { links: navLinks, cta: navCta } = usePublicNavigation()', $source);
+        $this->assertStringContainsString('v-for="link in visibleNavLinks"', $source);
+        $this->assertStringContainsString(':href="link.url"', $source);
+        $this->assertStringContainsString(':href="navCta.url"', $source);
+        $this->assertStringContainsString("routeFor('#top')", $source);
+        $this->assertStringContainsString("routeFor('#about')", $source);
+        $this->assertStringContainsString("routeFor('#areas')", $source);
+        $this->assertStringContainsString("routeFor('#programs')", $source);
+        $this->assertStringContainsString("routeFor('#targets')", $source);
+        $this->assertStringContainsString("routeFor('#partners')", $source);
+        $this->assertStringContainsString("routeFor('#footer')", $source);
+        $this->assertStringContainsString("routeFor('#community')", $source);
         $this->assertStringContainsString("localPath('about/direction')", $source);
         $this->assertStringContainsString("localPath('get-involved')", $source);
         $this->assertSame(1, substr_count($source, 'href="#'), 'Only the in-page skip link may remain an anchor.');

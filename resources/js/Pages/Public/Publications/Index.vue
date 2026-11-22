@@ -33,13 +33,11 @@ function submit() {
 <template>
     <PublicLayout :meta="meta" page-class="publications-page">
         <PublicPageHero
-            variant="sand"
-            :eyebrow="t('nav.publications')"
             :title="t('nav.publications')"
-            :lede="t('transparency_intro')"
-            :crumbs="[{ label: t('nav.publications') }]"
-            index="06"
-            :badge="t('documents')"
+            :lead="t('transparency_intro')"
+            :breadcrumbs="[{ label: t('nav.publications') }]"
+            accent="sand"
+            motif="book"
         />
 
         <section class="ps-section">

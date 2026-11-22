@@ -54,7 +54,20 @@
 .pcdr-home nav .nav-links{display:flex;align-items:center;gap:clamp(.9rem,1.6vw,1.6rem)}
 .pcdr-home nav .nav-links a{position:relative;font-weight:500;font-size:.98rem;padding-block:.5rem;white-space:nowrap}
 .pcdr-home nav .nav-links a::after{content:"";position:absolute;inset-inline:0;bottom:0;height:2px;background:var(--teal);transform:scaleX(0);transition:transform var(--m-fast) var(--ease-em)}
-.pcdr-home nav .nav-links a:hover::after{transform:scaleX(1)}
+.pcdr-home nav .nav-links a:hover::after,.pcdr-home nav .nav-links a.is-active::after{transform:scaleX(1)}
+.pcdr-home nav .nav-links a.is-active{font-weight:700}
+.pcdr-home .nav-item-mobile-only{display:none}
+.pcdr-home .nav-more{position:relative}
+.pcdr-home .nav-more-btn{appearance:none;border:0;background:transparent;cursor:pointer;font:inherit;color:inherit;position:relative;font-weight:500;font-size:.98rem;padding-block:.5rem;white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem}
+.pcdr-home .nav-more-btn::after{content:"";position:absolute;inset-inline:0;bottom:0;height:2px;background:var(--teal);transform:scaleX(0);transition:transform var(--m-fast) var(--ease-em)}
+.pcdr-home .nav-more-btn:hover::after,.pcdr-home .nav-more-btn.is-active::after{transform:scaleX(1)}
+.pcdr-home .nav-more-btn.is-active{font-weight:700}
+.pcdr-home .nav-more-caret{transition:transform var(--m-fast) var(--ease)}
+.pcdr-home .nav-more-btn[aria-expanded="true"] .nav-more-caret{transform:rotate(180deg)}
+.pcdr-home .nav-more-menu{position:absolute;inset-block-start:calc(100% + .5rem);inset-inline-end:0;min-inline-size:220px;padding:.5rem;background:#fff;border:1px solid var(--navy-100);border-radius:var(--r-sm);box-shadow:0 8px 24px rgba(37,51,75,.12);z-index:60;list-style:none;margin:0}
+.pcdr-home .nav-more-link{display:block;padding:.65rem .75rem;border-radius:calc(var(--r-sm) - 2px);color:var(--navy-900);font-size:.92rem;font-weight:500;white-space:nowrap;text-decoration:none}
+.pcdr-home .nav-more-link:hover,.pcdr-home .nav-more-link.is-active{background:var(--sand-100)}
+.pcdr-home .nav-more-link.is-active{font-weight:700}
 .pcdr-home .nav-panel-extra{display:none}
 .pcdr-home .actions{display:flex;align-items:center;gap:.7rem;flex-shrink:0}
 .pcdr-home .actions .btn{white-space:nowrap}
@@ -194,6 +207,8 @@ body.pcdr-menu-open{overflow:hidden}
 .pcdr-home .burger{display:block}
 .pcdr-home .hide-sm{display:none}
 .pcdr-home .actions .actions-lang{display:none}
+.pcdr-home .nav-more{display:none}
+.pcdr-home .nav-item-mobile-only{display:block;inline-size:100%}
 .pcdr-home nav{position:fixed;inset-inline:0;inset-block-start:var(--hh);background:#fff;padding-block:1rem 1.5rem;padding-inline:max(var(--pad), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));border-bottom:1px solid var(--navy-100);max-height:calc(100dvh - var(--hh));overflow-y:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(-12px);transition:opacity var(--m-fast),transform var(--m-fast) var(--ease),visibility var(--m-fast);z-index:49}
 .pcdr-home nav.open{opacity:1;visibility:visible;transform:none}
 .pcdr-home nav .nav-links{display:flex;flex-direction:column;gap:0;align-items:stretch}
@@ -254,7 +269,8 @@ body.pcdr-menu-open{overflow:hidden}
 @supports (animation-timeline:scroll()){.pcdr-home .progress{display:block;animation:prog linear both;animation-timeline:scroll(root)}
 @keyframes prog{to{transform:scaleX(1)}}}
 /* header over dark hero */
-.pcdr-home .site-header:not(.solid) .brand, .pcdr-home .site-header:not(.solid) nav a, .pcdr-home .site-header:not(.solid) .lang{color:#fff}
+.pcdr-home .site-header:not(.solid) .brand, .pcdr-home .site-header:not(.solid) nav a, .pcdr-home .site-header:not(.solid) .nav-more-btn, .pcdr-home .site-header:not(.solid) .lang{color:#fff}
+.pcdr-home .site-header:not(.solid) .nav-more-menu .nav-more-link{color:var(--navy-900)}
 .pcdr-home .site-header:not(.solid) .lang{border-color:rgba(255,255,255,.6)}
 .pcdr-home .site-header:not(.solid) .lang:hover{background:#fff;color:var(--navy-900)}
 .pcdr-home .site-header:not(.solid) .burger span{background:#fff}

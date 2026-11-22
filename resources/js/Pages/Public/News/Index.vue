@@ -34,12 +34,11 @@ function submit() {
 <template>
     <PublicLayout :meta="meta" page-class="news-page">
         <PublicPageHero
-            :eyebrow="t('nav.news')"
             :title="t('nav.news')"
-            :lede="t('latest_updates')"
-            :crumbs="[{ label: t('nav.news') }]"
-            index="05"
-            :badge="t('articles')"
+            :lead="t('latest_updates')"
+            :breadcrumbs="[{ label: t('nav.news') }]"
+            accent="navy"
+            motif="drop"
         />
 
         <section v-if="featured.length" class="ps-section ps-surface-sand">

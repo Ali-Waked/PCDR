@@ -18,13 +18,12 @@ const { t, localPath } = useI18n()
 <template>
     <PublicLayout :meta="meta" page-class="pillars-page">
         <PublicPageHero
-            :eyebrow="t('ui.strategic_direction')"
             :title="t('nav.pillars')"
-            :lede="t('strategic_areas_intro')"
-            :crumbs="[{ label: t('nav.pillars') }]"
-            index="11"
-            :badge="t('at_a_glance')"
-            :actions="[{ label: t('nav.about'), url: localPath('about/direction'), primary: true }]"
+            :lead="t('strategic_areas_intro')"
+            :breadcrumbs="[{ label: t('nav.pillars') }]"
+            accent="sand"
+            motif="sun"
+            :cta="[{ label: t('nav.about'), url: localPath('about/direction'), primary: true }]"
         />
 
         <section class="ps-section">

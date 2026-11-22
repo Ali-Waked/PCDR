@@ -19,13 +19,11 @@ const closingActions = [
 <template>
     <PublicLayout :meta="meta" page-class="static-page">
         <PublicPageHero
-            variant="sand"
-            :eyebrow="t('institution')"
             :title="props.page.title"
-            :lede="props.page.summary || ''"
-            :crumbs="[{ label: props.page.title }]"
-            index="∞"
-            :badge="t('at_a_glance')"
+            :lead="props.page.summary || ''"
+            :breadcrumbs="[{ label: props.page.title }]"
+            accent="navy"
+            motif="book"
         />
 
         <section class="ps-section">

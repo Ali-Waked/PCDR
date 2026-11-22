@@ -21,13 +21,12 @@ const closingActions = [
 <template>
     <PublicLayout :meta="meta" page-class="partnerships-page">
         <PublicPageHero
-            :eyebrow="t('nav.partnerships')"
             :title="t('nav.partnerships')"
-            :lede="t('partnership_intro')"
-            :crumbs="[{ label: t('nav.partnerships') }]"
-            index="08"
-            :badge="t('partnership_principles')"
-            :actions="[{ label: t('partnership_form'), url: localPath('get-involved'), primary: true }]"
+            :lead="t('partnership_intro')"
+            :breadcrumbs="[{ label: t('nav.partnerships') }]"
+            accent="navy"
+            motif="rings"
+            :cta="[{ label: t('partnership_form'), url: localPath('get-involved'), primary: true }]"
         />
 
         <section class="ps-section">

@@ -25,12 +25,11 @@ const closingActions = computed(() => [
 <template>
     <PublicLayout :meta="meta" page-class="involve-page">
         <PublicPageHero
-            :eyebrow="t('nav.involve')"
             :title="t('nav.involve')"
-            :lede="t('volunteer_intro')"
-            :crumbs="[{ label: t('nav.involve') }]"
-            index="09"
-            :badge="t('ui.cms_areas')"
+            :lead="t('volunteer_intro')"
+            :breadcrumbs="[{ label: t('nav.involve') }]"
+            accent="sand"
+            motif="hands"
         />
 
         <section class="ps-section ps-surface-sand">

@@ -24,15 +24,14 @@ const { t, localPath } = useI18n()
 <template>
     <PublicLayout :meta="meta" page-class="pillars-page">
         <PublicPageHero
-            :eyebrow="`${props.pillar.code} · ${t('ui.strategic_direction')}`"
             :title="props.pillar.title"
-            :lede="props.pillar.description || ''"
-            :crumbs="[
+            :lead="props.pillar.description || ''"
+            :breadcrumbs="[
                 { label: t('nav.pillars'), url: localPath('strategic-areas') },
                 { label: props.pillar.shortTitle || props.pillar.title },
             ]"
-            :index="String(props.pillar.code).padStart(2, '0')"
-            :badge="t('ui.strategic_direction')"
+            accent="sand"
+            motif="sun"
         />
 
         <section v-if="props.pillar.image" class="ps-section ps-section--tight">

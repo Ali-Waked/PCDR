@@ -24,12 +24,11 @@ const closingActions = computed(() => [
 <template>
     <PublicLayout :meta="meta" page-class="contact-page">
         <PublicPageHero
-            :eyebrow="t('nav.contact')"
             :title="t('nav.contact')"
-            :lede="t('privacy_notice_short')"
-            :crumbs="[{ label: t('nav.contact') }]"
-            index="10"
-            :badge="t('cms_menu_primary')"
+            :lead="t('privacy_notice_short')"
+            :breadcrumbs="[{ label: t('nav.contact') }]"
+            accent="teal"
+            motif="envelope"
         />
 
         <section class="ps-section">

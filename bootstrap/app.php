@@ -40,6 +40,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn (Request $request) => route('login.show', [
             'locale' => $request->route('locale') ?? 'ar',
         ]));
+
+        $middleware->redirectUsersTo(fn (Request $request) => route('dashboard', [
+            'locale' => $request->route('locale') ?? app()->getLocale() ?? 'ar',
+        ]));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

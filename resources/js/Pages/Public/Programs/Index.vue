@@ -19,12 +19,11 @@ const { t, localPath } = useI18n()
 <template>
     <PublicLayout :meta="meta" page-class="programs-page">
         <PublicPageHero
-            :eyebrow="t('nav.programs')"
             :title="t('ui.cms_programs')"
-            :lede="t('programs_intro')"
-            :crumbs="[{ label: t('nav.programs') }]"
-            index="03"
-            :badge="t('projects')"
+            :lead="t('programs_intro')"
+            :breadcrumbs="[{ label: t('nav.programs') }]"
+            accent="teal"
+            motif="wheat"
         />
 
         <section class="ps-section">

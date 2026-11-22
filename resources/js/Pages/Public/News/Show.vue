@@ -18,15 +18,14 @@ const { t, localPath, formatDate, richText } = useI18n()
 <template>
     <PublicLayout :meta="meta" page-class="news-page">
         <PublicPageHero
-            :eyebrow="props.article.category || t('nav.news')"
             :title="props.article.title"
-            :lede="props.article.excerpt || ''"
-            :crumbs="[
+            :lead="props.article.excerpt || ''"
+            :breadcrumbs="[
                 { label: t('nav.news'), url: localPath('news') },
                 { label: props.article.title },
             ]"
-            index="05"
-            :badge="t('articles')"
+            accent="navy"
+            motif="drop"
         >
             <div class="ps-meta">
                 <span v-if="props.article.category" class="ps-pill">{{ props.article.category }}</span>

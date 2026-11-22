@@ -23,13 +23,11 @@ const closingActions = [
 <template>
     <PublicLayout :meta="meta" page-class="transparency-page">
         <PublicPageHero
-            variant="sand"
-            :eyebrow="t('governance')"
             :title="t('nav.transparency')"
-            :lede="t('transparency_intro')"
-            :crumbs="[{ label: t('nav.transparency') }]"
-            index="07"
-            :badge="t('governance')"
+            :lead="t('transparency_intro')"
+            :breadcrumbs="[{ label: t('nav.transparency') }]"
+            accent="teal"
+            motif="scales"
         />
 
         <section class="ps-section ps-section--tight">

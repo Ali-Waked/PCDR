@@ -19,15 +19,14 @@ const { t, localPath, formatDate, richText } = useI18n()
 <template>
     <PublicLayout :meta="meta" page-class="programs-page">
         <PublicPageHero
-            :eyebrow="props.program.pillar || t('nav.programs')"
             :title="props.program.title"
-            :lede="props.program.summary || ''"
-            :crumbs="[
+            :lead="props.program.summary || ''"
+            :breadcrumbs="[
                 { label: t('nav.programs'), url: localPath('programs') },
                 { label: props.program.title },
             ]"
-            index="03"
-            :badge="t('ui.cms_programs')"
+            accent="teal"
+            motif="wheat"
         />
 
         <section v-if="props.program.image" class="ps-section ps-section--tight">
