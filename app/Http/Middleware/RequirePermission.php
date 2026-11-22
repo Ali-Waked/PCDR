@@ -22,6 +22,16 @@ final class RequirePermission
             return $next($request);
         }
 
+        if ($user === null) {
+            if ($request->expectsJson() || $request->is('*/api/*')) {
+                abort(Response::HTTP_UNAUTHORIZED, __('auth.forbidden'));
+            }
+
+            return redirect()->route('login.show', [
+                'locale' => $request->route('locale') ?? 'ar',
+            ]);
+        }
+
         if ($request->expectsJson() || $request->is('*/api/*')) {
             return response()->json(['message' => __('auth.forbidden')], 403);
         }

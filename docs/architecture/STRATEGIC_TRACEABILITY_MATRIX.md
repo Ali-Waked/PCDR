@@ -112,3 +112,11 @@
 - This matrix is a Phase 1 documentation artifact; it does not create database tables, routes, permissions, or code.
 - "Initial later wave" indicates architectural sequencing only after required gates/approvals; it does not authorize implementation.
 - Counts and IDs should be cross-checked against `STRATEGIC_PLAN_COVERAGE_AUDIT.md` when updated.
+
+---
+
+## 8. Phase 4 technical addendum (2026-11-22)
+
+A generic operational platform layer has been implemented in code (config-whitelisted records, translations, transitions, inventory ledger, restricted documents, aggregate reports, dashboard). This is an **enabling capability**, not evidence of strategic-domain completion. The coverage values in sections 3–5 are therefore unchanged: no cell is upgraded because a generic table or CRUD route now exists.
+
+No beneficiary, household, protection, case, or identifiable-person entities were added; institutional approval authority was not created; no OQ status or ADR status changed. OQ-49 remains **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL**.

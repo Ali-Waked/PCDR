@@ -354,3 +354,11 @@ database/migrations/
 - Never build reports by reading raw beneficiary identifiers; use aggregated queries and approved export permissions.
 - Deduplication keys on applications/complaints prevent double counting.
 - Audit-log subject keys are stable strings so reporting code does not depend on Eloquent class names.
+
+---
+
+## Phase 4 schema addendum (2026-11-22)
+
+Migration `2026_11_24_000500_create_phase4_operations_schema.php` adds config-whitelisted operational tables for locations, interventions, activities, distribution planning/records, warehouses and inventory, volunteers and committees, community feedback (aggregated only), partners and grants, MEAL structures, and aggregate report history. Generic resource tables carry `deleted_at`; inventory uses dedicated balance and movement tables with row locking, snapshots, idempotency keys, and append-only reversal entries.
+
+No `beneficiaries`, `households`, `complaints`, `institutional_approvals`, `delegations`, or `officeholders` tables exist. This addendum does not change OQ statuses or authorize sensitive person-linked schema.

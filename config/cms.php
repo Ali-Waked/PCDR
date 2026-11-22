@@ -55,6 +55,22 @@ return [
         'settings.view' => 'View public site settings',
         'settings.update' => 'Edit public site settings',
         'inquiries.view' => 'View inquiries',
+
+        // Phase 4 operational modules. The keys match config/permissions.php.
+        'locations.view' => 'View locations',
+        'interventions.view' => 'View interventions',
+        'activities.view' => 'View activities',
+        'distributions.view' => 'View distributions',
+        'inventory.view' => 'View inventory',
+        'volunteers.view' => 'View volunteer program records',
+        'committees.view' => 'View community participation records',
+        'partners.view' => 'View partners and donors',
+        'partner_contacts.view' => 'View restricted partner contacts',
+        'grants.view' => 'View grants and proposals',
+        'meal.view' => 'View MEAL records',
+        'assessments.view' => 'View assessments and research',
+        'reports.view' => 'View operational reports and dashboards',
+        'documents.view' => 'View operational documents',
     ],
 
     /**

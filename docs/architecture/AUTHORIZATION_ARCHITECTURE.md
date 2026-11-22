@@ -396,3 +396,11 @@ Minimum approval-record fields: `id`, `approval_record_reference`, `approver_use
 7. Frontend `usePermission` + permission-aware navigation (UI only).
 
 Authorization tests are mandatory for every step; see `TESTING_STRATEGY.md`.
+
+---
+
+## Phase 4 authorization addendum (2026-11-22)
+
+Operational authorization reuses the existing custom RBAC only. `config/operations.php` declares permission families; generated routes apply `permission:<family>.<verb>` middleware, and every operational Form Request re-checks the same permission through `CmsAccess` and fails closed. Guests are redirected to the localized login for browser requests. Platform Owner wildcard behavior and cache invalidation remain Phase 2 contracts; no second authorization system was introduced.
+
+No `.approve` permission, institutional approval role, delegation, or officeholder assignment exists. OQ-49 remains **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL**.

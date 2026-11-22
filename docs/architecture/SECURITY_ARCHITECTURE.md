@@ -210,3 +210,11 @@ graph TD
 ## 12. Explicit non-claims
 
 **[VERIFIED]** No authentication or authorization implementation, no MFA, no security-header middleware, no CSP, no upload handling, and no audit log exist in the repository today. All controls in this document are design requirements for future phases.
+
+---
+
+## Phase 4 security addendum (2026-11-22)
+
+Operational records are restricted by existing RBAC and re-authorized at the Form Request boundary. Restricted operational documents are stored on the `private` disk and reachable only through a signed URL plus an explicit `documents.download` permission check; responses request `private, no-store` caching. CSV report exports contain aggregate counts only and are gated by `reports.export`. Responses carry no beneficiary identifiers or free-text summaries.
+
+This addendum is an implementation record, not a completed security review. Production hardening, CSP/proxy validation, and the canonical deployment gate remain outstanding.

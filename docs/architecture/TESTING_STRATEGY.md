@@ -172,3 +172,21 @@ The following PHPUnit coverage was added with the Phase 2a technical foundation.
 | `ContentStatusTest` | Five required workflow states and declared transition map. |
 
 Local Phase 2a QA results: PHPUnit `44 tests, 44 passed, 251 assertions, 19.664s`; `vendor/bin/pint --dirty --format agent` passed; `npm run build` completed with 608 modules in 4.75s (non-blocking optional `fontaine` fallback notice); `composer audit` reported no security vulnerability advisories; `npm audit` found 0 vulnerabilities. No Vitest, Vue Test Utils, Playwright, or axe suite was introduced. PHP 8.3 compatibility and Larastan remain unimplemented gates, so no claim is made that they pass.
+
+---
+
+## 9. Phase 4 verification coverage (2026-11-22)
+
+`tests/Feature/Phase4OperationsTest.php` adds feature coverage for the config-bound operational layer. It exercises observable HTTP behavior rather than framework internals:
+
+- schema presence and absence of prohibited privacy/authority tables;
+- closed privacy and authority gates and absence of `.approve` permissions;
+- unauthenticated redirect, outsider denial, and permission-specific access to operational routes;
+- CRUD with whitelisted fields, rejected unknown/mass-assignment keys, translations, soft deletes, and audit entries;
+- gated status rejection on create and invalid/gated transition rejection with unchanged persisted state;
+- inventory idempotency, balance checks, and append-only correction reversals;
+- signed, permission-gated restricted downloads with no-store/private caching;
+- aggregate report generation and CSV export without identifiers or free text;
+- measurement verification, proposal submission evidence, reconciliation, dashboard aggregates, and AR/EN rendering.
+
+Exact command results and counts are recorded in `PHASE_4_IMPLEMENTATION_REPORT.md`. No frontend component test runner, browser test, or accessibility automation was added in this phase.

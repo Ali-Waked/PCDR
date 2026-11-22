@@ -242,3 +242,11 @@ graph LR
 ```
 
 **[RECOMMENDATION]** No phase begins before the previous phase's acceptance criteria are met and a human reviews the result. No phase, including Phase 2a, starts automatically. The canonical production gate is `DEPLOYMENT_ARCHITECTURE.md` §8; the dependency graph above is not a competing gate list. See `IMPLEMENTATION_ROADMAP.md` §10.
+
+---
+
+## Phase 4 implementation note (2026-11-22)
+
+A bounded Phase 4 technical layer now exists in code: config-declared operational records, translated fields, lifecycle transitions, a transactional inventory ledger, restricted-document links, aggregate reports, and an operations dashboard. It is a **generic operational shell**, not completion of the strategic humanitarian domains and not institutional authorization. Enabled resources, tables, fields, statuses, transitions, permissions, and report sources are defined only in `config/operations.php`.
+
+No beneficiary or household PII tables, identifiable samples, sensitive disaggregation, institutional approvals, delegations, officeholder registry, or inventory valuation were added. The corresponding gates remain disabled. OQ-24–OQ-29 and OQ-49 keep their existing unresolved statuses, and no ADR status changed.

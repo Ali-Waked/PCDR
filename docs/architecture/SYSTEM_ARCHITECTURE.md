@@ -200,3 +200,11 @@ sequenceDiagram
 ## 11. Document index
 
 See `PHASE_1_SUMMARY.md` for the complete list of the 17 architecture documents and their responsibilities. The finalization record is `PHASE_1_FINALIZATION_REPORT.md`; it documents dispositions but does not grant approval.
+
+---
+
+## 12. Phase 4 technical addendum (2026-11-22)
+
+The deployed code now includes a config-bound operational layer: `OperationCatalog` is the single whitelist for resources, tables, fields, statuses, transitions, permissions, report sources, and gates; generic records use `OperationalRecord`; translations, documents, transitions, balances, and movements use dedicated models. Inventory postings are append-only, transactional, and idempotent; corrections create reversal entries.
+
+This addendum records implementation only. The Phase 1 status statements at the top of this document are not superseded: OQ-49 remains **PARTIALLY RESOLVED — PENDING FORMAL APPROVAL**, ADRs remain `PROPOSED`, and no production or phase-transition authorization is implied. Privacy and authority gates stay closed.

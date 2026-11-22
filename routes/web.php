@@ -236,4 +236,7 @@ Route::prefix('{locale}')
             });
         });
 
+        // Phase 4 institutional operational modules.
+        require __DIR__.'/operations.php';
+
     });
