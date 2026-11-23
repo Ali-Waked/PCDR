@@ -213,9 +213,10 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
                 ->where('adminNavigation.0.key', 'overview')
                 ->where('adminNavigation.1.key', 'access')
                 ->where('adminNavigation.2.key', 'content')
-                ->where('adminNavigation.3.key', 'operations')
-                ->where('adminNavigation.4.key', 'phase5')
-                ->where('adminNavigation', fn ($groups): bool => count($groups) === 5));
+                ->where('adminNavigation', fn ($groups): bool => $groups->count() === 3
+                    && collect($groups->firstWhere('key', 'content')['items'])
+                        ->contains(fn ($item): bool => $item['key'] === 'email_templates'))
+                ->missing('adminNavigation.3'));
     }
 
     public function test_navigation_is_filtered_to_permissions_granted_to_a_normal_user(): void

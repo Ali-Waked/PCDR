@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\ContactMessage;
 use App\Models\ContentRevision;
+use App\Models\EmailTemplate;
 use App\Models\Media;
 use App\Models\Page;
 use App\Models\PartnershipInquiry;
@@ -37,6 +38,7 @@ final class DashboardController extends Controller
                 'publications' => Publication::query()->count(),
                 'pillars' => StrategicPillar::query()->count(),
                 'media' => Media::query()->count(),
+                'emailTemplates' => EmailTemplate::query()->where('is_active', true)->count(),
             ],
             'inquiries' => [
                 'contact' => ContactMessage::query()->where('status', 'new')->count(),

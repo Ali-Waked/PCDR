@@ -6,18 +6,27 @@ namespace App\Actions;
 
 use App\Models\ContactMessage;
 use App\Models\PartnershipInquiry;
+use App\Models\User;
 use App\Models\VolunteerInquiry;
+use App\Notifications\InquiryReceivedNotification;
+use App\Services\InquiryMailService;
+use App\Services\RbacService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
 final class StoreInquiry
 {
+    public function __construct(private InquiryMailService $mailService) {}
+
     public function handle(string $type, array $data, Request $request): mixed
     {
-        $key = 'inquiry:'.$type.':'.hash('sha256', ($request->ip() ?? '').'|'.($data['email'] ?? ''));
+        $ip = $request->ip() ?? '';
+        $key = 'inquiry:'.$type.':'.hash('sha256', $ip.'|'.($data['email'] ?? ''));
+        $ipKey = 'inquiry:ip:'.hash('sha256', $ip);
 
-        if (RateLimiter::tooManyAttempts($key, (int) config('website.inquiry.rate_limit', 5))) {
+        if (RateLimiter::tooManyAttempts($key, (int) config('website.inquiry.rate_limit', 5))
+            || RateLimiter::tooManyAttempts($ipKey, (int) config('website.inquiry.ip_rate_limit', 20))) {
             abort(429, __('website.forms.too_many_requests'));
         }
 
@@ -57,8 +66,23 @@ final class StoreInquiry
             default => throw new \InvalidArgumentException("Unknown inquiry type: {$type}"),
         };
 
-        RateLimiter::hit($key, (int) config('website.inquiry.rate_decay_minutes', 10) * 60);
+        $decay = (int) config('website.inquiry.rate_decay_minutes', 10) * 60;
+        RateLimiter::hit($key, $decay);
+        RateLimiter::hit($ipKey, $decay);
+        $this->mailService->sendInternalNotification($record, $type);
+        $this->notifyInquiryReviewers($record, $type);
 
         return $record;
+    }
+
+    private function notifyInquiryReviewers(object $record, string $type): void
+    {
+        $rbac = app(RbacService::class);
+        $notification = new InquiryReceivedNotification($type, (string) $record->reference, (int) $record->id);
+
+        User::query()->where('status', User::STATUS_ACTIVE)
+            ->get()
+            ->filter(fn (User $user): bool => $rbac->has($user, 'inquiries.view'))
+            ->each(fn (User $user) => $user->notify($notification));
     }
 }

@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
         Artisan::call('pcdr:permissions:sync');
 
         $this->call(WebsiteSeeder::class);
+        $this->call(CmsRolesSeeder::class);
+        $this->call(EmailTemplatesSeeder::class);
 
         // Local development identity only. Never seeded in production and
         // never created unless the development-only CMS shim is enabled.

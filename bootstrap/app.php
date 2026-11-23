@@ -7,6 +7,7 @@ use App\Exceptions\Phase5GovernanceException;
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureCmsPermission;
+use App\Http\Middleware\EnsureDashboardFeatureAvailable;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SetLocale;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // Settings/user-aware locale first; the route segment wins when present.
             SetLocale::class,
             SetWebsiteLocale::class,
+            EnsureDashboardFeatureAvailable::class,
             HandleInertiaRequests::class,
             AddSecurityHeaders::class,
         ]);

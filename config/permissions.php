@@ -55,6 +55,73 @@ return [
     'inquiries.update' => ['module' => 'content', 'label' => 'Update inquiry status', 'protected' => false],
 
     /*
+     * Website CMS permissions. These are the only operational capabilities
+     * exposed by the delivered dashboard. They map to config/cms.php and are
+     * enforced on the backend, never only in the Vue interface.
+     */
+    'pages.view' => ['module' => 'website', 'label' => 'View pages', 'protected' => false],
+    'pages.create' => ['module' => 'website', 'label' => 'Create pages', 'protected' => false],
+    'pages.update' => ['module' => 'website', 'label' => 'Edit pages', 'protected' => false],
+    'pages.delete' => ['module' => 'website', 'label' => 'Delete pages', 'protected' => false],
+    'pages.publish' => ['module' => 'website', 'label' => 'Publish pages', 'protected' => false],
+    'pages.unpublish' => ['module' => 'website', 'label' => 'Unpublish pages', 'protected' => false],
+
+    'news.view' => ['module' => 'website', 'label' => 'View news', 'protected' => false],
+    'news.create' => ['module' => 'website', 'label' => 'Create news', 'protected' => false],
+    'news.update' => ['module' => 'website', 'label' => 'Edit news', 'protected' => false],
+    'news.delete' => ['module' => 'website', 'label' => 'Delete news', 'protected' => false],
+    'news.publish' => ['module' => 'website', 'label' => 'Publish news', 'protected' => false],
+    'news.unpublish' => ['module' => 'website', 'label' => 'Unpublish news', 'protected' => false],
+
+    'programs.view' => ['module' => 'website', 'label' => 'View programs', 'protected' => false],
+    'programs.create' => ['module' => 'website', 'label' => 'Create programs', 'protected' => false],
+    'programs.update' => ['module' => 'website', 'label' => 'Edit programs', 'protected' => false],
+    'programs.delete' => ['module' => 'website', 'label' => 'Delete programs', 'protected' => false],
+    'programs.publish' => ['module' => 'website', 'label' => 'Publish programs', 'protected' => false],
+    'programs.unpublish' => ['module' => 'website', 'label' => 'Unpublish programs', 'protected' => false],
+
+    'projects.view' => ['module' => 'website', 'label' => 'View projects', 'protected' => false],
+    'projects.create' => ['module' => 'website', 'label' => 'Create projects', 'protected' => false],
+    'projects.update' => ['module' => 'website', 'label' => 'Edit projects', 'protected' => false],
+    'projects.delete' => ['module' => 'website', 'label' => 'Delete projects', 'protected' => false],
+    'projects.publish' => ['module' => 'website', 'label' => 'Publish projects', 'protected' => false],
+    'projects.unpublish' => ['module' => 'website', 'label' => 'Unpublish projects', 'protected' => false],
+
+    'publications.view' => ['module' => 'website', 'label' => 'View publications', 'protected' => false],
+    'publications.create' => ['module' => 'website', 'label' => 'Create publications', 'protected' => false],
+    'publications.update' => ['module' => 'website', 'label' => 'Edit publications', 'protected' => false],
+    'publications.delete' => ['module' => 'website', 'label' => 'Delete publications', 'protected' => false],
+    'publications.publish' => ['module' => 'website', 'label' => 'Publish publications', 'protected' => false],
+    'publications.unpublish' => ['module' => 'website', 'label' => 'Unpublish publications', 'protected' => false],
+
+    'pillars.view' => ['module' => 'website', 'label' => 'View strategic pillars', 'protected' => false],
+    'pillars.create' => ['module' => 'website', 'label' => 'Create strategic pillars', 'protected' => false],
+    'pillars.update' => ['module' => 'website', 'label' => 'Edit strategic pillars', 'protected' => false],
+    'pillars.delete' => ['module' => 'website', 'label' => 'Delete strategic pillars', 'protected' => false],
+    'pillars.publish' => ['module' => 'website', 'label' => 'Publish strategic pillars', 'protected' => false],
+
+    'media.view' => ['module' => 'website', 'label' => 'View media library', 'protected' => false],
+    'media.upload' => ['module' => 'website', 'label' => 'Upload media', 'protected' => false],
+    'media.update' => ['module' => 'website', 'label' => 'Edit media', 'protected' => false],
+    'media.delete' => ['module' => 'website', 'label' => 'Delete media', 'protected' => false],
+    'navigation.view' => ['module' => 'website', 'label' => 'View navigation menus', 'protected' => false],
+    'navigation.update' => ['module' => 'website', 'label' => 'Edit navigation menus', 'protected' => false],
+    'homepage.view' => ['module' => 'website', 'label' => 'View homepage content', 'protected' => false],
+    'homepage.update' => ['module' => 'website', 'label' => 'Edit homepage content', 'protected' => false],
+
+    'inquiries.view' => ['module' => 'website', 'label' => 'View contact inquiries', 'protected' => false],
+    'inquiries.view_all' => ['module' => 'website', 'label' => 'View all inquiries', 'protected' => false],
+    'inquiries.view_assigned' => ['module' => 'website', 'label' => 'View assigned inquiries', 'protected' => false],
+    'inquiries.assign' => ['module' => 'website', 'label' => 'Assign inquiries', 'protected' => false],
+    'inquiries.add_internal_note' => ['module' => 'website', 'label' => 'Add internal inquiry notes', 'protected' => false],
+    'inquiries.reply' => ['module' => 'website', 'label' => 'Reply to inquiries by email', 'protected' => false],
+
+    'email_templates.view' => ['module' => 'website', 'label' => 'View email templates', 'protected' => false],
+    'email_templates.create' => ['module' => 'website', 'label' => 'Create email templates', 'protected' => false],
+    'email_templates.update' => ['module' => 'website', 'label' => 'Edit email templates', 'protected' => false],
+    'email_templates.delete' => ['module' => 'website', 'label' => 'Delete email templates', 'protected' => false],
+
+    /*
      * Phase 4 operational permissions. These are technical/operational
      * capabilities only. No `*.approve` or institutional delegation keys are
      * defined, seeded, or assignable by this phase.

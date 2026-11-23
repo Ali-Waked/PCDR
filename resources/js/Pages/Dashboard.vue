@@ -14,7 +14,7 @@ const props = defineProps({
 
 const page = usePage()
 const { t, locale, localePath, direction } = useLocale()
-const { can, isPlatformOwner, canInstitutionalApprove } = usePermission()
+const { isPlatformOwner, canInstitutionalApprove } = usePermission()
 
 function formatNumber(value) {
     return new Intl.NumberFormat(locale.value === 'ar' ? 'ar-EG' : 'en-GB').format(value ?? 0)
@@ -38,44 +38,32 @@ const primaryStats = computed(() => [
     { key: 'permissions', label: t('dashboard.permissions'), value: props.statistics.permissions ?? 0 },
 ])
 
-const moduleStats = computed(() => [
-    {
-        key: 'content',
-        label: t('admin_nav.content'),
-        value: props.statistics.content_items ?? 0,
-        href: localePath('/cms'),
-        permission: 'pages.view',
-    },
-    {
-        key: 'operations',
-        label: t('admin_nav.operations'),
-        value: props.statistics.operational_records ?? 0,
-        href: localePath('/operations/dashboard'),
-        permission: 'reports.view',
-    },
-    {
-        key: 'phase5',
-        label: t('admin_nav.phase5'),
-        value: props.statistics.phase5_tasks ?? 0,
-        href: localePath('/operations/phase5/dashboard'),
-        permission: 'dashboards.view',
-    },
-    {
-        key: 'workflows',
-        label: t('admin_nav.workflows'),
-        value: props.statistics.phase5_workflows ?? 0,
-        href: localePath('/operations/phase5/workflows'),
-        permission: 'workflows.view',
-    },
-].filter((module) => can(module.permission)))
+const contentGroup = computed(() => (page.props.adminNavigation ?? []).find((group) => group.key === 'content'))
+
+const moduleCounts = computed(() => ({
+    cms_dashboard: props.statistics.content_items ?? 0,
+    pages: props.statistics.content_items ?? 0,
+    news: props.statistics.content_items ?? 0,
+    publications: props.statistics.content_items ?? 0,
+    media: props.statistics.media_items ?? 0,
+    inquiries: props.statistics.inquiries ?? 0,
+    email_templates: props.statistics.email_templates ?? 0,
+}))
+
+const moduleStats = computed(() => (contentGroup.value?.items ?? [])
+    .filter((item) => item.key in moduleCounts.value)
+    .map((item) => ({
+        key: item.key,
+        label: item.label,
+        value: moduleCounts.value[item.key],
+        href: localePath(item.path),
+    })))
 
 const quickLinks = computed(() => {
     const accessGroup = (page.props.adminNavigation ?? []).find((group) => group.key === 'access')
 
-    return (accessGroup?.items ?? []).slice(0, 4).map((item) => ({
-        ...item,
-        href: localePath(item.path),
-    }))
+    return [...(contentGroup.value?.items ?? []).slice(0, 4), ...(accessGroup?.items ?? []).slice(0, 2)]
+        .map((item) => ({ ...item, href: localePath(item.path) }))
 })
 </script>
 

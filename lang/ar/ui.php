@@ -152,6 +152,7 @@ return [
         'homepage' => 'الصفحة الرئيسية',
         'cms_settings' => 'إعدادات الموقع',
         'inquiries' => 'الاستفسارات',
+        'email_templates' => 'قوالب البريد الإلكتروني',
         'operations_dashboard' => 'لوحة العمليات',
         'reports' => 'التقارير',
         'inventory' => 'المخزون',

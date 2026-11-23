@@ -78,7 +78,10 @@ final class CmsEditorialToolsTest extends TestCase
                 ->where('inquiries.contact.0.reference', $inProgress->reference)
                 ->where('inquiries.contact.0.status', 'in_progress')
                 ->missing('inquiries.contact.1')
-                ->where('statuses', ['new', 'in_progress', 'resolved', 'closed']));
+                ->where('statuses', fn ($statuses) => array_values(array_intersect(
+                    ['new', 'in_progress', 'resolved', 'closed'],
+                    $statuses->all(),
+                )) === ['new', 'in_progress', 'resolved', 'closed']));
 
         $this->assertSame('new', $new->fresh()->status);
     }

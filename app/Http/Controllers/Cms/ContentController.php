@@ -14,6 +14,7 @@ use App\Services\TranslationSaver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -80,15 +81,16 @@ abstract class ContentController extends Controller
 
     public function create(string $locale): Response
     {
-        $this->authorizeCms($this->resource.'.view');
+        $this->authorizeCms($this->resource.'.create');
 
         return $this->editResponse($locale, null);
     }
 
     public function store(string $locale, Request $request): RedirectResponse
     {
-        $this->authorizeCms($this->resource.'.update');
+        $this->authorizeCms($this->resource.'.create');
         $data = $this->validateContent($request);
+        $this->assertUniqueSlugs($data['translations']);
 
         /** @var class-string<Model> $class */
         $class = $this->modelClass;
@@ -123,6 +125,7 @@ abstract class ContentController extends Controller
         /** @var class-string<Model> $class */
         $class = $this->modelClass;
         $record = $class::query()->findOrFail($content);
+        $this->assertUniqueSlugs($data['translations'], $record);
         $attributes = $this->attributes($data);
         unset($attributes[$this->statusColumn]);
         $record->fill($attributes);
@@ -137,11 +140,14 @@ abstract class ContentController extends Controller
 
     public function destroy(string $locale, int $content): RedirectResponse
     {
-        $this->authorizeCms($this->resource.'.update');
+        $this->authorizeCms($this->resource.'.delete');
 
         /** @var class-string<Model> $class */
         $class = $this->modelClass;
         $record = $class::query()->findOrFail($content);
+
+        abort_if((bool) ($record->is_system ?? false), 403, __('website.cms.system_page_protected'));
+
         $record->delete();
 
         return to_route($this->routeBase.'.index', ['locale' => $locale])
@@ -150,7 +156,6 @@ abstract class ContentController extends Controller
 
     public function status(string $locale, Request $request, int $content): RedirectResponse
     {
-        $this->authorizeCms($this->resource.'.update');
         $validated = $request->validate([
             'status' => ['required', 'in:'.implode(',', ContentStatus::values())],
         ]);
@@ -158,9 +163,20 @@ abstract class ContentController extends Controller
         /** @var class-string<Model> $class */
         $class = $this->modelClass;
         $record = $class::query()->findOrFail($content);
+        $target = ContentStatus::from($validated['status']);
+        $currentlyPublished = ContentStatus::valueOf($record->workflow_status ?? $record->status) === ContentStatus::Published;
+
+        $permission = match (true) {
+            $target === ContentStatus::Published => $this->resource.'.publish',
+            $currentlyPublished && in_array($target, [ContentStatus::Draft, ContentStatus::Archived], true) => $this->resource.'.unpublish',
+            default => $this->resource.'.update',
+        };
+
+        $this->authorizeCms($permission);
+
         app(TransitionContentStatus::class)->handle(
             $record,
-            ContentStatus::from($validated['status']),
+            $target,
             $request->user(),
         );
 
@@ -250,6 +266,48 @@ abstract class ContentController extends Controller
             auth()->check() && app(CmsAccess::class)->allows(auth()->user(), $permission),
             403,
         );
+    }
+
+    /**
+     * Slugs must be unique per locale within each content type. Collision-safe
+     * validation happens before the shared translation saver writes anything.
+     *
+     * @param  array<string, array<string, mixed>>  $translations
+     */
+    private function assertUniqueSlugs(array $translations, ?Model $record = null): void
+    {
+        /** @var class-string<Model> $class */
+        $class = $this->modelClass;
+        $related = (new $class)->translations()->getRelated();
+        $currentIds = [];
+
+        if ($record !== null) {
+            foreach ($record->translations()->get(['id', 'locale']) as $translation) {
+                $currentIds[(string) $translation->locale] = $translation->getKey();
+            }
+        }
+
+        foreach ($translations as $locale => $values) {
+            $slug = trim((string) ($values['slug'] ?? ''));
+
+            if ($slug === '') {
+                continue;
+            }
+
+            $query = $related->newQuery()
+                ->where('locale', $locale)
+                ->where('slug', $slug);
+
+            if (isset($currentIds[$locale])) {
+                $query->whereKeyNot($currentIds[$locale]);
+            }
+
+            if ($query->exists()) {
+                throw ValidationException::withMessages([
+                    "translations.{$locale}.slug" => __('website.cms.slug_taken'),
+                ]);
+            }
+        }
     }
 
     private function editResponse(string $locale, ?Model $record): Response

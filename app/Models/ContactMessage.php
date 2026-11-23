@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ContactMessage extends Model
 {
@@ -13,11 +14,16 @@ class ContactMessage extends Model
 
     protected $fillable = [
         'reference', 'category', 'name', 'email', 'subject', 'message',
-        'locale', 'consent', 'ip_hash', 'user_agent', 'status',
+        'locale', 'consent', 'ip_hash', 'user_agent', 'status', 'assigned_to',
     ];
 
     protected function casts(): array
     {
         return ['consent' => 'boolean'];
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 }

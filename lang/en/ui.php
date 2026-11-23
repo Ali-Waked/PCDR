@@ -152,6 +152,7 @@ return [
         'homepage' => 'Homepage',
         'cms_settings' => 'Site settings',
         'inquiries' => 'Inquiries',
+        'email_templates' => 'Email templates',
         'operations_dashboard' => 'Operations dashboard',
         'reports' => 'Reports',
         'inventory' => 'Inventory',

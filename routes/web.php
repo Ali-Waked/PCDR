@@ -14,12 +14,14 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Cms\ArticleController;
 use App\Http\Controllers\Cms\AuthController;
 use App\Http\Controllers\Cms\DashboardController;
+use App\Http\Controllers\Cms\EmailTemplateController;
 use App\Http\Controllers\Cms\HomepageController;
 use App\Http\Controllers\Cms\InquiryController;
 use App\Http\Controllers\Cms\MediaController as CmsMediaController;
 use App\Http\Controllers\Cms\NavigationController;
 use App\Http\Controllers\Cms\PageController as CmsPageController;
 use App\Http\Controllers\Cms\PillarController as CmsPillarController;
+use App\Http\Controllers\Cms\PreviewController;
 use App\Http\Controllers\Cms\ProgramController as CmsProgramController;
 use App\Http\Controllers\Cms\ProjectController as CmsProjectController;
 use App\Http\Controllers\Cms\PublicationController as CmsPublicationController;
@@ -37,9 +39,17 @@ use App\Http\Controllers\Public\PublicationController;
 use App\Http\Controllers\Public\RobotsController;
 use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\StaticPageController;
+use App\Services\SiteSettings;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/'.config('website.default_locale', 'ar'))->name('root');
+Route::get('/', function () {
+    $locale = app(SiteSettings::class)->value(
+        'website.default_language',
+        (string) config('website.default_locale', 'ar'),
+    );
+
+    return redirect()->to('/'.(in_array($locale, (array) config('website.locales', ['ar', 'en']), true) ? $locale : 'ar'));
+})->name('root');
 
 // Legacy unprefixed authentication URLs redirect to the Arabic default.
 Route::get('/login', fn () => redirect()->route('login.show', ['locale' => 'ar']));
@@ -176,11 +186,42 @@ Route::prefix('{locale}')
                 Route::get('/settings', [SettingController::class, 'index'])->middleware('cms:settings.view')->name('settings.index');
                 Route::put('/settings', [SettingController::class, 'update'])->middleware('cms:settings.update')->name('settings.update');
 
+                Route::get('/preview/{resource}/{content}', PreviewController::class)->name('preview');
+
                 Route::get('/inquiries', [InquiryController::class, 'index'])->middleware('cms:inquiries.view')->name('inquiries.index');
+                Route::get('/inquiries/{type}/{inquiry}', [InquiryController::class, 'show'])
+                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereNumber('inquiry')
+                    ->middleware('cms:inquiries.view')
+                    ->name('inquiries.show');
                 Route::put('/inquiries/{type}/{inquiry}/status', [InquiryController::class, 'status'])
                     ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereNumber('inquiry')
                     ->middleware('cms:inquiries.update')
                     ->name('inquiries.status');
+                Route::put('/inquiries/{type}/{inquiry}/assign', [InquiryController::class, 'assign'])
+                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereNumber('inquiry')
+                    ->middleware('cms:inquiries.assign')
+                    ->name('inquiries.assign');
+                Route::post('/inquiries/{type}/{inquiry}/notes', [InquiryController::class, 'note'])
+                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereNumber('inquiry')
+                    ->middleware('cms:inquiries.add_internal_note')
+                    ->name('inquiries.note');
+                Route::post('/inquiries/{type}/{inquiry}/reply', [InquiryController::class, 'reply'])
+                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereNumber('inquiry')
+                    ->middleware('cms:inquiries.reply')
+                    ->name('inquiries.reply');
+
+                Route::middleware('cms:email_templates.view')->group(function (): void {
+                    Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
+                    Route::post('/email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
+                });
+                Route::post('/email-templates', [EmailTemplateController::class, 'store'])->middleware('cms:email_templates.create')->name('email-templates.store');
+                Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])->middleware('cms:email_templates.update')->name('email-templates.update');
+                Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])->middleware('cms:email_templates.delete')->name('email-templates.destroy');
             });
         });
 

@@ -25,6 +25,13 @@ final class AdminNavigationService
         $configured = config('admin_navigation.groups', []);
 
         foreach ($configured as $group) {
+            $groupKey = (string) ($group['key'] ?? '');
+            $featureState = config("dashboard_features.features.{$groupKey}.state");
+
+            if ($featureState !== null && $featureState !== 'enabled') {
+                continue;
+            }
+
             $items = [];
 
             foreach ($group['items'] as $item) {

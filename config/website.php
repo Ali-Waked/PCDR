@@ -123,6 +123,7 @@ return [
 
     'inquiry' => [
         'rate_limit' => 5,
+        'ip_rate_limit' => 20,
         'rate_decay_minutes' => 10,
     ],
 ];

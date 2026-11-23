@@ -23,6 +23,7 @@ const metricCards = computed(() => [
     { key: 'publications', label: t('ui.documents'), value: props.metrics.publications, href: localPath('cms/publications') },
     { key: 'pillars', label: t('ui.cms_pillars'), value: props.metrics.pillars, href: localPath('cms/pillars') },
     { key: 'media', label: t('ui.cms_media'), value: props.metrics.media, href: localPath('cms/media') },
+    { key: 'emailTemplates', label: t('ui.cms_email_templates'), value: props.metrics.emailTemplates, href: localPath('cms/email-templates') },
 ])
 
 const inquiryCards = computed(() => [
@@ -64,6 +65,16 @@ const inquiryCards = computed(() => [
             <Link :href="localPath('cms/inquiries')" class="btn btn-secondary btn-small">
                 {{ t('view_all') }}
             </Link>
+        </section>
+
+        <section class="cms-card">
+            <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ t('cms_quick_actions') }}</h2>
+            <div class="header-actions">
+                <Link :href="localPath('cms/pages/create')" class="btn btn-primary btn-small">{{ t('cms_new_page') }}</Link>
+                <Link :href="localPath('cms/inquiries')" class="btn btn-secondary btn-small">{{ t('cms_review_inquiries') }}</Link>
+                <Link :href="localPath('cms/email-templates')" class="btn btn-secondary btn-small">{{ t('ui.cms_email_templates') }}</Link>
+                <Link :href="localPath('cms/settings')" class="btn btn-secondary btn-small">{{ t('ui.cms_settings') }}</Link>
+            </div>
         </section>
 
         <section class="cms-card">
