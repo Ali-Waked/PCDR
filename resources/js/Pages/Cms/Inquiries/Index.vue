@@ -1,9 +1,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import CmsLayout from '../../../Layouts/CmsLayout.vue'
-import EmptyState from '../../../Components/EmptyState.vue'
-import Pagination from '../../../Components/Pagination.vue'
+import CmsDashboardLayout from '../../../Layouts/CmsDashboardLayout.vue'
+import CmsPagination from '../../../Components/Dashboard/CmsPagination.vue'
+import CmsStatusBadge from '../../../Components/Dashboard/CmsStatusBadge.vue'
+import DataTable from '../../../Components/Dashboard/DataTable.vue'
+import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
+import UiIcon from '../../../Components/Dashboard/UiIcon.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -51,6 +54,17 @@ function statusLabel(status) {
     return statusLabels[status] ? t(statusLabels[status], status) : status
 }
 
+const columns = computed(() => [
+    { key: 'reference', label: t('cms_reference') },
+    { key: 'institution', label: t('institution') },
+    { key: 'email', label: t('ui.email') },
+    { key: 'subject', label: t('subject') },
+    { key: 'assigned', label: t('cms_assigned_to') },
+    { key: 'status', label: t('cms_status') },
+    { key: 'created', label: t('cms_created_at') },
+    { key: 'actions', label: t('cms_actions'), align: 'end' },
+])
+
 const statusDrafts = ref({})
 
 function rowKey(groupKey, row) {
@@ -68,87 +82,97 @@ function saveStatus(groupKey, row) {
 </script>
 
 <template>
-    <CmsLayout :title="t('ui.cms_inquiries')" :subtitle="t('cms_inquiry_handling_note')">
-        <form class="form-grid form-grid--two" style="margin-block-end: 1rem" @submit.prevent="submitFilters">
-            <label class="field">
-                <span>{{ t('ui.status') }}</span>
-                <select v-model="filters.status" class="select">
-                    <option value="">{{ t('ui.all') }}</option>
-                    <option v-for="status in statuses" :key="status" :value="status">{{ statusLabel(status) }}</option>
-                </select>
-            </label>
-            <label class="field">
-                <span>{{ t('cms_assignment') }}</span>
-                <select v-model="filters.assigned" class="select">
-                    <option value="">{{ t('ui.all') }}</option>
-                    <option value="mine">{{ t('cms_assigned_to_me') }}</option>
-                    <option value="unassigned">{{ t('cms_unassigned') }}</option>
-                </select>
-            </label>
-            <label class="field">
-                <span>{{ t('cms_search') }}</span>
-                <input v-model="filters.search" class="input" type="search" maxlength="120">
-            </label>
-            <div class="form-actions">
-                <button class="btn btn-primary btn-small" type="submit">{{ t('ui.filter') }}</button>
-            </div>
-        </form>
+    <CmsDashboardLayout :title="t('ui.cms_inquiries')" :subtitle="t('cms_inquiry_handling_note')">
+        <div class="pc-stack pcdr-enter">
+            <section class="pc-card">
+                <div class="pc-card__head">
+                    <div>
+                        <h2 class="pc-card__title">{{ t('ui.filter') }}</h2>
+                        <p class="pc-card__subtitle">{{ t('cms_inquiry_handling_note') }}</p>
+                    </div>
+                </div>
+                <form class="pc-card__body pc-form-grid" @submit.prevent="submitFilters">
+                    <label class="pc-field">
+                        <span class="pc-label">{{ t('ui.status') }}</span>
+                        <select v-model="filters.status" class="pc-select">
+                            <option value="">{{ t('ui.all') }}</option>
+                            <option v-for="status in statuses" :key="status" :value="status">{{ statusLabel(status) }}</option>
+                        </select>
+                    </label>
+                    <label class="pc-field">
+                        <span class="pc-label">{{ t('cms_assignment') }}</span>
+                        <select v-model="filters.assigned" class="pc-select">
+                            <option value="">{{ t('ui.all') }}</option>
+                            <option value="mine">{{ t('cms_assigned_to_me') }}</option>
+                            <option value="unassigned">{{ t('cms_unassigned') }}</option>
+                        </select>
+                    </label>
+                    <label class="pc-field">
+                        <span class="pc-label">{{ t('cms_search') }}</span>
+                        <input v-model="filters.search" class="pc-input" type="search" maxlength="120">
+                    </label>
+                    <div class="pc-field pc-field--action">
+                        <button class="pc-btn pc-btn--primary" type="submit">
+                            <UiIcon name="search" :size="16" />
+                            {{ t('ui.filter') }}
+                        </button>
+                    </div>
+                </form>
+            </section>
 
-        <section v-for="group in groups" :key="group.key" class="cms-card">
-            <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ group.label }}</h2>
+            <section v-for="group in groups" :key="group.key" class="pc-card">
+                <div class="pc-card__head">
+                    <div>
+                        <h2 class="pc-card__title">{{ group.label }}</h2>
+                        <p class="pc-card__subtitle">{{ group.rows.length }} {{ t('ui.cms_inquiries') }}</p>
+                    </div>
+                    <span class="pc-badge pc-badge--teal">{{ group.rows.length }}</span>
+                </div>
 
-            <div v-if="group.rows.length" class="table-wrap">
-                <table class="cms-table">
-                    <thead>
-                        <tr>
-                            <th>{{ t('cms_reference') }}</th>
-                            <th>{{ t('institution') }}</th>
-                            <th>{{ t('ui.email') }}</th>
-                            <th>{{ t('subject') }}</th>
-                            <th>{{ t('cms_assigned_to') }}</th>
-                            <th>{{ t('cms_status') }}</th>
-                            <th>{{ t('cms_created_at') }}</th>
-                            <th>{{ t('cms_actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <template v-if="group.rows.length">
+                    <DataTable :columns="columns">
                         <tr v-for="row in group.rows" :key="row.id">
-                            <td dir="ltr">{{ row.reference }}</td>
+                            <td class="pc-directional" dir="ltr">{{ row.reference }}</td>
                             <td>{{ row.label }}</td>
-                            <td dir="ltr">{{ row.email }}</td>
-                            <td>{{ row.label }}</td>
+                            <td class="pc-directional" dir="ltr">{{ row.email }}</td>
+                            <td class="pc-table__primary">{{ row.label }}</td>
                             <td>{{ row.assignedTo || '—' }}</td>
                             <td>
-                                <span class="pill">{{ statusLabel(row.status) }}</span>
-                                <div class="header-actions" style="margin-block-start: 0.35rem">
-                                    <select
-                                        class="select"
-                                        style="inline-size: auto; min-block-size: 36px; font-size: 0.8rem"
-                                        :value="statusDrafts[rowKey(group.key, row)] ?? row.status"
-                                        :aria-label="`${t('cms_status')}: ${row.reference}`"
-                                        @change="setDraftStatus(group.key, row, $event.target.value)"
-                                    >
-                                        <option v-for="status in statuses" :key="status" :value="status">{{ statusLabel(status) }}</option>
-                                    </select>
-                                    <button class="btn btn-secondary btn-small" type="button" :aria-label="t('cms_update_status', t('cms_save'))" @click="saveStatus(group.key, row)">{{ t('cms_update_status', t('cms_save')) }}</button>
+                                <div class="pc-stack" style="gap: 8px">
+                                    <CmsStatusBadge :status="row.status" :label="statusLabel(row.status)" />
+                                    <div class="pc-table__actions">
+                                        <select
+                                            class="pc-select"
+                                            :value="statusDrafts[rowKey(group.key, row)] ?? row.status"
+                                            :aria-label="`${t('cms_status')}: ${row.reference}`"
+                                            @change="setDraftStatus(group.key, row, $event.target.value)"
+                                        >
+                                            <option v-for="status in statuses" :key="status" :value="status">{{ statusLabel(status) }}</option>
+                                        </select>
+                                        <button
+                                            class="pc-btn pc-btn--secondary pc-btn--sm"
+                                            type="button"
+                                            :aria-label="t('cms_update_status', t('cms_save'))"
+                                            @click="saveStatus(group.key, row)"
+                                        >
+                                            {{ t('cms_update_status', t('cms_save')) }}
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
-                            <td class="small-caps">{{ formatDate(row.createdAt) }}</td>
+                            <td class="pc-table__secondary">{{ formatDate(row.createdAt) }}</td>
                             <td>
-                                <Link :href="`${inquiriesPath}/${group.key}/${row.id}`" class="btn btn-secondary btn-small">{{ t('view') }}</Link>
+                                <Link :href="`${inquiriesPath}/${group.key}/${row.id}`" class="pc-btn pc-btn--secondary pc-btn--sm">
+                                    <UiIcon name="eye" :size="14" />
+                                    {{ t('ui.view') }}
+                                </Link>
                             </td>
                         </tr>
-                    </tbody>
-                </table>
-            </div>
-            <EmptyState v-else :body="t('cms_no_records')" />
-            <Pagination :pagination="pagination[group.key] || { currentPage: 1, lastPage: 1, total: 0 }" />
-        </section>
-    </CmsLayout>
+                    </DataTable>
+                    <CmsPagination :pagination="pagination[group.key] || { currentPage: 1, lastPage: 1, total: 0 }" />
+                </template>
+                <EmptyState v-else :title="t('cms_no_records')" icon="mail" />
+            </section>
+        </div>
+    </CmsDashboardLayout>
 </template>
-
-<style scoped>
-.cms-card + .cms-card {
-    margin-block-start: 1rem;
-}
-</style>

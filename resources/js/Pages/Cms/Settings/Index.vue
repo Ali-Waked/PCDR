@@ -1,7 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { useForm } from '@inertiajs/vue3'
-import CmsLayout from '../../../Layouts/CmsLayout.vue'
+import CmsDashboardLayout from '../../../Layouts/CmsDashboardLayout.vue'
+import UiIcon from '../../../Components/Dashboard/UiIcon.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -56,85 +57,87 @@ function inputType(setting) {
 </script>
 
 <template>
-    <CmsLayout :title="t('ui.cms_settings')" :subtitle="t('cms_settings_note')">
-        <div class="alert alert--info">{{ t('cms_protected_settings_note') }}</div>
+    <CmsDashboardLayout :title="t('ui.cms_settings')" :subtitle="t('cms_settings_note')">
+        <div class="pc-stack pcdr-enter">
+            <div class="pc-callout pc-callout--sand" role="note">
+                <UiIcon name="lock" :size="17" />
+                <span>{{ t('cms_protected_settings_note') }}</span>
+            </div>
 
-        <form @submit.prevent="save">
-            <section v-for="group in groups" :key="group" class="cms-card">
-                <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ group }}</h2>
-                <div class="form-grid form-grid--two">
-                    <template v-for="setting in rows.filter((item) => item.group === group)" :key="setting.key">
-                        <label v-if="!setting.localized" class="field">
-                            <span>{{ setting.label }}</span>
-                            <select
-                                v-if="inputType(setting) === 'locale'"
-                                v-model="form.settings[setting.index].value"
-                                class="select"
-                            >
-                                <option v-for="locale in locales" :key="locale" :value="locale">{{ locale }}</option>
-                            </select>
-                            <textarea
-                                v-else-if="inputType(setting) === 'textarea'"
-                                v-model="form.settings[setting.index].value"
-                                class="textarea"
-                                rows="3"
-                                maxlength="1000"
-                            ></textarea>
-                            <input
-                                v-else
-                                v-model="form.settings[setting.index].value"
-                                class="input"
-                                :type="inputType(setting)"
-                                maxlength="1000"
-                                :dir="['url', 'email'].includes(inputType(setting)) ? 'ltr' : undefined"
-                            >
-                            <span v-if="valueError(setting)" class="error" role="alert">{{ valueError(setting) }}</span>
-                        </label>
+            <div class="pc-page-actions">
+                <button class="pc-btn pc-btn--primary" type="submit" form="settings-form" :disabled="form.processing">
+                    <UiIcon name="check" :size="16" />
+                    {{ t('cms_save') }}
+                </button>
+            </div>
 
-                        <fieldset v-else class="field localized-field">
-                            <legend>{{ setting.label }}</legend>
-                            <label v-for="locale in locales" :key="locale" class="field">
-                                <span>{{ locale }}</span>
+            <form id="settings-form" class="pc-stack" @submit.prevent="save">
+                <section v-for="group in groups" :key="group" class="pc-card">
+                    <div class="pc-card__head">
+                        <h2 class="pc-card__title">{{ group }}</h2>
+                        <span class="pc-badge pc-badge--slate">{{ rows.filter((item) => item.group === group).length }}</span>
+                    </div>
+                    <div class="pc-card__body pc-form-grid">
+                        <template v-for="setting in rows.filter((item) => item.group === group)" :key="setting.key">
+                            <label v-if="!setting.localized" class="pc-field">
+                                <span class="pc-label">{{ setting.label }}</span>
+                                <select
+                                    v-if="inputType(setting) === 'locale'"
+                                    v-model="form.settings[setting.index].value"
+                                    class="pc-select"
+                                >
+                                    <option v-for="locale in locales" :key="locale" :value="locale">{{ locale }}</option>
+                                </select>
                                 <textarea
-                                    v-if="inputType(setting) === 'textarea'"
-                                    v-model="form.settings[setting.index].translations[locale]"
-                                    class="textarea"
-                                    rows="2"
+                                    v-else-if="inputType(setting) === 'textarea'"
+                                    v-model="form.settings[setting.index].value"
+                                    class="pc-textarea"
+                                    rows="3"
                                     maxlength="1000"
                                 ></textarea>
                                 <input
                                     v-else
-                                    v-model="form.settings[setting.index].translations[locale]"
-                                    class="input"
-                                    type="text"
+                                    v-model="form.settings[setting.index].value"
+                                    class="pc-input"
+                                    :type="inputType(setting)"
                                     maxlength="1000"
+                                    :dir="['url', 'email'].includes(inputType(setting)) ? 'ltr' : undefined"
                                 >
-                                <span v-if="valueError(setting, locale)" class="error" role="alert">{{ valueError(setting, locale) }}</span>
+                                <span v-if="valueError(setting)" class="pc-error" role="alert">{{ valueError(setting) }}</span>
                             </label>
-                        </fieldset>
-                    </template>
+
+                            <fieldset v-else class="pc-field pc-picker">
+                                <legend class="pc-label">{{ setting.label }}</legend>
+                                <label v-for="locale in locales" :key="locale" class="pc-field">
+                                    <span class="pc-label">{{ locale }}</span>
+                                    <textarea
+                                        v-if="inputType(setting) === 'textarea'"
+                                        v-model="form.settings[setting.index].translations[locale]"
+                                        class="pc-textarea"
+                                        rows="2"
+                                        maxlength="1000"
+                                    ></textarea>
+                                    <input
+                                        v-else
+                                        v-model="form.settings[setting.index].translations[locale]"
+                                        class="pc-input"
+                                        type="text"
+                                        maxlength="1000"
+                                    >
+                                    <span v-if="valueError(setting, locale)" class="pc-error" role="alert">{{ valueError(setting, locale) }}</span>
+                                </label>
+                            </fieldset>
+                        </template>
+                    </div>
+                </section>
+
+                <div class="pc-form-actions">
+                    <button class="pc-btn pc-btn--primary" type="submit" :disabled="form.processing" :aria-busy="form.processing">
+                        <UiIcon name="check" :size="16" />
+                        {{ t('cms_save') }}
+                    </button>
                 </div>
-            </section>
-
-            <div class="form-actions">
-                <button class="btn btn-primary" type="submit" :disabled="form.processing" :aria-busy="form.processing">
-                    {{ t('cms_save') }}
-                </button>
-            </div>
-        </form>
-    </CmsLayout>
+            </form>
+        </div>
+    </CmsDashboardLayout>
 </template>
-
-<style scoped>
-.cms-card + .cms-card {
-    margin-block-start: 1rem;
-}
-
-.localized-field {
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    display: grid;
-    gap: 0.5rem;
-}
-</style>

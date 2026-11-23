@@ -1,10 +1,14 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import CmsLayout from '../../../Layouts/CmsLayout.vue'
-import StatusPill from '../../../Components/StatusPill.vue'
-import EmptyState from '../../../Components/EmptyState.vue'
-import Pagination from '../../../Components/Pagination.vue'
+import CmsDashboardLayout from '../../../Layouts/CmsDashboardLayout.vue'
+import ConfirmDialog from '../../../Components/Dashboard/ConfirmDialog.vue'
+import CmsPagination from '../../../Components/Dashboard/CmsPagination.vue'
+import CmsStatusBadge from '../../../Components/Dashboard/CmsStatusBadge.vue'
+import DataTable from '../../../Components/Dashboard/DataTable.vue'
+import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
+import MetricCard from '../../../Components/Dashboard/MetricCard.vue'
+import UiIcon from '../../../Components/Dashboard/UiIcon.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -29,91 +33,122 @@ const segments = {
 
 const basePath = computed(() => localPath(`cms/${segments[props.routeBase] || props.resource}`))
 const confirmId = ref(null)
-
 const statuses = ['draft', 'pending_review', 'approved', 'published', 'archived']
+
+const columns = computed(() => [
+    { key: 'title', label: t('cms_title') },
+    { key: 'status', label: t('cms_status') },
+    { key: 'locales', label: t('available_options') },
+    { key: 'updated', label: t('updated_on') },
+    { key: 'actions', label: t('cms_actions'), align: 'end' },
+])
 
 function changeStatus(id, status) {
     router.post(`${basePath.value}/${id}/status`, { status }, { preserveScroll: true })
 }
 
-function remove(id) {
-    router.delete(`${basePath.value}/${id}`, { preserveScroll: true, onFinish: () => { confirmId.value = null } })
+function remove() {
+    if (!confirmId.value) {
+        return
+    }
+
+    router.delete(`${basePath.value}/${confirmId.value}`, {
+        preserveScroll: true,
+        onFinish: () => { confirmId.value = null },
+    })
 }
 </script>
 
 <template>
-    <CmsLayout :title="label" :subtitle="t('cms_publish_status')">
-        <div class="cms-metric-grid" style="margin-block-end: 1rem">
-            <div class="cms-metric">
-                <strong>{{ counts.all || 0 }}</strong>
-                <span>{{ t('ui.all') }}</span>
-            </div>
-            <div class="cms-metric">
-                <strong>{{ counts.published || 0 }}</strong>
-                <span>{{ t('ui.published') }}</span>
-            </div>
-            <div class="cms-metric">
-                <strong>{{ counts.draft || 0 }}</strong>
-                <span>{{ t('ui.draft') }}</span>
-            </div>
-        </div>
-
-        <div class="cms-card">
-            <div class="cms-card__head">
-                <h2 style="font-size: 1.05rem; margin: 0">{{ label }}</h2>
-                <Link :href="`${basePath}/create`" class="btn btn-primary btn-small">{{ t('cms_new_item') }}</Link>
+    <CmsDashboardLayout :title="label" :subtitle="t('ui.cms_publish_status')">
+        <div class="pc-stack pcdr-enter">
+            <div class="pc-metric-grid">
+                <MetricCard :label="t('ui.all')" :value="counts.all || 0" icon="layers" />
+                <MetricCard :label="t('ui.published')" :value="counts.published || 0" icon="check" tone="sand" />
+                <MetricCard :label="t('ui.draft')" :value="counts.draft || 0" icon="file" tone="navy" />
             </div>
 
-            <div v-if="items.length" class="table-wrap">
-                <table class="cms-table">
-                    <thead>
-                        <tr>
-                            <th>{{ t('cms_title') }}</th>
-                            <th>{{ t('cms_status') }}</th>
-                            <th>{{ t('available_options') }}</th>
-                            <th>{{ t('updated_on') }}</th>
-                            <th>{{ t('cms_actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <div class="pc-page-actions">
+                <Link :href="`${basePath}/create`" class="pc-btn pc-btn--primary">
+                    <UiIcon name="plus" :size="16" />
+                    {{ t('cms_new_item') }}
+                </Link>
+            </div>
+
+            <section class="pc-card">
+                <div class="pc-card__head">
+                    <div>
+                        <h2 class="pc-card__title">{{ label }}</h2>
+                        <p class="pc-card__subtitle">{{ t('ui.dashboard_technical_note') }}</p>
+                    </div>
+                    <span class="pc-badge pc-badge--teal">{{ items.length }}</span>
+                </div>
+
+                <template v-if="items.length">
+                    <DataTable :columns="columns">
                         <tr v-for="item in items" :key="item.id">
-                            <td>
-                                <Link :href="`${basePath}/${item.id}/edit`" style="font-weight: 650">{{ item.title || `#${item.id}` }}</Link>
+                            <td class="pc-table__primary">
+                                <Link :href="`${basePath}/${item.id}/edit`" class="pc-link">
+                                    {{ item.title || `#${item.id}` }}
+                                </Link>
                             </td>
-                            <td><StatusPill :status="item.status" /></td>
+                            <td><CmsStatusBadge :status="item.status" /></td>
                             <td>
-                                <span v-for="code in item.locales" :key="code" class="pill" style="margin-inline-end: 0.3rem">{{ code.toUpperCase() }}</span>
-                            </td>
-                            <td class="small-caps">{{ formatDate(item.updatedAt) }}</td>
-                            <td>
-                                <div class="header-actions">
-                                    <Link :href="`${basePath}/${item.id}/edit`" class="btn btn-secondary btn-small">{{ t('cms_edit') }}</Link>
-                                    <select
-                                        class="select"
-                                        style="inline-size: auto; min-block-size: 36px; font-size: 0.8rem"
-                                        :value="item.status"
-                                        :aria-label="`${t('cms_status')}: ${item.title}`"
-                                        @change="changeStatus(item.id, $event.target.value)"
-                                    >
-                                        <option v-for="status in statuses" :key="status" :value="status">{{ t(status) }}</option>
-                                    </select>
-                                    <button class="btn btn-danger btn-small" type="button" @click="confirmId = item.id">{{ t('cms_delete') }}</button>
+                                <div class="pc-table__actions">
+                                    <span v-for="code in item.locales" :key="code" class="pc-badge pc-badge--slate">{{ code.toUpperCase() }}</span>
                                 </div>
-                                <div v-if="confirmId === item.id" class="alert alert--error" style="margin-block-start: 0.6rem" role="alert">
-                                    <span>{{ t('cms_confirm_delete') }}</span>
-                                    <button class="btn btn-danger btn-small" type="button" @click="remove(item.id)">{{ t('cms_delete') }}</button>
-                                    <button class="btn btn-ghost btn-small" type="button" @click="confirmId = null">×</button>
+                            </td>
+                            <td class="pc-table__secondary">{{ formatDate(item.updatedAt) }}</td>
+                            <td>
+                                <div class="pc-table__actions">
+                                    <Link :href="`${basePath}/${item.id}/edit`" class="pc-btn pc-btn--secondary pc-btn--sm">
+                                        <UiIcon name="edit" :size="14" />
+                                        {{ t('ui.edit') }}
+                                    </Link>
+                                    <label class="pc-field">
+                                        <span class="sr-only">{{ `${t('cms_status')}: ${item.title}` }}</span>
+                                        <select
+                                            class="pc-select"
+                                            :value="item.status"
+                                            @change="changeStatus(item.id, $event.target.value)"
+                                        >
+                                            <option v-for="status in statuses" :key="status" :value="status">{{ t(status) }}</option>
+                                        </select>
+                                    </label>
+                                    <button class="pc-btn pc-btn--danger pc-btn--sm" type="button" @click="confirmId = item.id">
+                                        <UiIcon name="trash" :size="14" />
+                                        {{ t('ui.delete') }}
+                                    </button>
                                 </div>
                             </td>
                         </tr>
-                    </tbody>
-                </table>
-            </div>
-            <EmptyState v-else :body="t('cms_no_records')">
-                <Link :href="`${basePath}/create`" class="btn btn-primary" style="margin-block-start: 1rem">{{ t('cms_new_item') }}</Link>
-            </EmptyState>
+                    </DataTable>
+                    <CmsPagination :pagination="pagination" />
+                </template>
 
-            <Pagination :pagination="pagination" />
+                <EmptyState
+                    v-else
+                    :title="t('cms_no_records')"
+                    :message="t('ui.dashboard_content_studio')"
+                    icon="file"
+                >
+                    <Link :href="`${basePath}/create`" class="pc-btn pc-btn--primary">
+                        <UiIcon name="plus" :size="16" />
+                        {{ t('cms_new_item') }}
+                    </Link>
+                </EmptyState>
+            </section>
         </div>
-    </CmsLayout>
+
+        <ConfirmDialog
+            :open="confirmId !== null"
+            :title="t('ui.delete')"
+            :message="t('cms_confirm_delete')"
+            :confirm-label="t('ui.delete')"
+            :cancel-label="t('ui.cancel')"
+            danger
+            @close="confirmId = null"
+            @confirm="remove"
+        />
+    </CmsDashboardLayout>
 </template>

@@ -5,8 +5,9 @@ import Card from '../../../Components/Ui/Card.vue'
 import TextField from '../../../Components/Ui/TextField.vue'
 import SelectField from '../../../Components/Ui/SelectField.vue'
 import Button from '../../../Components/Ui/Button.vue'
-import Alert from '../../../Components/Ui/Alert.vue'
+import FormSection from '../../../Components/Dashboard/FormSection.vue'
 import { useLocale } from '../../../Composables/useLocale'
+import { useI18n } from '../../../composables/useI18n'
 
 defineOptions({ layout: AppLayout })
 
@@ -16,6 +17,7 @@ const props = defineProps({
 })
 
 const { t, localePath } = useLocale()
+const { t: tWebsite } = useI18n()
 const form = useForm({
     name: props.target.name,
     email: props.target.email,
@@ -30,41 +32,50 @@ function toggleRole(id) {
 </script>
 
 <template>
-    <div class="grid gap-5 lg:grid-cols-2">
+    <div class="pc-grid pc-grid--2">
         <Head :title="t('edit')" />
         <Card>
-            <h2 class="mb-5 text-lg font-semibold text-navy-900">{{ t('users_page.title') }}</h2>
-            <Alert v-if="Object.keys(form.errors).length" type="error" :message="Object.values(form.errors)[0]" class="mb-5" />
-            <form class="space-y-5" @submit.prevent="form.put(localePath(`/admin/users/${target.id}`))">
-                <TextField v-model="form.name" name="name" :label="t('users_page.name')" required :error="form.errors.name" />
-                <TextField v-model="form.email" name="email" :label="t('users_page.email')" type="email" required :error="form.errors.email" />
-                <SelectField
-                    v-model="form.locale"
-                    name="locale"
-                    :label="t('users_page.locale')"
-                    :options="[{ value: 'ar', label: 'العربية' }, { value: 'en', label: 'English' }]"
-                />
-                <SelectField
-                    v-model="form.status"
-                    name="status"
-                    :label="t('status')"
-                    :options="[{ value: 'active', label: 'active' }, { value: 'inactive', label: 'inactive' }, { value: 'suspended', label: 'suspended' }]"
-                />
-                <Button type="submit" :processing="form.processing">{{ t('save') }}</Button>
+            <form @submit.prevent="form.put(localePath(`/admin/users/${target.id}`))">
+                <FormSection :title="tWebsite('ui.cms_basic_data')" :hint="t('users_page.subtitle')">
+                    <div class="pc-stack">
+                        <TextField v-model="form.name" name="name" :label="t('users_page.name')" required :error="form.errors.name" />
+                        <TextField v-model="form.email" name="email" :label="t('users_page.email')" type="email" required :error="form.errors.email" />
+                        <div class="pc-form-grid">
+                            <SelectField
+                                v-model="form.locale"
+                                name="locale"
+                                :label="t('users_page.locale')"
+                                :options="[{ value: 'ar', label: 'العربية' }, { value: 'en', label: 'English' }]"
+                            />
+                            <SelectField
+                                v-model="form.status"
+                                name="status"
+                                :label="t('status')"
+                                :options="[{ value: 'active', label: tWebsite('ui.active') }, { value: 'inactive', label: tWebsite('ui.inactive') }, { value: 'suspended', label: tWebsite('ui.suspended') }]"
+                            />
+                        </div>
+                    </div>
+                </FormSection>
+                <div class="pc-form-actions">
+                    <Button type="submit" :processing="form.processing">{{ t('save') }}</Button>
+                </div>
             </form>
         </Card>
 
         <Card>
-            <h2 class="mb-5 text-lg font-semibold text-navy-900">{{ t('users_page.roles') }}</h2>
-            <form class="space-y-4" @submit.prevent="roles.put(localePath(`/admin/users/${target.id}/roles`))">
-                <div class="grid gap-2 sm:grid-cols-2">
-                    <label v-for="role in availableRoles" :key="role.id" class="flex min-h-11 items-center gap-2 rounded-md border border-subtle px-3 py-2 text-sm">
-                        <input type="checkbox" :checked="roles.roles.includes(role.id)" @change="toggleRole(role.id)" />
-                        {{ role.name }}
-                    </label>
-                    <p v-if="!availableRoles.length" class="text-sm text-muted">{{ t('no_results') }}</p>
+            <form @submit.prevent="roles.put(localePath(`/admin/users/${target.id}/roles`))">
+                <FormSection :title="t('users_page.roles')" :hint="t('roles_page.permissions')">
+                    <div class="pc-form-grid">
+                        <label v-for="role in availableRoles" :key="role.id" class="pc-checkbox">
+                            <input type="checkbox" :checked="roles.roles.includes(role.id)" @change="toggleRole(role.id)">
+                            <span>{{ role.name }}</span>
+                        </label>
+                        <p v-if="!availableRoles.length" class="pc-hint">{{ t('no_results') }}</p>
+                    </div>
+                </FormSection>
+                <div class="pc-form-actions">
+                    <Button type="submit" variant="secondary" :processing="roles.processing">{{ t('save') }}</Button>
                 </div>
-                <Button type="submit" variant="secondary" :processing="roles.processing">{{ t('save') }}</Button>
             </form>
         </Card>
     </div>

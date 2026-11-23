@@ -1,8 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
-import CmsLayout from '../../../Layouts/CmsLayout.vue'
-import EmptyState from '../../../Components/EmptyState.vue'
+import CmsDashboardLayout from '../../../Layouts/CmsDashboardLayout.vue'
+import CmsStatusBadge from '../../../Components/Dashboard/CmsStatusBadge.vue'
+import DataTable from '../../../Components/Dashboard/DataTable.vue'
+import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
+import UiIcon from '../../../Components/Dashboard/UiIcon.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -37,6 +40,13 @@ const variableList = computed(() => Object.entries(props.variables || {}).map(([
     label,
     token: '{{ ' + key + ' }}',
 })))
+
+const columns = computed(() => [
+    { key: 'key', label: t('cms_template_key') },
+    { key: 'name', label: t('cms_name') },
+    { key: 'status', label: t('ui.status') },
+    { key: 'actions', label: t('cms_actions'), align: 'end' },
+])
 
 function edit(template) {
     editingId.value = template.id
@@ -112,122 +122,125 @@ async function renderPreview() {
 </script>
 
 <template>
-    <CmsLayout :title="t('ui.cms_email_templates')" :subtitle="t('cms_email_templates_note')">
-        <section class="cms-card">
-            <div class="header-actions">
-                <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ t('cms_templates') }}</h2>
-                <button class="btn btn-secondary btn-small" type="button" @click="reset">{{ t('cms_new_template') }}</button>
+    <CmsDashboardLayout :title="t('ui.cms_email_templates')" :subtitle="t('cms_email_templates_note')">
+        <div class="pc-stack pcdr-enter">
+            <div class="pc-grid pc-grid--content">
+                <section class="pc-card">
+                    <div class="pc-card__head">
+                        <div>
+                            <h2 class="pc-card__title">{{ t('cms_templates') }}</h2>
+                            <p class="pc-card__subtitle">{{ t('ui.dashboard_content_studio') }}</p>
+                        </div>
+                        <button class="pc-btn pc-btn--secondary pc-btn--sm" type="button" @click="reset">
+                            <UiIcon name="plus" :size="15" />
+                            {{ t('cms_new_template') }}
+                        </button>
+                    </div>
+
+                    <template v-if="templates.length">
+                        <DataTable :columns="columns">
+                            <tr v-for="template in templates" :key="template.id">
+                                <td class="pc-directional" dir="ltr">{{ template.key }}</td>
+                                <td class="pc-table__primary">{{ template.translations?.[selectedLocale]?.name || template.key }}</td>
+                                <td>
+                                    <CmsStatusBadge :label="template.active ? t('ui.active') : t('ui.inactive')" :status="template.active ? 'active' : 'inactive'" />
+                                </td>
+                                <td>
+                                    <div class="pc-table__actions">
+                                        <button class="pc-btn pc-btn--secondary pc-btn--sm" type="button" @click="edit(template)">
+                                            <UiIcon name="edit" :size="14" />
+                                            {{ t('ui.edit') }}
+                                        </button>
+                                        <button class="pc-btn pc-btn--danger pc-btn--sm" type="button" @click="remove(template)">
+                                            <UiIcon name="trash" :size="14" />
+                                            {{ t('ui.delete') }}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </DataTable>
+                    </template>
+                    <EmptyState v-else :title="t('cms_no_records')" icon="mail" />
+                </section>
+
+                <section class="pc-card">
+                    <div class="pc-card__head">
+                        <div>
+                            <h2 class="pc-card__title">{{ editingId ? t('ui.edit') : t('cms_new_template') }}</h2>
+                            <p class="pc-card__subtitle">{{ selectedLocale.toUpperCase() }}</p>
+                        </div>
+                    </div>
+                    <form class="pc-card__body pc-form-grid" @submit.prevent="save">
+                        <label v-if="!editingId" class="pc-field">
+                            <span class="pc-label">{{ t('cms_template_key') }}</span>
+                            <input v-model="form.key" class="pc-input" type="text" maxlength="96" dir="ltr" required>
+                            <span v-if="form.errors.key" class="pc-error" role="alert">{{ form.errors.key }}</span>
+                        </label>
+
+                        <div class="pc-form-grid pc-form-grid--2">
+                            <label class="pc-field">
+                                <span class="pc-label">{{ t('ui.status') }}</span>
+                                <select v-model="form.is_active" class="pc-select">
+                                    <option :value="true">{{ t('ui.active') }}</option>
+                                    <option :value="false">{{ t('ui.inactive') }}</option>
+                                </select>
+                            </label>
+                            <label class="pc-field">
+                                <span class="pc-label">{{ t('ui.language') }}</span>
+                                <select v-model="selectedLocale" class="pc-select">
+                                    <option v-for="locale in locales" :key="locale" :value="locale">{{ locale }}</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <label class="pc-field">
+                            <span class="pc-label">{{ t('cms_name') }}</span>
+                            <input v-model="activeTranslation.name" class="pc-input" type="text" maxlength="160" required>
+                        </label>
+                        <label class="pc-field">
+                            <span class="pc-label">{{ t('cms_description') }}</span>
+                            <input v-model="activeTranslation.description" class="pc-input" type="text" maxlength="500">
+                        </label>
+                        <label class="pc-field">
+                            <span class="pc-label">{{ t('ui.subject') }}</span>
+                            <input v-model="activeTranslation.subject" class="pc-input" type="text" maxlength="255" required>
+                        </label>
+                        <label class="pc-field">
+                            <span class="pc-label">{{ t('cms_body') }}</span>
+                            <textarea v-model="activeTranslation.body" class="pc-textarea" rows="8" maxlength="10000" required></textarea>
+                        </label>
+
+                        <div class="pc-field">
+                            <span class="pc-label">{{ t('cms_allowed_variables') }}</span>
+                            <div class="pc-token-list">
+                                <span v-for="variable in variableList" :key="variable.key" class="pc-token">
+                                    <span>{{ variable.token }}</span>
+                                    <span>{{ variable.label }}</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="pc-form-actions">
+                            <button class="pc-btn pc-btn--secondary" type="button" :disabled="form.processing" @click="renderPreview">
+                                <UiIcon name="eye" :size="16" />
+                                {{ t('cms_preview') }}
+                            </button>
+                            <button class="pc-btn pc-btn--primary" type="submit" :disabled="form.processing">
+                                <UiIcon name="check" :size="16" />
+                                {{ t('cms_save') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div v-if="preview || previewError" class="pc-card__foot">
+                        <div v-if="preview" class="pc-preview-panel">
+                            <strong>{{ preview.subject }}</strong>
+                            <p>{{ preview.body }}</p>
+                        </div>
+                        <p v-if="previewError" class="pc-error" role="alert">{{ previewError }}</p>
+                    </div>
+                </section>
             </div>
-            <div v-if="templates.length" class="table-wrap">
-                <table class="cms-table">
-                    <thead>
-                        <tr>
-                            <th>{{ t('cms_template_key') }}</th>
-                            <th>{{ t('cms_name') }}</th>
-                            <th>{{ t('ui.status') }}</th>
-                            <th>{{ t('cms_actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="template in templates" :key="template.id">
-                            <td dir="ltr">{{ template.key }}</td>
-                            <td>{{ template.translations?.[selectedLocale]?.name || template.key }}</td>
-                            <td><span class="pill">{{ template.active ? t('ui.active') : t('ui.inactive') }}</span></td>
-                            <td>
-                                <div class="header-actions">
-                                    <button class="btn btn-secondary btn-small" type="button" @click="edit(template)">{{ t('edit') }}</button>
-                                    <button class="btn btn-danger btn-small" type="button" @click="remove(template)">{{ t('delete') }}</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <EmptyState v-else :body="t('cms_no_records')" />
-        </section>
-
-        <section class="cms-card">
-            <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ editingId ? t('edit') : t('cms_new_template') }}</h2>
-            <form class="form-stack" @submit.prevent="save">
-                <div class="form-grid form-grid--two">
-                    <label v-if="!editingId" class="field">
-                        <span>{{ t('cms_template_key') }}</span>
-                        <input v-model="form.key" class="input" type="text" maxlength="96" dir="ltr" required>
-                        <span v-if="form.errors.key" class="error" role="alert">{{ form.errors.key }}</span>
-                    </label>
-                    <label class="field">
-                        <span>{{ t('ui.status') }}</span>
-                        <select v-model="form.is_active" class="select">
-                            <option :value="true">{{ t('ui.active') }}</option>
-                            <option :value="false">{{ t('ui.inactive') }}</option>
-                        </select>
-                    </label>
-                </div>
-
-                <label class="field">
-                    <span>{{ t('ui.language') }}</span>
-                    <select v-model="selectedLocale" class="select">
-                        <option v-for="locale in locales" :key="locale" :value="locale">{{ locale }}</option>
-                    </select>
-                </label>
-
-                <label class="field">
-                    <span>{{ t('cms_name') }}</span>
-                    <input v-model="activeTranslation.name" class="input" type="text" maxlength="160" required>
-                </label>
-                <label class="field">
-                    <span>{{ t('cms_description') }}</span>
-                    <input v-model="activeTranslation.description" class="input" type="text" maxlength="500">
-                </label>
-                <label class="field">
-                    <span>{{ t('subject') }}</span>
-                    <input v-model="activeTranslation.subject" class="input" type="text" maxlength="255" required>
-                </label>
-                <label class="field">
-                    <span>{{ t('cms_body') }}</span>
-                    <textarea v-model="activeTranslation.body" class="textarea" rows="8" maxlength="10000" required></textarea>
-                </label>
-
-                <div class="variable-list">
-                    <span v-for="variable in variableList" :key="variable.key" class="pill" dir="ltr">{{ variable.token }} — {{ variable.label }}</span>
-                </div>
-
-                <div class="form-actions">
-                    <button class="btn btn-secondary" type="button" :disabled="form.processing" @click="renderPreview">{{ t('cms_preview') }}</button>
-                    <button class="btn btn-primary" type="submit" :disabled="form.processing">{{ t('cms_save') }}</button>
-                </div>
-            </form>
-
-            <div v-if="preview" class="preview-panel">
-                <strong>{{ preview.subject }}</strong>
-                <p>{{ preview.body }}</p>
-            </div>
-            <p v-if="previewError" class="error" role="alert">{{ previewError }}</p>
-        </section>
-    </CmsLayout>
+        </div>
+    </CmsDashboardLayout>
 </template>
-
-<style scoped>
-.cms-card + .cms-card {
-    margin-block-start: 1rem;
-}
-
-.form-stack {
-    display: grid;
-    gap: 0.75rem;
-}
-
-.variable-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.preview-panel {
-    margin-block-start: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: 0.5rem;
-    white-space: pre-wrap;
-}
-</style>

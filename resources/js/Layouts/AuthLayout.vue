@@ -1,40 +1,60 @@
 <script setup>
-import { computed } from 'vue'
-import { usePage } from '@inertiajs/vue3'
-import BrandMark from '../Components/BrandMark.vue'
-import LocaleSwitcher from '../Components/LocaleSwitcher.vue'
-import Alert from '../Components/Ui/Alert.vue'
+import { Link, usePage } from '@inertiajs/vue3'
+import { useI18n } from '../composables/useI18n'
 import { useLocale } from '../Composables/useLocale'
+import UiIcon from '../Components/Dashboard/UiIcon.vue'
 
-const { t, direction } = useLocale()
+const { t, direction } = useI18n()
+const { pathForLocale } = useLocale()
 const page = usePage()
-const flash = computed(() => page.props.flash ?? {})
 </script>
 
 <template>
-    <div class="auth-shell" :dir="direction">
-        <a href="#main" class="skip-link">
-            {{ t('skip_to_content') }}
-        </a>
+    <div class="pc-auth" :dir="direction">
+        <a href="#pc-auth-main" class="skip-link">{{ t('ui.skip_to_content') }}</a>
 
-        <header class="auth-shell__header">
-            <BrandMark />
-            <LocaleSwitcher />
-        </header>
+        <section class="pc-auth__brand" aria-labelledby="pc-auth-intro">
+            <div class="pc-auth__logo">
+                <img src="/assets/pcdr-homepage/logo/pcdr-logo.png" alt="" aria-hidden="true" width="56" height="56">
+                <span class="pc-auth__logo-copy">
+                    <strong>PCDR</strong>
+                    <span>{{ t('ui.dashboard_organization') }}</span>
+                </span>
+            </div>
 
-        <main id="main" class="auth-shell__main" tabindex="-1">
-            <section class="auth-shell__intro pcdr-enter" aria-labelledby="auth-intro-title">
-                <p class="admin-eyebrow">{{ t('welcome.badge') }}</p>
-                <h1 id="auth-intro-title">{{ t('admin_brand.secure_gateway') }}</h1>
-                <p>{{ t('welcome.note') }}</p>
-                <div class="auth-shell__accent" aria-hidden="true" />
-            </section>
+            <div class="pc-auth__statement">
+                <p class="pc-auth__eyebrow">{{ t('ui.dashboard_secure_workspace') }}</p>
+                <h1 id="pc-auth-intro" class="pc-auth__title">{{ t('ui.dashboard_auth_title') }}</h1>
+                <p class="pc-auth__text">{{ t('ui.dashboard_auth_text') }}</p>
+            </div>
 
-            <section class="auth-shell__panel pcdr-card" :aria-label="t('admin_brand.control_center')">
-                <Alert v-if="flash.success" type="success" :message="flash.success" />
-                <Alert v-if="flash.error" type="error" :message="flash.error" />
-                <slot />
-            </section>
-        </main>
+            <div class="pc-auth__footer">
+                <span>{{ t('ui.dashboard_humanitarian') }}</span>
+                <span aria-hidden="true">•</span>
+                <span>{{ t('ui.dashboard_editorial') }}</span>
+            </div>
+        </section>
+
+        <section class="pc-auth__panel">
+            <div class="pc-auth__panel-top">
+                <div class="pc-locale-switch" role="group" :aria-label="t('ui.language')">
+                    <Link :href="pathForLocale('ar')" :class="{ 'is-active': page.props.locale === 'ar' }" :aria-current="page.props.locale === 'ar' ? 'page' : undefined">ع</Link>
+                    <Link :href="pathForLocale('en')" :class="{ 'is-active': page.props.locale === 'en' }" :aria-current="page.props.locale === 'en' ? 'page' : undefined">EN</Link>
+                </div>
+            </div>
+            <div class="pc-auth__form-wrap">
+                <main id="pc-auth-main" class="pc-auth__form" tabindex="-1">
+                    <div v-if="page.props.flash?.success" class="pc-callout" role="status">
+                        <UiIcon name="check" :size="17" />
+                        <span>{{ page.props.flash.success }}</span>
+                    </div>
+                    <div v-if="page.props.flash?.error" class="pc-callout pc-callout--warning" role="alert">
+                        <UiIcon name="alert" :size="17" />
+                        <span>{{ page.props.flash.error }}</span>
+                    </div>
+                    <slot />
+                </main>
+            </div>
+        </section>
     </div>
 </template>

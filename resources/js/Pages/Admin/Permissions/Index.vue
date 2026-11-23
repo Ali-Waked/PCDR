@@ -6,6 +6,7 @@ import Badge from '../../../Components/Ui/Badge.vue'
 import TextField from '../../../Components/Ui/TextField.vue'
 import Button from '../../../Components/Ui/Button.vue'
 import Pagination from '../../../Components/Ui/Pagination.vue'
+import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
 import { useLocale } from '../../../Composables/useLocale'
 import { usePermission } from '../../../Composables/usePermission'
 
@@ -22,31 +23,44 @@ const search = useForm({ search: props.filters.search ?? '' })
 </script>
 
 <template>
-    <div class="pcdr-enter">
+    <div class="pc-stack pcdr-enter">
         <Head :title="t('permissions_page.title')" />
-        <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
-            <p class="text-sm text-muted">{{ t('permissions_page.subtitle') }}</p>
-            <Link v-if="can('permissions.create')" :href="localePath('/admin/permissions/create')" class="focus-ring rounded-md bg-navy-700 px-4 py-2.5 text-sm font-semibold text-white">
-                {{ t('permissions_page.new') }}
-            </Link>
+        <div class="pc-page-actions">
+            <Link v-if="can('permissions.create')" :href="localePath('/admin/permissions/create')" class="pc-btn pc-btn--primary">{{ t('permissions_page.new') }}</Link>
         </div>
         <Card>
-            <form class="mb-5 flex flex-wrap items-end gap-3" @submit.prevent="search.get(localePath('/admin/permissions'), { preserveState: true })">
-                <div class="min-w-64 flex-1"><TextField v-model="search.search" name="search" :label="t('search')" /></div>
-                <Button type="submit" variant="secondary">{{ t('search') }}</Button>
+            <form class="pc-form-grid" @submit.prevent="search.get(localePath('/admin/permissions'), { preserveState: true })">
+                <TextField v-model="search.search" name="search" :label="t('search')" />
+                <div class="pc-field" style="align-self: end"><Button type="submit" variant="secondary">{{ t('search') }}</Button></div>
             </form>
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[620px] text-sm">
-                    <thead><tr class="border-b border-subtle text-muted"><th class="py-3 text-start">{{ t('permissions_page.module') }}</th><th class="py-3 text-start">{{ t('roles_page.key') }}</th><th class="py-3 text-start">{{ t('users_page.name') }}</th><th class="py-3 text-start">{{ t('permissions_page.protected') }}</th><th class="py-3 text-start">{{ t('actions') }}</th></tr></thead>
-                    <tbody>
-                        <tr v-for="permission in permissions.data" :key="permission.id" class="border-b border-subtle last:border-0">
-                            <td class="py-3 text-muted" dir="ltr">{{ permission.module }}</td>
-                            <td class="py-3 font-medium text-ink" dir="ltr">{{ permission.key }}</td>
-                            <td class="py-3 text-muted">{{ permission.name }}</td>
-                            <td class="py-3"><Badge v-if="permission.is_protected" tone="warning">{{ t('permissions_page.protected') }}</Badge><span v-else>—</span></td>
-                            <td class="py-3"><Link :href="localePath(`/admin/permissions/${permission.id}/edit`)" class="focus-ring rounded border border-subtle px-2.5 py-1.5 text-xs">{{ t('edit') }}</Link></td>
+        </Card>
+        <Card>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead>
+                        <tr>
+                            <th>{{ t('permissions_page.module') }}</th>
+                            <th>{{ t('roles_page.key') }}</th>
+                            <th>{{ t('users_page.name') }}</th>
+                            <th>{{ t('permissions_page.protected') }}</th>
+                            <th>{{ t('actions') }}</th>
                         </tr>
-                        <tr v-if="!permissions.data.length"><td colspan="5" class="py-8 text-center text-muted">{{ t('no_results') }}</td></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="permission in permissions.data" :key="permission.id">
+                            <td class="pc-directional">{{ permission.module }}</td>
+                            <td class="pc-table__primary pc-directional">{{ permission.key }}</td>
+                            <td>{{ permission.name }}</td>
+                            <td><Badge v-if="permission.is_protected" tone="warning">{{ t('permissions_page.protected') }}</Badge><span v-else>—</span></td>
+                            <td>
+                                <div class="pc-table__actions">
+                                    <Link :href="localePath(`/admin/permissions/${permission.id}/edit`)" class="pc-btn pc-btn--secondary pc-btn--sm">{{ t('edit') }}</Link>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="!permissions.data.length">
+                            <td colspan="5"><EmptyState :title="t('no_results')" icon="shield" /></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

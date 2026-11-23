@@ -6,7 +6,9 @@ import Badge from '../../../Components/Ui/Badge.vue'
 import Pagination from '../../../Components/Ui/Pagination.vue'
 import TextField from '../../../Components/Ui/TextField.vue'
 import Button from '../../../Components/Ui/Button.vue'
+import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
 import { useLocale } from '../../../Composables/useLocale'
+import { useI18n } from '../../../composables/useI18n'
 import { usePermission } from '../../../Composables/usePermission'
 
 defineOptions({ layout: AppLayout })
@@ -17,6 +19,7 @@ const props = defineProps({
 })
 
 const { t, localePath } = useLocale()
+const { t: tWebsite } = useI18n()
 const { can } = usePermission()
 const search = useForm({ search: props.filters.search ?? '' })
 
@@ -32,55 +35,57 @@ function toggleStatus(user) {
 </script>
 
 <template>
-    <div class="pcdr-enter">
+    <div class="pc-stack pcdr-enter">
         <Head :title="t('users_page.title')" />
-        <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
-            <p class="text-sm text-muted">{{ t('users_page.subtitle') }}</p>
-            <Link v-if="can('users.create')" :href="localePath('/admin/users/create')" class="focus-ring rounded-md bg-navy-700 px-4 py-2.5 text-sm font-semibold text-white">
+
+        <div class="pc-page-actions">
+            <Link v-if="can('users.create')" :href="localePath('/admin/users/create')" class="pc-btn pc-btn--primary">
                 {{ t('users_page.new') }}
             </Link>
         </div>
 
         <Card>
-            <form class="mb-5 flex flex-wrap items-end gap-3" @submit.prevent="applySearch">
-                <div class="min-w-64 flex-1">
-                    <TextField v-model="search.search" name="search" :label="t('search')" />
+            <form class="pc-form-grid" @submit.prevent="applySearch">
+                <TextField v-model="search.search" name="search" :label="t('search')" />
+                <div class="pc-field" style="align-self: end">
+                    <Button type="submit" variant="secondary">{{ t('search') }}</Button>
                 </div>
-                <Button type="submit" variant="secondary">{{ t('search') }}</Button>
             </form>
+        </Card>
 
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[760px] border-collapse text-sm">
+        <Card>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
                     <thead>
-                        <tr class="border-b border-subtle text-start text-muted">
-                            <th class="py-3 text-start font-medium">{{ t('users_page.name') }}</th>
-                            <th class="py-3 text-start font-medium">{{ t('users_page.email') }}</th>
-                            <th class="py-3 text-start font-medium">{{ t('status') }}</th>
-                            <th class="py-3 text-start font-medium">{{ t('users_page.roles') }}</th>
-                            <th class="py-3 text-start font-medium">{{ t('actions') }}</th>
+                        <tr>
+                            <th>{{ t('users_page.name') }}</th>
+                            <th>{{ t('users_page.email') }}</th>
+                            <th>{{ t('status') }}</th>
+                            <th>{{ t('users_page.roles') }}</th>
+                            <th>{{ t('actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="user in users.data" :key="user.id" class="border-b border-subtle last:border-0">
-                            <td class="py-3 font-medium text-ink">
+                        <tr v-for="user in users.data" :key="user.id">
+                            <td class="pc-table__primary">
                                 {{ user.name }}
                                 <Badge v-if="user.is_platform_owner" tone="success" class="ms-2">{{ t('users_page.platform_owner') }}</Badge>
                             </td>
-                            <td class="py-3 text-muted" dir="ltr">{{ user.email }}</td>
-                            <td class="py-3"><Badge :tone="user.status === 'active' ? 'success' : 'warning'">{{ user.status }}</Badge></td>
-                            <td class="py-3 text-muted">{{ user.roles.join(', ') || '—' }}</td>
-                            <td class="py-3">
-                                <div class="flex flex-wrap gap-2">
-                                    <Link :href="localePath(`/admin/users/${user.id}`)" class="focus-ring rounded border border-subtle px-2.5 py-1.5 text-xs">{{ t('view') }}</Link>
-                                    <Link v-if="!user.is_platform_owner && can('users.update')" :href="localePath(`/admin/users/${user.id}/edit`)" class="focus-ring rounded border border-subtle px-2.5 py-1.5 text-xs">{{ t('edit') }}</Link>
-                                    <button v-if="!user.is_platform_owner && can('users.update')" type="button" class="focus-ring rounded border border-subtle px-2.5 py-1.5 text-xs" @click="toggleStatus(user)">
-                                        {{ user.status === 'active' ? 'Deactivate' : 'Activate' }}
+                            <td class="pc-directional">{{ user.email }}</td>
+                            <td><Badge :tone="user.status === 'active' ? 'success' : 'warning'">{{ user.status }}</Badge></td>
+                            <td>{{ user.roles.join(', ') || '—' }}</td>
+                            <td>
+                                <div class="pc-table__actions">
+                                    <Link :href="localePath(`/admin/users/${user.id}`)" class="pc-btn pc-btn--secondary pc-btn--sm">{{ t('view') }}</Link>
+                                    <Link v-if="!user.is_platform_owner && can('users.update')" :href="localePath(`/admin/users/${user.id}/edit`)" class="pc-btn pc-btn--secondary pc-btn--sm">{{ t('edit') }}</Link>
+                                    <button v-if="!user.is_platform_owner && can('users.update')" type="button" class="pc-btn pc-btn--ghost pc-btn--sm" @click="toggleStatus(user)">
+                                        {{ user.status === 'active' ? tWebsite('ui.inactive') : tWebsite('ui.active') }}
                                     </button>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="!users.data.length">
-                            <td colspan="5" class="py-8 text-center text-muted">{{ t('no_results') }}</td>
+                            <td colspan="5"><EmptyState :title="t('no_results')" icon="users" /></td>
                         </tr>
                     </tbody>
                 </table>

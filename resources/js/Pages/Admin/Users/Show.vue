@@ -4,7 +4,6 @@ import AppLayout from '../../../Layouts/AppLayout.vue'
 import Card from '../../../Components/Ui/Card.vue'
 import Badge from '../../../Components/Ui/Badge.vue'
 import Button from '../../../Components/Ui/Button.vue'
-import Alert from '../../../Components/Ui/Alert.vue'
 import { useLocale } from '../../../Composables/useLocale'
 
 defineOptions({ layout: AppLayout })
@@ -17,26 +16,25 @@ const resetForm = useForm({})
 <template>
     <Card>
         <Head :title="target.name" />
-        <Alert v-if="Object.keys(resetForm.errors).length" type="error" :message="Object.values(resetForm.errors)[0]" class="mb-5" />
-        <dl class="grid gap-5 sm:grid-cols-2">
-            <div>
-                <dt class="text-xs text-muted">{{ t('users_page.name') }}</dt>
-                <dd class="mt-1 font-medium text-ink">{{ target.name }}</dd>
+        <dl class="pc-detail-list">
+            <div class="pc-detail-list__item">
+                <dt>{{ t('users_page.name') }}</dt>
+                <dd>{{ target.name }}</dd>
             </div>
-            <div>
-                <dt class="text-xs text-muted">{{ t('users_page.email') }}</dt>
-                <dd class="mt-1 text-ink" dir="ltr">{{ target.email }}</dd>
+            <div class="pc-detail-list__item">
+                <dt>{{ t('users_page.email') }}</dt>
+                <dd class="pc-directional">{{ target.email }}</dd>
             </div>
-            <div>
-                <dt class="text-xs text-muted">{{ t('status') }}</dt>
-                <dd class="mt-1"><Badge :tone="target.status === 'active' ? 'success' : 'warning'">{{ target.status }}</Badge></dd>
+            <div class="pc-detail-list__item">
+                <dt>{{ t('status') }}</dt>
+                <dd><Badge :tone="target.status === 'active' ? 'success' : 'warning'">{{ target.status }}</Badge></dd>
             </div>
-            <div>
-                <dt class="text-xs text-muted">{{ t('users_page.roles') }}</dt>
-                <dd class="mt-1 text-ink">{{ target.roles.map((role) => role.name).join(', ') || '—' }}</dd>
+            <div class="pc-detail-list__item">
+                <dt>{{ t('users_page.roles') }}</dt>
+                <dd>{{ target.roles.map((role) => role.name).join(', ') || '—' }}</dd>
             </div>
         </dl>
-        <div class="mt-6">
+        <div class="pc-form-actions">
             <Button variant="secondary" :processing="resetForm.processing" @click="resetForm.post(localePath(`/admin/users/${target.id}/reset-password`))">
                 {{ t('reset_link_sent') }}
             </Button>

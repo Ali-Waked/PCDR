@@ -1,9 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
-import CmsLayout from '../../../Layouts/CmsLayout.vue'
-import StatusPill from '../../../Components/StatusPill.vue'
-import EmptyState from '../../../Components/EmptyState.vue'
+import CmsDashboardLayout from '../../../Layouts/CmsDashboardLayout.vue'
+import CmsStatusBadge from '../../../Components/Dashboard/CmsStatusBadge.vue'
+import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
+import UiIcon from '../../../Components/Dashboard/UiIcon.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -32,6 +33,7 @@ const segments = {
 
 const basePath = computed(() => localPath(`cms/${segments[props.routeBase] || props.resource}`))
 const isCreate = computed(() => props.record === null)
+const activeLocale = ref('ar')
 
 function initialExtras() {
     const attrs = props.record?.attributes || {}
@@ -80,6 +82,8 @@ function initialExtras() {
             return {}
     }
 }
+
+const hasExtras = computed(() => Object.keys(initialExtras()).length > 0)
 
 const form = useForm({
     status: props.record?.status || 'draft',
@@ -280,282 +284,289 @@ function submit() {
 
     form.put(url, { preserveScroll: true })
 }
-
-function dateValue(key) {
-    return form[key] ? String(form[key]).slice(0, 10) : ''
-}
 </script>
 
 <template>
-    <CmsLayout :title="isCreate ? t('cms_new_item') : t('cms_edit')" :subtitle="label">
-        <div class="cms-toolbar">
-            <Link :href="basePath" class="btn btn-secondary btn-small">{{ t('ui.back_to_list') }}</Link>
-            <StatusPill v-if="record" :status="record.status" />
-            <button class="btn btn-secondary btn-small" type="button" @click="togglePreview">{{ t('cms_preview') }}</button>
-        </div>
+    <CmsDashboardLayout :title="isCreate ? t('cms_new_item') : t('cms_edit')" :subtitle="label">
+        <div class="pc-stack pcdr-enter">
+            <div class="pc-toolbar">
+                <Link :href="basePath" class="pc-btn pc-btn--secondary pc-btn--sm">
+                    <UiIcon name="arrowRight" :size="15" />
+                    {{ t('ui.back_to_list') }}
+                </Link>
+                <CmsStatusBadge v-if="record" :status="record.status" />
+                <div class="pc-toolbar__spacer" />
+                <button class="pc-btn pc-btn--secondary pc-btn--sm" type="button" @click="togglePreview">
+                    <UiIcon :name="showPreview ? 'eyeOff' : 'eye'" :size="15" />
+                    {{ showPreview ? t('cms_close') : t('cms_preview') }}
+                </button>
+            </div>
 
-        <form @submit.prevent="submit">
-            <div class="cms-form-grid cms-form-grid--split">
-                <div>
-                    <section class="cms-card">
-                        <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ t('cms_translations') }}</h2>
-                        <div v-for="code in locales" :key="code" class="translation-pane">
-                            <h3 class="small-caps">{{ code === 'ar' ? t('cms_arabic') : t('cms_english') }}</h3>
-                            <div class="form-grid">
-                                <div v-for="(value, field) in form.translations[code]" :key="`${code}-${field}`" class="field">
-                                    <label class="label" :for="`translation-${code}-${field}`">{{ fieldLabel(field) }} <span class="hint">{{ ['title', 'slug'].includes(field) ? t('cms_required') : t('cms_optional') }}</span></label>
-                                    <div v-if="isRichField(field)" class="rich-toolbar" role="toolbar" :aria-label="t('cms_toolbar')">
-                                        <span class="small-caps">{{ t('cms_toolbar') }}</span>
-                                        <button class="btn btn-ghost btn-small" type="button" :title="t('cms_toolbar_bold')" @click="wrapSelection(code, field, '<strong>', '</strong>')">{{ t('cms_toolbar_bold') }}</button>
-                                        <button class="btn btn-ghost btn-small" type="button" :title="t('cms_toolbar_italic')" @click="wrapSelection(code, field, '<em>', '</em>')">{{ t('cms_toolbar_italic') }}</button>
-                                        <button class="btn btn-ghost btn-small" type="button" :title="t('cms_toolbar_heading')" @click="wrapSelection(code, field, '<h3>', '</h3>')">{{ t('cms_toolbar_heading') }}</button>
-                                        <button class="btn btn-ghost btn-small" type="button" :title="t('cms_toolbar_list')" @click="wrapList(code, field)">{{ t('cms_toolbar_list') }}</button>
-                                        <button class="btn btn-ghost btn-small" type="button" :title="t('cms_toolbar_link')" @click="insertLink(code, field)">{{ t('cms_toolbar_link') }}</button>
-                                        <button class="btn btn-ghost btn-small" type="button" :title="t('cms_toolbar_quote')" @click="wrapSelection(code, field, '<blockquote>', '</blockquote>')">{{ t('cms_toolbar_quote') }}</button>
-                                    </div>
-                                    <textarea
-                                        v-if="isLongField(field)"
-                                        :id="`translation-${code}-${field}`"
-                                        :ref="(el) => setFieldRef(`${code}.${field}`, el)"
-                                        v-model="form.translations[code][field]"
-                                        class="textarea"
-                                        :rows="field === 'body' ? 8 : 4"
-                                        :aria-invalid="!! form.errors[`translations.${code}.${field}`]"
-                                    ></textarea>
-                                    <input
-                                        v-else
-                                        :id="`translation-${code}-${field}`"
-                                        v-model="form.translations[code][field]"
-                                        class="input"
-                                        type="text"
-                                        :dir="['slug', 'canonical_url', 'og_image'].includes(field) ? 'ltr' : undefined"
-                                        :aria-invalid="!! form.errors[`translations.${code}.${field}`]"
+            <form class="pc-stack" @submit.prevent="submit">
+                <div class="pc-grid pc-grid--content">
+                    <div class="pc-stack">
+                        <section class="pc-card">
+                            <div class="pc-card__head">
+                                <div>
+                                    <h2 class="pc-card__title">{{ t('cms_translations') }}</h2>
+                                    <p class="pc-card__subtitle">{{ t('ui.dashboard_editorial') }}</p>
+                                </div>
+                                <div class="pc-tabs" role="tablist" :aria-label="t('cms_translations')">
+                                    <button
+                                        v-for="code in locales"
+                                        :key="`tab-${code}`"
+                                        type="button"
+                                        class="pc-tab"
+                                        :class="{ 'is-active': activeLocale === code }"
+                                        :aria-selected="activeLocale === code ? 'true' : 'false'"
+                                        @click="activeLocale = code"
                                     >
-                                    <span v-if="form.errors[`translations.${code}.${field}`]" class="error" role="alert">{{ form.errors[`translations.${code}.${field}`] }}</span>
+                                        {{ code === 'ar' ? t('cms_arabic') : t('cms_english') }}
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                            <div class="pc-card__body pc-stack">
+                                <div
+                                    v-for="code in locales"
+                                    :key="code"
+                                    v-show="activeLocale === code"
+                                    class="pc-translation-pane"
+                                >
+                                    <div v-for="(value, field) in form.translations[code]" :key="`${code}-${field}`" class="pc-field">
+                                        <label class="pc-label" :for="`translation-${code}-${field}`">
+                                            {{ fieldLabel(field) }}
+                                            <span class="pc-label__optional">{{ ['title', 'slug'].includes(field) ? t('cms_required') : t('cms_optional') }}</span>
+                                        </label>
 
-                    <section v-if="showPreview" class="cms-card">
-                        <div class="cms-card__head">
-                            <h2 style="font-size: 1.05rem; margin: 0">{{ t('cms_preview') }}</h2>
-                            <button class="btn btn-ghost btn-small" type="button" @click="togglePreview">{{ t('cms_close') }}</button>
-                        </div>
-                        <div v-for="entry in previewEntries" :key="entry.key" class="preview-entry">
-                            <h3 class="small-caps">{{ entry.heading }}</h3>
-                            <p class="preview-text">{{ entry.text }}</p>
-                        </div>
-                    </section>
-                </div>
-
-                <div>
-                    <section class="cms-card">
-                        <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ t('cms_basic_data') }}</h2>
-                        <input type="hidden" :value="form.status" name="status">
-                        <div class="form-grid">
-                            <label class="field">
-                                <span>{{ t('cms_publish_status') }}</span>
-                                <select class="select" :value="form.status" @change="applyTransition($event.target.value)">
-                                    <option v-for="status in allowedStatuses" :key="status.value" :value="status.value">{{ status.label }}</option>
-                                </select>
-                            </label>
-                            <label class="field">
-                                <span>{{ t('published_on') }}</span>
-                                <input v-model="form.published_at" class="input" type="date" dir="ltr">
-                            </label>
-                            <label class="field">
-                                <span>{{ t('cms_order') }}</span>
-                                <input v-model.number="form.display_order" class="input" type="number" min="0" dir="ltr">
-                            </label>
-                        </div>
-                    </section>
-
-                    <section v-if="Object.keys(initialExtras()).length" class="cms-card">
-                        <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ t('cms_relations') }}</h2>
-                        <div class="form-grid">
-                            <template v-if="resource === 'pages'">
-                                <label class="field">
-                                    <span>{{ t('parent_page') }}</span>
-                                    <input v-model="form.parent_id" class="input" type="number" min="1" dir="ltr">
-                                </label>
-                                <label class="checkbox-row"><input v-model="form.is_system" type="checkbox"><span>{{ t('institution') }}</span></label>
-                            </template>
-
-                            <template v-if="resource === 'pillars'">
-                                <label class="field"><span>Code</span><input v-model="form.code" class="input" type="text" maxlength="2" dir="ltr"></label>
-                                <label class="checkbox-row"><input v-model="form.is_featured" type="checkbox"><span>{{ t('cms_section_enabled') }}</span></label>
-                            </template>
-
-                            <template v-if="resource === 'programs'">
-                                <label class="field"><span>{{ t('navigation.pillars') }}</span>
-                                    <select v-model="form.strategic_pillar_id" class="select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('start') }}</span><input v-model="form.start_date" class="input" type="date" dir="ltr"></label>
-                                <label class="field"><span>{{ t('end') }}</span><input v-model="form.end_date" class="input" type="date" dir="ltr"></label>
-                            </template>
-
-                            <template v-if="resource === 'projects'">
-                                <label class="field"><span>{{ t('ui.cms_programs') }}</span>
-                                    <select v-model="form.program_id" class="select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.programs || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('navigation.pillars') }}</span>
-                                    <select v-model="form.strategic_pillar_id" class="select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('cms_publish_status') }}</span>
-                                    <select v-model="form.project_status" class="select"><option v-for="item in options.projectStatuses || []" :key="item.value" :value="item.value">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('start') }}</span><input v-model="form.start_date" class="input" type="date" dir="ltr"></label>
-                                <label class="field"><span>{{ t('end') }}</span><input v-model="form.end_date" class="input" type="date" dir="ltr"></label>
-                            </template>
-
-                            <template v-if="resource === 'news'">
-                                <label class="field"><span>{{ t('ui.category') }}</span>
-                                    <select v-model="form.article_category_id" class="select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.categories || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('navigation.pillars') }}</span>
-                                    <select v-model="form.strategic_pillar_id" class="select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('activity') }}</span><input v-model="form.event_date" class="input" type="date" dir="ltr"></label>
-                                <label class="checkbox-row"><input v-model="form.is_featured" type="checkbox"><span>{{ t('cms_section_enabled') }}</span></label>
-                                <fieldset v-if="options.tags?.length" style="border: 0; padding: 0; margin: 0">
-                                    <legend class="label">{{ t('available_options') }}</legend>
-                                    <label v-for="tag in options.tags" :key="tag.id" class="checkbox-row"><input v-model="form.tags" type="checkbox" :value="tag.id"><span>{{ tag.label }}</span></label>
-                                </fieldset>
-                            </template>
-
-                            <template v-if="resource === 'publications'">
-                                <label class="field"><span>{{ t('ui.category') }}</span>
-                                    <select v-model="form.category" class="select"><option v-for="item in options.categories || []" :key="item.value" :value="item.value">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('navigation.pillars') }}</span>
-                                    <select v-model="form.strategic_pillar_id" class="select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
-                                </label>
-                                <label class="field"><span>{{ t('published_on') }}</span><input v-model="form.publication_date" class="input" type="date" dir="ltr"></label>
-                                <label class="field"><span>{{ t('version') }}</span><input v-model="form.version" class="input" type="text" maxlength="32" dir="ltr"></label>
-                                <label class="checkbox-row"><input v-model="form.is_restricted" type="checkbox"><span>{{ t('cms_restricted_file') }}</span></label>
-                            </template>
-
-                            <div v-for="field in mediaFields" :key="`media-${field}`" class="field media-picker">
-                                <span class="label">{{ mediaFieldLabel(field) }}</span>
-                                <div class="media-picker__current">
-                                    <img
-                                        v-if="selectedMedia(field)?.url && (! selectedMedia(field)?.type || selectedMedia(field)?.type === 'image')"
-                                        class="media-picker__thumb"
-                                        :src="selectedMedia(field).url"
-                                        :alt="selectedMedia(field).alt || selectedMedia(field).name"
-                                        loading="lazy"
-                                    >
-                                    <span class="media-picker__name">{{ selectedMedia(field)?.name || t('cms_select_media') }}</span>
-                                    <button class="btn btn-secondary btn-small" type="button" @click="toggleMediaPicker(field)">{{ selectedMedia(field) ? t('cms_edit') : t('cms_select_media') }}</button>
-                                    <button v-if="selectedMedia(field)" class="btn btn-danger btn-small" type="button" @click="clearMedia(field)">{{ t('cms_remove_item') }}</button>
-                                </div>
-                                <div v-if="openMediaPickers[field]" class="media-picker__list">
-                                    <span class="small-caps">{{ t('cms_media_picker') }}</span>
-                                    <div v-if="mediaOptions.length" class="media-picker__options">
-                                        <div v-for="item in mediaOptions" :key="item.id" class="media-picker__option">
-                                            <img
-                                                v-if="item.url && (! item.type || item.type === 'image')"
-                                                class="media-picker__thumb"
-                                                :src="item.url"
-                                                :alt="item.alt || item.name"
-                                                loading="lazy"
-                                            >
-                                            <span class="media-picker__name">{{ item.name }}</span>
-                                            <button class="btn btn-ghost btn-small" type="button" @click="insertMedia(field, item)">{{ t('cms_insert_media') }}</button>
+                                        <div v-if="isRichField(field)" class="pc-editor">
+                                            <div class="pc-editor__toolbar" role="toolbar" :aria-label="t('cms_toolbar')">
+                                                <span class="pc-eyebrow">{{ t('cms_toolbar') }}</span>
+                                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" :title="t('cms_toolbar_bold')" @click="wrapSelection(code, field, '<strong>', '</strong>')">{{ t('cms_toolbar_bold') }}</button>
+                                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" :title="t('cms_toolbar_italic')" @click="wrapSelection(code, field, '<em>', '</em>')">{{ t('cms_toolbar_italic') }}</button>
+                                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" :title="t('cms_toolbar_heading')" @click="wrapSelection(code, field, '<h3>', '</h3>')">{{ t('cms_toolbar_heading') }}</button>
+                                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" :title="t('cms_toolbar_list')" @click="wrapList(code, field)">{{ t('cms_toolbar_list') }}</button>
+                                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" :title="t('cms_toolbar_link')" @click="insertLink(code, field)">{{ t('cms_toolbar_link') }}</button>
+                                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" :title="t('cms_toolbar_quote')" @click="wrapSelection(code, field, '<blockquote>', '</blockquote>')">{{ t('cms_toolbar_quote') }}</button>
+                                            </div>
+                                            <textarea
+                                                :id="`translation-${code}-${field}`"
+                                                :ref="(el) => setFieldRef(`${code}.${field}`, el)"
+                                                v-model="form.translations[code][field]"
+                                                class="pc-textarea pc-editor__area"
+                                                :rows="field === 'body' ? 8 : 4"
+                                                :aria-invalid="!! form.errors[`translations.${code}.${field}`]"
+                                            ></textarea>
                                         </div>
+                                        <textarea
+                                            v-else-if="isLongField(field)"
+                                            :id="`translation-${code}-${field}`"
+                                            v-model="form.translations[code][field]"
+                                            class="pc-textarea"
+                                            :rows="field === 'body' ? 8 : 4"
+                                            :aria-invalid="!! form.errors[`translations.${code}.${field}`]"
+                                        ></textarea>
+                                        <input
+                                            v-else
+                                            :id="`translation-${code}-${field}`"
+                                            v-model="form.translations[code][field]"
+                                            class="pc-input"
+                                            type="text"
+                                            :dir="['slug', 'canonical_url', 'og_image'].includes(field) ? 'ltr' : undefined"
+                                            :aria-invalid="!! form.errors[`translations.${code}.${field}`]"
+                                        >
+                                        <span v-if="form.errors[`translations.${code}.${field}`]" class="pc-error" role="alert">{{ form.errors[`translations.${code}.${field}`] }}</span>
                                     </div>
-                                    <p v-else class="hint" style="margin: 0">{{ t('cms_select_media') }}</p>
-                                    <button class="btn btn-ghost btn-small" type="button" @click="closeMediaPicker(field)">{{ t('cms_close') }}</button>
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    <section v-if="revisions.length" class="cms-card">
-                        <h2 style="font-size: 1.05rem; margin-block-start: 0">{{ t('cms_revisions') }}</h2>
-                        <ul class="revision-list">
-                            <li v-for="revision in revisions" :key="revision.id">
-                                <div class="meta-row"><StatusPill :status="revision.status" /><span class="small-caps">{{ revision.locale?.toUpperCase() }}</span></div>
-                                <p style="margin: 0.35rem 0; font-size: 0.85rem">{{ revision.note }}</p>
-                                <span class="small-caps">{{ revision.actor || '—' }} · {{ formatDate(revision.created_at) }}</span>
-                            </li>
-                        </ul>
-                    </section>
-                    <EmptyState v-else :body="t('cms_no_revisions')" />
+                        <section v-if="showPreview" class="pc-card">
+                            <div class="pc-card__head">
+                                <h2 class="pc-card__title">{{ t('cms_preview') }}</h2>
+                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" @click="togglePreview">
+                                    <UiIcon name="close" :size="14" />
+                                    {{ t('cms_close') }}
+                                </button>
+                            </div>
+                            <div class="pc-card__body pc-stack">
+                                <div v-for="entry in previewEntries" :key="entry.key" class="pc-translation-pane">
+                                    <h3 class="pc-eyebrow">{{ entry.heading }}</h3>
+                                    <p class="pc-preview-text">{{ entry.text }}</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="pc-stack">
+                        <section class="pc-card">
+                            <div class="pc-card__head">
+                                <h2 class="pc-card__title">{{ t('cms_basic_data') }}</h2>
+                            </div>
+                            <div class="pc-card__body pc-form-grid">
+                                <input type="hidden" :value="form.status" name="status">
+                                <label class="pc-field">
+                                    <span class="pc-label">{{ t('cms_publish_status') }}</span>
+                                    <select class="pc-select" :value="form.status" @change="applyTransition($event.target.value)">
+                                        <option v-for="status in allowedStatuses" :key="status.value" :value="status.value">{{ status.label }}</option>
+                                    </select>
+                                </label>
+                                <label class="pc-field">
+                                    <span class="pc-label">{{ t('published_on') }}</span>
+                                    <input v-model="form.published_at" class="pc-input" type="date" dir="ltr">
+                                </label>
+                                <label class="pc-field">
+                                    <span class="pc-label">{{ t('cms_order') }}</span>
+                                    <input v-model.number="form.display_order" class="pc-input" type="number" min="0" dir="ltr">
+                                </label>
+                            </div>
+                        </section>
+
+                        <section v-if="hasExtras" class="pc-card">
+                            <div class="pc-card__head">
+                                <h2 class="pc-card__title">{{ t('cms_relations') }}</h2>
+                            </div>
+                            <div class="pc-card__body pc-form-grid">
+                                <template v-if="resource === 'pages'">
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('parent_page') }}</span>
+                                        <input v-model="form.parent_id" class="pc-input" type="number" min="1" dir="ltr">
+                                    </label>
+                                    <label class="pc-checkbox"><input v-model="form.is_system" type="checkbox"><span>{{ t('institution') }}</span></label>
+                                </template>
+
+                                <template v-if="resource === 'pillars'">
+                                    <label class="pc-field"><span class="pc-label">Code</span><input v-model="form.code" class="pc-input" type="text" maxlength="2" dir="ltr"></label>
+                                    <label class="pc-checkbox"><input v-model="form.is_featured" type="checkbox"><span>{{ t('cms_section_enabled') }}</span></label>
+                                </template>
+
+                                <template v-if="resource === 'programs'">
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('navigation.pillars') }}</span>
+                                        <select v-model="form.strategic_pillar_id" class="pc-select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field"><span class="pc-label">{{ t('start') }}</span><input v-model="form.start_date" class="pc-input" type="date" dir="ltr"></label>
+                                    <label class="pc-field"><span class="pc-label">{{ t('end') }}</span><input v-model="form.end_date" class="pc-input" type="date" dir="ltr"></label>
+                                </template>
+
+                                <template v-if="resource === 'projects'">
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('ui.cms_programs') }}</span>
+                                        <select v-model="form.program_id" class="pc-select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.programs || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('navigation.pillars') }}</span>
+                                        <select v-model="form.strategic_pillar_id" class="pc-select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('cms_publish_status') }}</span>
+                                        <select v-model="form.project_status" class="pc-select"><option v-for="item in options.projectStatuses || []" :key="item.value" :value="item.value">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field"><span class="pc-label">{{ t('start') }}</span><input v-model="form.start_date" class="pc-input" type="date" dir="ltr"></label>
+                                    <label class="pc-field"><span class="pc-label">{{ t('end') }}</span><input v-model="form.end_date" class="pc-input" type="date" dir="ltr"></label>
+                                </template>
+
+                                <template v-if="resource === 'news'">
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('ui.category') }}</span>
+                                        <select v-model="form.article_category_id" class="pc-select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.categories || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('navigation.pillars') }}</span>
+                                        <select v-model="form.strategic_pillar_id" class="pc-select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field"><span class="pc-label">{{ t('activity') }}</span><input v-model="form.event_date" class="pc-input" type="date" dir="ltr"></label>
+                                    <label class="pc-checkbox"><input v-model="form.is_featured" type="checkbox"><span>{{ t('cms_section_enabled') }}</span></label>
+                                    <fieldset v-if="options.tags?.length" class="pc-field pc-field--full">
+                                        <legend class="pc-label">{{ t('available_options') }}</legend>
+                                        <div class="pc-selection-list">
+                                            <label v-for="tag in options.tags" :key="tag.id" class="pc-checkbox"><input v-model="form.tags" type="checkbox" :value="tag.id"><span>{{ tag.label }}</span></label>
+                                        </div>
+                                    </fieldset>
+                                </template>
+
+                                <template v-if="resource === 'publications'">
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('ui.category') }}</span>
+                                        <select v-model="form.category" class="pc-select"><option v-for="item in options.categories || []" :key="item.value" :value="item.value">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field">
+                                        <span class="pc-label">{{ t('navigation.pillars') }}</span>
+                                        <select v-model="form.strategic_pillar_id" class="pc-select"><option value="">{{ t('cms_optional') }}</option><option v-for="item in options.pillars || []" :key="item.id" :value="item.id">{{ item.label }}</option></select>
+                                    </label>
+                                    <label class="pc-field"><span class="pc-label">{{ t('published_on') }}</span><input v-model="form.publication_date" class="pc-input" type="date" dir="ltr"></label>
+                                    <label class="pc-field"><span class="pc-label">{{ t('version') }}</span><input v-model="form.version" class="pc-input" type="text" maxlength="32" dir="ltr"></label>
+                                    <label class="pc-checkbox"><input v-model="form.is_restricted" type="checkbox"><span>{{ t('cms_restricted_file') }}</span></label>
+                                </template>
+
+                                <div v-for="field in mediaFields" :key="`media-${field}`" class="pc-field pc-field--full pc-picker">
+                                    <span class="pc-label">{{ mediaFieldLabel(field) }}</span>
+                                    <div class="pc-picker__current">
+                                        <img
+                                            v-if="selectedMedia(field)?.url && (! selectedMedia(field)?.type || selectedMedia(field)?.type === 'image')"
+                                            class="pc-media-cover"
+                                            :src="selectedMedia(field).url"
+                                            :alt="selectedMedia(field).alt || selectedMedia(field).name"
+                                            loading="lazy"
+                                        >
+                                        <span class="pc-picker__name">{{ selectedMedia(field)?.name || t('cms_select_media') }}</span>
+                                        <button class="pc-btn pc-btn--secondary pc-btn--sm" type="button" @click="toggleMediaPicker(field)">
+                                            {{ selectedMedia(field) ? t('ui.edit') : t('cms_select_media') }}
+                                        </button>
+                                        <button v-if="selectedMedia(field)" class="pc-btn pc-btn--danger pc-btn--sm" type="button" @click="clearMedia(field)">
+                                            {{ t('cms_remove_item') }}
+                                        </button>
+                                    </div>
+                                    <div v-if="openMediaPickers[field]" class="pc-picker__list">
+                                        <span class="pc-eyebrow">{{ t('cms_media_picker') }}</span>
+                                        <div v-if="mediaOptions.length" class="pc-stack">
+                                            <div v-for="item in mediaOptions" :key="item.id" class="pc-picker__option">
+                                                <img
+                                                    v-if="item.url && (! item.type || item.type === 'image')"
+                                                    class="pc-media-cover"
+                                                    :src="item.url"
+                                                    :alt="item.alt || item.name"
+                                                    loading="lazy"
+                                                >
+                                                <span class="pc-picker__name">{{ item.name }}</span>
+                                                <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" @click="insertMedia(field, item)">{{ t('cms_insert_media') }}</button>
+                                            </div>
+                                        </div>
+                                        <p v-else class="pc-hint">{{ t('cms_select_media') }}</p>
+                                        <button class="pc-btn pc-btn--ghost pc-btn--sm" type="button" @click="closeMediaPicker(field)">{{ t('cms_close') }}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section v-if="revisions.length" class="pc-card">
+                            <div class="pc-card__head">
+                                <h2 class="pc-card__title">{{ t('cms_revisions') }}</h2>
+                                <span class="pc-badge pc-badge--slate">{{ revisions.length }}</span>
+                            </div>
+                            <div class="pc-card__body pc-timeline">
+                                <article v-for="revision in revisions" :key="revision.id" class="pc-timeline__item">
+                                    <span class="pc-timeline__dot" aria-hidden="true"></span>
+                                    <div class="pc-table__actions">
+                                        <CmsStatusBadge :status="revision.status" />
+                                        <span class="pc-badge pc-badge--slate" dir="ltr">{{ revision.locale?.toUpperCase() }}</span>
+                                    </div>
+                                    <p class="pc-timeline__body">{{ revision.note }}</p>
+                                    <p class="pc-timeline__meta">{{ revision.actor || '—' }} · {{ formatDate(revision.created_at) }}</p>
+                                </article>
+                            </div>
+                        </section>
+                        <EmptyState v-else :title="t('cms_no_revisions')" icon="history" />
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-actions" style="margin-block-start: 1.25rem">
-                <button class="btn btn-primary" type="submit" :disabled="form.processing" :aria-busy="form.processing">{{ t('cms_save') }}</button>
-                <span v-if="form.errors.status" class="error" role="alert">{{ form.errors.status }}</span>
-            </div>
-        </form>
-    </CmsLayout>
+                <div class="pc-form-actions">
+                    <button class="pc-btn pc-btn--primary" type="submit" :disabled="form.processing" :aria-busy="form.processing">
+                        <UiIcon name="check" :size="16" />
+                        {{ t('cms_save') }}
+                    </button>
+                    <span v-if="form.errors.status" class="pc-error" role="alert">{{ form.errors.status }}</span>
+                </div>
+            </form>
+        </div>
+    </CmsDashboardLayout>
 </template>
-
-<style scoped>
-.translation-pane + .translation-pane {
-    margin-block-start: 1.5rem;
-    padding-block-start: 1.25rem;
-    border-block-start: 1px solid var(--line);
-}
-
-.rich-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    padding-block-end: 0.25rem;
-}
-
-.media-picker__current,
-.media-picker__option {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.media-picker__thumb {
-    inline-size: 40px;
-    block-size: 40px;
-    flex: none;
-    object-fit: cover;
-    border: 1px solid var(--line);
-    border-radius: 0.35rem;
-}
-
-.media-picker__name {
-    flex: 1;
-    min-inline-size: 0;
-    overflow-wrap: anywhere;
-    font-size: 0.85rem;
-}
-
-.media-picker__list {
-    display: grid;
-    gap: 0.4rem;
-    max-block-size: 220px;
-    padding: 0.5rem;
-    overflow: auto;
-    border: 1px solid var(--line);
-    border-radius: 0.5rem;
-}
-
-.media-picker__options {
-    display: grid;
-    gap: 0.35rem;
-}
-
-.preview-entry + .preview-entry {
-    margin-block-start: 1rem;
-    padding-block-start: 0.75rem;
-    border-block-start: 1px solid var(--line);
-}
-
-.preview-text {
-    margin: 0.25rem 0 0;
-    white-space: pre-wrap;
-    font-size: 0.9rem;
-}
-</style>

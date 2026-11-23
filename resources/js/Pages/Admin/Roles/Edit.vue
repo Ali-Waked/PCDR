@@ -6,7 +6,7 @@ import Card from '../../../Components/Ui/Card.vue'
 import TextField from '../../../Components/Ui/TextField.vue'
 import Button from '../../../Components/Ui/Button.vue'
 import Badge from '../../../Components/Ui/Badge.vue'
-import Alert from '../../../Components/Ui/Alert.vue'
+import FormSection from '../../../Components/Dashboard/FormSection.vue'
 import { useLocale } from '../../../Composables/useLocale'
 
 defineOptions({ layout: AppLayout })
@@ -29,41 +29,52 @@ function togglePermission(id) {
 </script>
 
 <template>
-    <div class="grid gap-5 xl:grid-cols-3">
+    <div class="pc-grid pc-grid--sidebar">
         <Head :title="role.name" />
-        <Card class="xl:col-span-1">
-            <Alert v-if="Object.keys(details.errors).length" type="error" :message="Object.values(details.errors)[0]" class="mb-5" />
-            <form class="space-y-5" @submit.prevent="details.put(localePath(`/admin/roles/${role.id}`))">
-                <TextField v-model="details.key" name="key" :label="t('roles_page.key')" required :disabled="role.is_system" :error="details.errors.key" dir="ltr" />
-                <TextField v-model="details.name" name="name" :label="t('users_page.name')" required :error="details.errors.name" />
-                <TextField v-model="details.description" name="description" :label="t('roles_page.description')" :error="details.errors.description" />
-                <Badge v-if="role.is_system">system</Badge>
-                <Button type="submit" :processing="details.processing">{{ t('save') }}</Button>
+        <Card>
+            <form @submit.prevent="details.put(localePath(`/admin/roles/${role.id}`))">
+                <FormSection :title="t('roles_page.new')" :hint="t('roles_page.key')">
+                    <div class="pc-stack">
+                        <TextField v-model="details.key" name="key" :label="t('roles_page.key')" required :disabled="role.is_system" :error="details.errors.key" dir="ltr" />
+                        <TextField v-model="details.name" name="name" :label="t('users_page.name')" required :error="details.errors.name" />
+                        <TextField v-model="details.description" name="description" :label="t('roles_page.description')" :error="details.errors.description" />
+                        <Badge v-if="role.is_system" tone="slate">system</Badge>
+                    </div>
+                </FormSection>
+                <div class="pc-form-actions">
+                    <Button type="submit" :processing="details.processing">{{ t('save') }}</Button>
+                </div>
             </form>
         </Card>
 
-        <Card class="xl:col-span-2">
-            <h2 class="mb-1 text-lg font-semibold text-navy-900">{{ t('roles_page.permissions') }}</h2>
-            <p class="mb-5 text-xs text-muted">{{ protectedCount }} protected permission(s) in catalog</p>
-            <Alert v-if="Object.keys(permissions.errors).length" type="error" :message="Object.values(permissions.errors)[0]" class="mb-5" />
-            <form class="space-y-6" @submit.prevent="permissions.put(localePath(`/admin/roles/${role.id}/permissions`))">
-                <fieldset v-for="group in permissionGroups" :key="group.module">
-                    <legend class="pcdr-label" dir="ltr">{{ group.module }}</legend>
-                    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        <label v-for="item in group.items" :key="item.id" class="flex min-h-11 items-start gap-2 rounded-md border border-subtle px-3 py-2 text-xs">
-                            <input class="mt-0.5" type="checkbox" :checked="permissions.permissions.includes(item.id)" @change="togglePermission(item.id)" />
-                            <span><span dir="ltr">{{ item.key }}</span><Badge v-if="item.is_protected" tone="warning" class="ms-1">{{ t('permissions_page.protected') }}</Badge></span>
-                        </label>
+        <Card>
+            <form @submit.prevent="permissions.put(localePath(`/admin/roles/${role.id}/permissions`))">
+                <FormSection :title="t('roles_page.permissions')" :hint="`${protectedCount} ${t('permissions_page.protected')}`">
+                    <div class="pc-stack">
+                        <fieldset v-for="group in permissionGroups" :key="group.module" class="pc-form-section">
+                            <legend class="pc-nav-label pc-directional">{{ group.module }}</legend>
+                            <div class="pc-form-grid">
+                                <label v-for="item in group.items" :key="item.id" class="pc-checkbox">
+                                    <input type="checkbox" :checked="permissions.permissions.includes(item.id)" @change="togglePermission(item.id)">
+                                    <span class="pc-directional">{{ item.key }}</span>
+                                    <Badge v-if="item.is_protected" tone="warning">{{ t('permissions_page.protected') }}</Badge>
+                                </label>
+                            </div>
+                        </fieldset>
                     </div>
-                </fieldset>
-                <Button type="submit" :processing="permissions.processing">{{ t('save') }}</Button>
+                </FormSection>
+                <div class="pc-form-actions">
+                    <Button type="submit" :processing="permissions.processing">{{ t('save') }}</Button>
+                </div>
             </form>
-
-            <div class="mt-8 border-t border-subtle pt-5">
-                <h3 class="text-sm font-semibold text-ink">{{ t('roles_page.members') }}</h3>
-                <ul class="mt-2 space-y-1 text-sm text-muted">
-                    <li v-for="member in role.users" :key="member.id">{{ member.name }} — {{ member.email }}</li>
-                    <li v-if="!role.users.length">{{ t('no_results') }}</li>
+            <div class="pc-form-section">
+                <h3 class="pc-card__title">{{ t('roles_page.members') }}</h3>
+                <ul class="pc-list">
+                    <li v-for="member in role.users" :key="member.id" class="pc-list__item">
+                        <span class="pc-list__title">{{ member.name }}</span>
+                        <span class="pc-list__meta pc-directional">{{ member.email }}</span>
+                    </li>
+                    <li v-if="!role.users.length" class="pc-list__item">{{ t('no_results') }}</li>
                 </ul>
             </div>
         </Card>

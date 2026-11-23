@@ -6,7 +6,7 @@ import Card from '../../../Components/Ui/Card.vue'
 import TextField from '../../../Components/Ui/TextField.vue'
 import Button from '../../../Components/Ui/Button.vue'
 import Badge from '../../../Components/Ui/Badge.vue'
-import Alert from '../../../Components/Ui/Alert.vue'
+import FormSection from '../../../Components/Dashboard/FormSection.vue'
 import { useLocale } from '../../../Composables/useLocale'
 
 defineOptions({ layout: AppLayout })
@@ -50,14 +50,18 @@ function submit() {
 <template>
     <Card>
         <Head :title="t('settings_page.title')" />
-        <p class="mb-5 text-sm text-muted">{{ t('settings_page.subtitle') }}</p>
-        <Alert v-if="Object.keys(form.errors).length" type="error" :message="Object.values(form.errors)[0]" class="mb-5" />
-        <form class="grid gap-5 md:grid-cols-2" @submit.prevent="submit">
-            <div v-for="definition in definitions" :key="definition.key">
-                <TextField v-model="draft[definition.key]" :name="definition.key" :label="definition.label" :error="form.errors[definition.key]" dir="auto" />
-                <Badge v-if="definition.public" class="mt-2">{{ t('settings_page.public') }}</Badge>
+        <form @submit.prevent="submit">
+            <FormSection :title="t('settings_page.title')" :hint="t('settings_page.subtitle')">
+                <div class="pc-form-grid">
+                    <div v-for="definition in definitions" :key="definition.key" class="pc-field">
+                        <TextField v-model="draft[definition.key]" :name="definition.key" :label="definition.label" :error="form.errors[definition.key]" dir="auto" />
+                        <Badge v-if="definition.public" tone="teal">{{ t('settings_page.public') }}</Badge>
+                    </div>
+                </div>
+            </FormSection>
+            <div class="pc-form-actions">
+                <Button type="submit" :processing="form.processing">{{ t('save') }}</Button>
             </div>
-            <div class="md:col-span-2"><Button type="submit" :processing="form.processing">{{ t('save') }}</Button></div>
         </form>
     </Card>
 </template>

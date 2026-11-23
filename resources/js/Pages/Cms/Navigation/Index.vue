@@ -1,5 +1,5 @@
 <script setup>
-import CmsLayout from '../../../Layouts/CmsLayout.vue'
+import CmsDashboardLayout from '../../../Layouts/CmsDashboardLayout.vue'
 import NavigationMenuEditor from '../../../Components/Cms/NavigationMenuEditor.vue'
 import { useI18n } from '../../../composables/useI18n'
 
@@ -12,7 +12,9 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <CmsLayout :title="t('ui.cms_navigation')" :subtitle="t('cms_auth_note')">
-        <NavigationMenuEditor v-for="menu in menus" :key="menu.id" :menu="menu" :route-keys="routeKeys" />
-    </CmsLayout>
+    <CmsDashboardLayout :title="t('ui.cms_navigation')" :subtitle="t('ui.dashboard_editorial')">
+        <div class="pc-stack pcdr-enter">
+            <NavigationMenuEditor v-for="menu in menus" :key="menu.id" :menu="menu" :route-keys="routeKeys" />
+        </div>
+    </CmsDashboardLayout>
 </template>

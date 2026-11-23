@@ -18,6 +18,12 @@
         </include>
     </source>
     <php>
+        <!--
+            Anchor test bootstrapping to the project root. Laravel 13 otherwise
+            infers the base path from the Composer loader directory, which is
+            wrong when vendor is symlinked from another Git worktree.
+        -->
+        <env name="APP_BASE_PATH" value="."/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_LOCALE" value="ar"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
