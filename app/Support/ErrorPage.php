@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Services\LocaleResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Throwable;
@@ -22,7 +23,12 @@ final class ErrorPage
      *     srStatus: string,
      *     actionsLabel: string,
      *     skipLabel: string,
+     *     suggestionsLabel: string,
+     *     adminLabel: string,
+     *     localeLabel: string,
+     *     admin: bool,
      *     homeLabel: string,
+     *     suggestions: list<array{label: string, href: string}>,
      *     actions: list<array{label: string, href: ?string, type: string, variant: string, icon: string}>
      * }
      */
@@ -37,6 +43,9 @@ final class ErrorPage
             ...self::copy($status, $locale),
             'homeLabel' => self::actionLabel('home', $locale),
             'actions' => self::actions($status, $locale, self::homeUrl($locale)),
+            'suggestions' => $status === 404 ? self::suggestions($locale) : [],
+            'admin' => self::isAdminPath($request),
+            'localeLabel' => self::translate('errors.common.locale_name', $locale),
         ];
     }
 
@@ -61,35 +70,21 @@ final class ErrorPage
 
     public static function homeUrl(string $locale): string
     {
-        if (Route::has('public.home')) {
-            try {
-                return route('public.home', ['locale' => $locale]);
-            } catch (Throwable) {
-                // A named route may be unavailable while routes are being rebuilt.
-            }
-        }
-
-        return url('/'.$locale);
+        return self::localizedUrl('public.home', $locale) ?? url('/'.$locale);
     }
 
     public static function actionLabel(string $action, string $locale): string
     {
-        $labels = [
-            'home' => [
-                'ar' => 'العودة إلى الصفحة الرئيسية',
-                'en' => 'Return to homepage',
-            ],
-            'back' => [
-                'ar' => 'العودة إلى الصفحة السابقة',
-                'en' => 'Go back',
-            ],
-            'reload' => [
-                'ar' => 'إعادة تحميل الصفحة',
-                'en' => 'Reload page',
-            ],
+        $keys = [
+            'home' => 'errors.common.home',
+            'back' => 'errors.common.back',
+            'reload' => 'errors.common.reload',
+            'contact' => 'errors.common.contact',
         ];
 
-        return $labels[$action][$locale] ?? $labels[$action]['ar'];
+        $key = $keys[$action] ?? $keys['home'];
+
+        return self::translate($key, $locale);
     }
 
     /**
@@ -100,56 +95,29 @@ final class ErrorPage
      *     description: string,
      *     srStatus: string,
      *     actionsLabel: string,
-     *     skipLabel: string
+     *     skipLabel: string,
+     *     suggestionsLabel: string,
+     *     adminLabel: string
      * }
      */
     private static function copy(int $status, string $locale): array
     {
-        return match ($status) {
-            403 => [
-                'pageTitle' => $locale === 'ar' ? 'الوصول مقيّد | PCDR' : 'Access restricted | PCDR',
-                'eyebrow' => $locale === 'ar' ? 'HTTP 403 · الوصول مقيّد' : 'HTTP 403 · Access restricted',
-                'title' => $locale === 'ar'
-                    ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
-                    : "You don't have permission to access this page.",
-                'description' => $locale === 'ar'
-                    ? 'عذراً، لا تملك الصلاحيات اللازمة للوصول إلى هذا المحتوى. إذا كنت تعتقد أن هذا غير صحيح، يرجى التواصل مع المسؤول المختص عبر قنوات التواصل الرسمية.'
-                    : 'Sorry, you do not have the required permissions to access this content. If you believe this is an error, please contact the appropriate administrator through the official channels.',
-                'srStatus' => $locale === 'ar'
-                    ? 'حالة الخطأ: 403، الوصول مقيّد.'
-                    : 'Error status: 403, access restricted.',
-                'actionsLabel' => $locale === 'ar' ? 'خيارات التنقل' : 'Navigation options',
-                'skipLabel' => $locale === 'ar' ? 'تخطَّ إلى المحتوى الرئيسي' : 'Skip to main content',
-            ],
-            404 => [
-                'pageTitle' => $locale === 'ar' ? 'الصفحة غير موجودة | PCDR' : 'Page not found | PCDR',
-                'eyebrow' => $locale === 'ar' ? 'HTTP 404 · الصفحة غير موجودة' : 'HTTP 404 · Page unavailable',
-                'title' => $locale === 'ar'
-                    ? 'عذراً، لم نتمكن من العثور على هذه الصفحة'
-                    : "We couldn't find this page.",
-                'description' => $locale === 'ar'
-                    ? 'قد يكون الرابط غير صحيح، أو أن الصفحة لم تعد متاحة. يمكنك العودة إلى الصفحة الرئيسية ومتابعة استكشاف موقعنا.'
-                    : 'The link may be incorrect, or the page may no longer be available. You can return to the homepage and continue exploring our website.',
-                'srStatus' => $locale === 'ar'
-                    ? 'حالة الخطأ: 404، الصفحة غير موجودة.'
-                    : 'Error status: 404, page not found.',
-                'actionsLabel' => $locale === 'ar' ? 'خيارات التنقل' : 'Navigation options',
-                'skipLabel' => $locale === 'ar' ? 'تخطَّ إلى المحتوى الرئيسي' : 'Skip to main content',
-            ],
-            default => [
-                'pageTitle' => $locale === 'ar' ? 'حدث خطأ غير متوقع | PCDR' : 'Something went wrong | PCDR',
-                'eyebrow' => $locale === 'ar' ? 'HTTP 500 · خطأ تقني' : 'HTTP 500 · Technical problem',
-                'title' => $locale === 'ar' ? 'حدث خطأ غير متوقع' : 'Something went wrong.',
-                'description' => $locale === 'ar'
-                    ? 'نواجه مشكلة تقنية أثناء معالجة طلبك. نعتذر عن هذا الإزعاج. يرجى المحاولة مرة أخرى بعد قليل.'
-                    : 'We encountered a technical problem while processing your request. We apologize for the inconvenience. Please try again shortly.',
-                'srStatus' => $locale === 'ar'
-                    ? 'حالة الخطأ: 500، حدث خطأ غير متوقع.'
-                    : 'Error status: 500, something went wrong.',
-                'actionsLabel' => $locale === 'ar' ? 'خيارات التنقل' : 'Navigation options',
-                'skipLabel' => $locale === 'ar' ? 'تخطَّ إلى المحتوى الرئيسي' : 'Skip to main content',
-            ],
+        $key = match ($status) {
+            403, 404 => (string) $status,
+            default => '500',
         };
+
+        return [
+            'pageTitle' => self::translate("errors.{$key}.page_title", $locale),
+            'eyebrow' => self::translate("errors.{$key}.eyebrow", $locale),
+            'title' => self::translate("errors.{$key}.title", $locale),
+            'description' => self::translate("errors.{$key}.description", $locale),
+            'srStatus' => self::translate("errors.{$key}.sr_status", $locale),
+            'actionsLabel' => self::translate('errors.common.navigation_options', $locale),
+            'skipLabel' => self::translate('errors.common.skip', $locale),
+            'suggestionsLabel' => self::translate('errors.common.suggestions', $locale),
+            'adminLabel' => self::translate('errors.common.admin_shell', $locale),
+        ];
     }
 
     /**
@@ -165,22 +133,95 @@ final class ErrorPage
             'icon' => 'home',
         ];
 
-        $secondary = $status === 500
-            ? [
+        $secondary = match ($status) {
+            404 => [
+                'label' => self::actionLabel('contact', $locale),
+                'href' => self::localizedUrl('public.contact', $locale),
+                'type' => 'link',
+                'variant' => 'secondary',
+                'icon' => 'contact',
+            ],
+            500 => [
                 'label' => self::actionLabel('reload', $locale),
                 'href' => null,
                 'type' => 'reload',
                 'variant' => 'secondary',
                 'icon' => 'reload',
-            ]
-            : [
+            ],
+            default => [
                 'label' => self::actionLabel('back', $locale),
                 'href' => null,
                 'type' => 'back',
                 'variant' => 'secondary',
                 'icon' => 'back',
-            ];
+            ],
+        };
 
         return [$home, $secondary];
+    }
+
+    /** @return list<array{label: string, href: string}> */
+    private static function suggestions(string $locale): array
+    {
+        $configured = (array) config('website.not_found_suggestions', []);
+        $suggestions = [];
+
+        foreach (array_slice($configured, 0, 5) as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $labelKey = (string) ($item['label'] ?? '');
+            $routeName = (string) ($item['route'] ?? '');
+            $translationKey = 'website.navigation.'.$labelKey;
+            $label = self::translate($translationKey, $locale);
+            $href = self::localizedUrl($routeName, $locale);
+
+            if ($label === $translationKey || $href === null) {
+                continue;
+            }
+
+            $suggestions[] = ['label' => $label, 'href' => $href];
+        }
+
+        return $suggestions;
+    }
+
+    private static function isAdminPath(Request $request): bool
+    {
+        $segments = array_values(array_filter(
+            explode('/', (string) $request->getPathInfo()),
+            static fn (string $segment): bool => $segment !== '',
+        ));
+
+        $resolver = new LocaleResolver;
+
+        if (isset($segments[0]) && $resolver->normalize($segments[0]) !== null) {
+            array_shift($segments);
+        }
+
+        $first = strtolower((string) ($segments[0] ?? ''));
+
+        return in_array($first, ['admin', 'cms', 'dashboard', 'operations', 'phase5'], true);
+    }
+
+    private static function localizedUrl(string $routeName, string $locale): ?string
+    {
+        if ($routeName === '' || ! Route::has($routeName)) {
+            return null;
+        }
+
+        try {
+            return route($routeName, ['locale' => $locale]);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private static function translate(string $key, string $locale): string
+    {
+        $value = __($key, [], $locale);
+
+        return is_string($value) ? $value : $key;
     }
 }

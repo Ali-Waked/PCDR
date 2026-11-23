@@ -33,6 +33,19 @@ return [
     'default_locale' => 'ar',
     'fallback_locale' => 'en',
 
+    /*
+     * Static navigation suggestions for the localized 404 page. Labels are
+     * resolved from lang/{locale}/website.php so the error page never needs a
+     * database-backed navigation menu.
+     */
+    'not_found_suggestions' => [
+        ['label' => 'about', 'route' => 'public.about'],
+        ['label' => 'pillars', 'route' => 'public.pillars.index'],
+        ['label' => 'programs', 'route' => 'public.programs.index'],
+        ['label' => 'news', 'route' => 'public.news.index'],
+        ['label' => 'contact', 'route' => 'public.contact'],
+    ],
+
     'description' => [
         'ar' => 'منصة مؤسسية تقدم الرؤية والرسالة والمحاور الاستراتيجية والبرامج المخططة وتقارير جمعية العمل التشاركي في الأزمات والكوارث الخيرية.',
         'en' => 'The institutional platform of the Participatory Community for Disaster Response (PCDR): vision, mission, strategic pillars, planned programmes and publications.',

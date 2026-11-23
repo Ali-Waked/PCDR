@@ -1,11 +1,12 @@
 @php
-    $locale = \App\Support\ErrorPage::locale(request());
-    $direction = \App\Support\Locale::direction($locale);
+    $error ??= \App\Support\ErrorPage::context(request(), 404);
+    $locale = $error['locale'];
+    $direction = $error['direction'];
     $organization = (string) config('website.name.'.$locale, $locale === 'ar' ? 'جمعية العمل التشاركي في الأزمات والكوارث الخيرية' : 'Participatory Community for Disaster Response');
     $region = (string) config('website.region.'.$locale, $locale === 'ar' ? 'قطاع غزة' : 'Gaza Strip');
     $homeUrl = \App\Support\ErrorPage::homeUrl($locale);
-    $homeLabel = \App\Support\ErrorPage::actionLabel('home', $locale);
-    $localeLabel = $locale === 'ar' ? 'العربية' : 'English';
+    $homeLabel = $error['homeLabel'];
+    $localeLabel = $error['localeLabel'];
 @endphp
 <!doctype html>
 <html lang="{{ $locale }}" dir="{{ $direction }}" data-locale="{{ $locale }}">
@@ -324,6 +325,55 @@
                 margin: 0;
             }
 
+            .pcdr-error__header-meta {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex: none;
+            }
+
+            .pcdr-error__admin {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.35rem 0.85rem;
+                border: 1px solid var(--pcdr-error-teal-100);
+                border-radius: 999px;
+                background: var(--pcdr-error-teal-100);
+                color: var(--pcdr-error-teal-700);
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+
+            .pcdr-error__suggestions {
+                margin-block-start: 2.5rem;
+                padding-block-start: 1.5rem;
+                border-block-start: 1px solid var(--pcdr-error-line);
+            }
+
+            .pcdr-error__suggestions h2 {
+                margin: 0 0 0.85rem;
+                color: var(--pcdr-error-navy-900);
+                font-size: 0.9rem;
+                font-weight: 700;
+            }
+
+            .pcdr-error__suggestions-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem 1.25rem;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .pcdr-error__suggestions-list a {
+                color: var(--pcdr-error-teal-700);
+                font-size: 0.92rem;
+                font-weight: 600;
+                text-decoration-color: var(--pcdr-error-sand);
+                text-underline-offset: 0.25em;
+            }
+
             @media (max-width: 600px) {
                 .pcdr-error__header {
                     align-items: flex-start;
@@ -365,7 +415,7 @@
         </style>
     </head>
     <body>
-        <div class="pcdr-error">
+        <div class="pcdr-error" data-shell="{{ $error['admin'] ? 'admin' : 'public' }}">
             <a class="pcdr-error__skip" href="#pcdr-error-main">@yield('skip-label')</a>
 
             <header class="pcdr-error__header">
@@ -382,7 +432,12 @@
                         <small>{{ $organization }}</small>
                     </span>
                 </a>
-                <span class="pcdr-error__locale">{{ $localeLabel }}</span>
+                <div class="pcdr-error__header-meta">
+                    @if ($error['admin'])
+                        <span class="pcdr-error__admin">{{ $error['adminLabel'] }}</span>
+                    @endif
+                    <span class="pcdr-error__locale">{{ $localeLabel }}</span>
+                </div>
             </header>
 
             <main class="pcdr-error__main" id="pcdr-error-main">
@@ -396,6 +451,13 @@
                         <nav class="pcdr-error__actions" aria-label="@yield('actions-label')">
                             @yield('actions')
                         </nav>
+
+                        @hasSection('suggestions')
+                            <section class="pcdr-error__suggestions" aria-labelledby="pcdr-error-suggestions">
+                                <h2 id="pcdr-error-suggestions">@yield('suggestions-label')</h2>
+                                @yield('suggestions')
+                            </section>
+                        @endif
                     </section>
 
                     <div class="pcdr-error__visual">

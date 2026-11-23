@@ -40,6 +40,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'locale' => SetWebsiteLocale::class,
         ]);
 
+        // Locale preference cookies are non-sensitive and may be set by the
+        // browser or a language switcher without Laravel's encryption wrapper.
+        $middleware->encryptCookies(except: ['pcdr_locale', 'locale']);
+
         // Inbound webhooks authenticate with a timestamped HMAC signature and
         // nonce replay protection rather than a browser CSRF token.
         $middleware->validateCsrfTokens(except: ['webhooks/inbound/*']);

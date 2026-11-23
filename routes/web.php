@@ -39,6 +39,11 @@ use App\Http\Controllers\Public\PublicationController;
 use App\Http\Controllers\Public\RobotsController;
 use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\StaticPageController;
+use App\Http\Middleware\EnsureDashboardFeatureAvailable;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectToLocalizedUrl;
+use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetWebsiteLocale;
 use App\Services\SiteSettings;
 use Illuminate\Support\Facades\Route;
 
@@ -297,3 +302,23 @@ Route::prefix('{locale}')
         require __DIR__.'/phase5.php';
 
     });
+
+// Unmatched requests may map to an existing localized page. A controller class
+// keeps the fallback serializable under `route:cache`. The fallback skips the
+// settings/user-data middleware so 404 and redirect responses stay independent
+// of database-backed navigation, settings and Inertia shared props.
+// `Route::fallback()` is GET/HEAD only; registering the same fallback route
+// through `match()` lets non-GET unmatched requests render the normal 404 too.
+$localizedFallback = Route::match(
+    ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    '{fallbackPlaceholder}',
+    RedirectToLocalizedUrl::class,
+)
+    ->where('fallbackPlaceholder', '.*')
+    ->fallback()
+    ->withoutMiddleware([
+        SetLocale::class,
+        SetWebsiteLocale::class,
+        EnsureDashboardFeatureAvailable::class,
+        HandleInertiaRequests::class,
+    ]);

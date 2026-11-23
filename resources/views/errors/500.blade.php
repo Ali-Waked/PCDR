@@ -1,8 +1,8 @@
-@extends('errors::layout')
-
 @php
     $error = \App\Support\ErrorPage::context(request(), 500);
 @endphp
+
+@extends('errors::layout', ['error' => $error])
 
 @section('page-title', $error['pageTitle'])
 @section('skip-label', $error['skipLabel'])

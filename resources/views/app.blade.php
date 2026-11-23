@@ -13,6 +13,37 @@
     $seoDescription = $isHome && $seoLocale === 'ar'
         ? 'من الاستجابة الإنسانية إلى التعافي والتنمية المستدامة — PCDR، قطاع غزة.'
         : (string) config('website.description.'.$seoLocale);
+
+    // Build localized links from the matched route and its parameters so the
+    // same page is addressed in every locale, including model-bound routes.
+    $seoRoute = request()->route();
+    $seoRouteName = $seoRoute?->getName();
+    $seoRouteParameters = $seoRoute?->parameters() ?? [];
+    $seoRouteName = $seoRouteName === 'root' ? 'public.home' : $seoRouteName;
+    $supportedLocales = (array) config('locales.supported', config('website.locales', ['ar', 'en']));
+    $alternateUrls = [];
+
+    foreach ($supportedLocales as $alternateLocale) {
+        $alternateLocale = strtolower((string) $alternateLocale);
+        $generated = null;
+
+        if ($seoRouteName && \Illuminate\Support\Facades\Route::has($seoRouteName)) {
+            try {
+                $generated = route($seoRouteName, array_replace($seoRouteParameters, ['locale' => $alternateLocale]), false);
+            } catch (\Throwable) {
+                $generated = null;
+            }
+        }
+
+        $alternateUrls[$alternateLocale] = url($generated ?? '/'.$alternateLocale.$seoSuffix);
+    }
+
+    $canonicalUrl = $alternateUrls[$seoLocale] ?? reset($alternateUrls);
+    $defaultLocale = strtolower((string) config('locales.default', config('website.default_locale', 'ar')));
+
+    if (! array_key_exists($defaultLocale, $alternateUrls)) {
+        $defaultLocale = array_key_first($alternateUrls) ?? $seoLocale;
+    }
 @endphp
 @php
     $iconV = trim((string) @file_get_contents(public_path('icons-version.txt'))) ?: '1';
@@ -37,10 +68,11 @@
         >
         <title inertia>{{ $seoTitle }}</title>
         <meta name="description" inertia content="{{ $seoDescription }}">
-        <link rel="canonical" inertia href="{{ url('/'.$seoLocale.$seoSuffix) }}">
-        <link rel="alternate" inertia hreflang="ar" href="{{ url('/ar'.$seoSuffix) }}">
-        <link rel="alternate" inertia hreflang="en" href="{{ url('/en'.$seoSuffix) }}">
-        <link rel="alternate" inertia hreflang="x-default" href="{{ url('/ar'.$seoSuffix) }}">
+        <link rel="canonical" inertia href="{{ $canonicalUrl }}">
+        @foreach ($alternateUrls as $alternateLocale => $alternateUrl)
+            <link rel="alternate" inertia hreflang="{{ $alternateLocale }}" href="{{ $alternateUrl }}">
+        @endforeach
+        <link rel="alternate" inertia hreflang="x-default" href="{{ $alternateUrls[$defaultLocale] }}">
         <meta property="og:type" inertia content="website">
         <meta property="og:site_name" inertia content="PCDR">
         <meta property="og:locale" inertia content="{{ $seoLocale }}">
