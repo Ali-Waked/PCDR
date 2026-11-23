@@ -129,7 +129,26 @@ onBeforeUnmount(() => {
                         aria-hidden="true"
                     ></span>
                     <li v-for="(item, i) in links" :key="item.key" class="ps-nav__item" :style="{ '--nav-i': i }">
+                        <a
+                            v-if="item.external"
+                            :href="item.url"
+                            class="ps-nav__link"
+                            :data-nav-key="item.key"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            @mouseenter="onHover(item.key)"
+                            @focus="onHover(item.key)"
+                            @blur="onLeave"
+                            @click="closeMenu"
+                        >
+                            <span class="ps-nav__label ps-nav__label--full">{{ item.label }}</span>
+                            <span class="ps-nav__label ps-nav__label--short" aria-hidden="true">{{ item.shortLabel }}</span>
+                            <span class="ps-nav__active-dot" aria-hidden="true"></span>
+                            <span class="ps-nav__mobile-bar" aria-hidden="true"></span>
+                            <span class="ps-nav__mobile-dot" aria-hidden="true"></span>
+                        </a>
                         <Link
+                            v-else
                             :href="item.url"
                             class="ps-nav__link"
                             :data-nav-key="item.key"

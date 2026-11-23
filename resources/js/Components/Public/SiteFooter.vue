@@ -6,7 +6,18 @@ import { usePublicNavigation } from '../../composables/usePublicNavigation'
 import { useInView } from '../../composables/useInView'
 
 const { page, t, site, localPath, locale } = useI18n()
-const { footerGroups } = usePublicNavigation()
+const { footerGroups: navFooterGroups } = usePublicNavigation()
+
+const fallbackGroups = computed(() => {
+    const isEn = locale.value === 'en'
+    const L = (path, ar, en) => ({ key: path, label: isEn ? en : ar, url: localPath(path) })
+    return [
+        { key: 'about', title: isEn ? 'About' : 'عن الجمعية', items: [L('about','عن الجمعية','About'), L('strategic-areas','المحاور الاستراتيجية','Strategic Axes'), L('programs','البرامج والمشاريع','Programs & Projects')] },
+        { key: 'knowledge', title: isEn ? 'Knowledge & Accountability' : 'المعرفة والمساءلة', items: [L('news','الأخبار والأنشطة','News & Activities'), L('publications','التقارير والإصدارات','Reports & Publications'), L('transparency','الشفافية والمساءلة','Transparency & Accountability')] },
+        { key: 'involve', title: isEn ? 'Get Involved' : 'شارك معنا', items: [L('partnerships','الشراكات','Partnerships'), L('get-involved','شارك معنا','Join Us'), L('contact','اتصل بنا','Contact')] },
+    ]
+})
+const footerGroups = computed(() => (navFooterGroups.value && navFooterGroups.value.length ? navFooterGroups.value : fallbackGroups.value))
 
 const logo = '/assets/pcdr-homepage/logo/pcdr-logo.png'
 const year = new Date().getFullYear()
@@ -119,7 +130,14 @@ const footerLabel = computed(() => locale.value === 'en' ? 'Site footer' : 'تذ
                         <div class="ps-footer__panel-inner">
                             <ul class="ps-footer__links">
                                 <li v-for="item in group.items" :key="item.key">
-                                    <Link :href="item.url" class="ps-footer__link">{{ item.label }}</Link>
+                                    <a
+                                        v-if="item.external"
+                                        :href="item.url"
+                                        class="ps-footer__link"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >{{ item.label }}</a>
+                                    <Link v-else :href="item.url" class="ps-footer__link">{{ item.label }}</Link>
                                 </li>
                             </ul>
                         </div>

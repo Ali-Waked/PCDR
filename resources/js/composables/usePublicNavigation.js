@@ -42,37 +42,105 @@ function resolveItem(key) {
     return ITEMS.find((item) => item.key === key) || EXTRA_ITEMS[key] || null
 }
 
+function pathOf(url) {
+    try {
+        return new URL(String(url || ''), 'http://localhost').pathname.replace(/\/+$/, '') || '/'
+    } catch (_) {
+        return String(url || '')
+    }
+}
+
 export function usePublicNavigation() {
-    const { locale, localPath } = useI18n()
+    const { page, locale, localPath } = useI18n()
     const isEn = computed(() => locale.value === 'en')
 
-    const links = computed(() => ITEMS.map((item) => ({
-        key: item.key,
-        label: isEn.value ? item.en : item.ar,
-        shortLabel: isEn.value ? item.shortEn : item.shortAr,
-        url: localPath(item.path),
-        path: item.path,
-    })))
+    /**
+     * CMS-seeded menus are the source of truth. The compiled ITEMS/FOOTER_GROUPS
+     * below remain as a deterministic fallback when the site has not been seeded.
+     */
+    const seededNavigation = computed(() => page.props.navigation || {})
 
-    const cta = computed(() => ({
-        key: 'get-involved',
-        label: isEn.value ? 'Join Us' : 'شارك معنا',
-        url: localPath('get-involved'),
-    }))
+    function seededLinks(menu) {
+        const items = menu && Array.isArray(menu) ? menu : []
 
-    const footerGroups = computed(() => FOOTER_GROUPS.map((group) => ({
-        key: group.key,
-        title: isEn.value ? group.en : group.ar,
-        items: group.items
-            .map(resolveItem)
-            .filter(Boolean)
-            .map((item) => ({
-                key: item.key,
-                label: isEn.value ? item.en : item.ar,
-                url: localPath(item.path),
-                path: item.path,
-            })),
-    })))
+        return items
+            .filter((item) => item && item.url)
+            .map((item, index) => ({
+                key: pathOf(item.url).split('/').filter(Boolean).pop() || `seeded-${index}`,
+                label: item.label || '',
+                shortLabel: item.label || '',
+                url: item.url,
+                external: !!item.external,
+                path: pathOf(item.url),
+            }))
+            .filter((item) => item.label)
+    }
+
+    const seededPrimary = computed(() => seededLinks(seededNavigation.value.primary))
+    const seededFooter = computed(() => seededLinks(seededNavigation.value.footer))
+
+    const links = computed(() => {
+        if (seededPrimary.value.length > 0) {
+            return seededPrimary.value
+        }
+
+        return ITEMS.map((item) => ({
+            key: item.key,
+            label: isEn.value ? item.en : item.ar,
+            shortLabel: isEn.value ? item.shortEn : item.shortAr,
+            url: localPath(item.path),
+            path: item.path,
+        }))
+    })
+
+    const cta = computed(() => {
+        const seeded = seededPrimary.value.find((item) => item.path === pathOf(localPath('get-involved')))
+        if (seeded) {
+            return { key: 'get-involved', label: seeded.label, url: seeded.url }
+        }
+
+        return {
+            key: 'get-involved',
+            label: isEn.value ? 'Join Us' : 'شارك معنا',
+            url: localPath('get-involved'),
+        }
+    })
+
+    const footerGroups = computed(() => {
+        if (seededFooter.value.length > 0) {
+            return FOOTER_GROUPS.map((group) => ({
+                key: group.key,
+                title: isEn.value ? group.en : group.ar,
+                items: group.items
+                    .map(resolveItem)
+                    .filter(Boolean)
+                    .map((item) => {
+                        const seeded = seededFooter.value.find((link) => link.path === pathOf(localPath(item.path)))
+
+                        return {
+                            key: item.key,
+                            label: seeded ? seeded.label : (isEn.value ? item.en : item.ar),
+                            url: seeded ? seeded.url : localPath(item.path),
+                            external: seeded ? seeded.external : false,
+                        }
+                    }),
+            }))
+        }
+
+        return FOOTER_GROUPS.map((group) => ({
+            key: group.key,
+            title: isEn.value ? group.en : group.ar,
+            items: group.items
+                .map(resolveItem)
+                .filter(Boolean)
+                .map((item) => ({
+                    key: item.key,
+                    label: isEn.value ? item.en : item.ar,
+                    url: localPath(item.path),
+                    path: item.path,
+                })),
+        }))
+    })
 
     return { links, cta, footerGroups }
 }
