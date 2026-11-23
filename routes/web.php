@@ -99,7 +99,8 @@ Route::prefix('{locale}')
 
             // Every CMS route is protected by the `cms` middleware below,
             // which redirects guests to the real localized `cms.login` route.
-            Route::group([], function (): void {
+            // Account status is enforced before permission evaluation.
+            Route::middleware('account.active')->group(function (): void {
                 Route::get('/', DashboardController::class)->middleware('cms:pages.view')->name('dashboard');
 
                 Route::middleware('cms:pages.view')->group(function (): void {

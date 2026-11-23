@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Services\AdminNavigationService;
 use App\Services\CmsAccess;
 use App\Services\NavigationService;
 use App\Services\RbacService;
@@ -20,6 +21,7 @@ class HandleInertiaRequests extends Middleware
     public function __construct(
         private readonly RbacService $rbac,
         private readonly SettingsService $settings,
+        private readonly AdminNavigationService $adminNavigation,
     ) {}
 
     public function version(Request $request): ?string
@@ -45,6 +47,18 @@ class HandleInertiaRequests extends Middleware
                 'scopes' => $user ? $this->rbac->publicScopesFor($user) : [],
                 'cmsPermissions' => $user ? app(CmsAccess::class)->permissionsFor($user) : [],
             ],
+            'authority' => [
+                'is_platform_owner' => $user?->isPlatformOwner() === true,
+                'institutional_approval' => [
+                    'granted' => false,
+                    'reason' => $this->rbac->authorityReason($locale),
+                ],
+                'denied_permission_patterns' => array_merge(
+                    (array) config('governance.authority.permission_prefixes', []),
+                    (array) config('governance.authority.permission_suffixes', []),
+                ),
+            ],
+            'adminNavigation' => $user ? $this->adminNavigation->visibleFor($user, $locale) : [],
             'locale' => $locale,
             'direction' => $direction,
             'availableLocales' => ['ar', 'en'],

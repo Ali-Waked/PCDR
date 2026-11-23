@@ -14,10 +14,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('operational-documents/{document}/download', [DocumentController::class, 'download'])
     ->whereNumber('document')
-    ->middleware(['auth', 'signed', 'permission:documents.download'])
+    ->middleware(['auth', 'account.active', 'signed', 'permission:documents.download'])
     ->name('public.operational-documents.download');
 
-Route::prefix('operations')->group(function (): void {
+Route::middleware('account.active')->prefix('operations')->group(function (): void {
     Route::get('dashboard', [OperationController::class, 'dashboard'])
         ->middleware('permission:reports.view')
         ->name('operations.dashboard');

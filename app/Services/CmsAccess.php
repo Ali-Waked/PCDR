@@ -19,6 +19,12 @@ final class CmsAccess
 {
     public function allows(User $user, string $permission): bool
     {
+        // Institutional authority never flows through the CMS seam, including
+        // the development-only bootstrap identity below.
+        if (app(RbacService::class)->isAuthorityPermission($permission)) {
+            return false;
+        }
+
         // Phase 2's RbacService is the authoritative permission contract once
         // the two phases are integrated. Keep the other seams for isolation.
         if (class_exists(RbacService::class) && app(RbacService::class)->has($user, $permission)) {
