@@ -1,4 +1,8 @@
-# PCDR — Participatory Community for Disasters Response
+<p align="center">
+  <img src="docs/logo.svg" alt="PCDR Logo" width="120">
+</p>
+
+<h1 align="center">PCDR — Participatory Community for Disasters Response</h1>
 
 ## 1. Project Header
 
@@ -14,7 +18,7 @@
 | Institutional verdict | `NOT CLEARED — RESTRICTED TECHNICAL WORK ONLY` |
 | Planned Phase 6 | `NOT STARTED / NOT AUTHORIZED` |
 
-PCDR is a single Laravel application that delivers a bilingual public website, an editorial content management system, and a permission-gated administrative dashboard. It is an institutional communication and content platform, not a SaaS product.
+<p align="center">PCDR is a single Laravel application that delivers a bilingual public website, an editorial content management system, and a permission-gated administrative dashboard. It is an institutional communication and content platform, not a SaaS product.</p>
 
 ## 2. About PCDR
 

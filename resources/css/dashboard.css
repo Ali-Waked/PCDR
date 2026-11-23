@@ -1,5 +1,6 @@
-/* PCDR dashboard design system — scoped to the delivered website-management app.
-   Public pages, hidden operational modules and Phase 5 keep their own styles. */
+/* PCDR dashboard design system — used by the administrative dashboard shell,
+   website management, hidden operational modules and Phase 5. Public pages
+   keep their own styles. */
 
 .pc-app,
 .pc-auth {
@@ -501,7 +502,8 @@
 
 .pc-content {
     inline-size: 100%;
-    max-inline-size: 1600px;
+    min-inline-size: 0;
+    max-inline-size: min(1600px, 100%);
     margin-inline: auto;
     padding: 30px 32px 56px;
 }
@@ -653,6 +655,16 @@
 
 .pc-card__body--flush {
     padding: 0;
+}
+
+.pc-app .pc-card--padded {
+    padding: 20px;
+}
+
+.pc-app .pc-card--padded > h2:first-child {
+    margin: 0 0 16px;
+    font-size: 1rem;
+    font-weight: 720;
 }
 
 .pc-card__foot {
@@ -1625,7 +1637,7 @@
     z-index: 120;
     display: grid;
     gap: 10px;
-    inline-size: min(380px, calc(100vw - 32px));
+    inline-size: min(380px, calc(100% - 32px));
 }
 
 [dir='rtl'] .pc-toast-stack {
@@ -1896,17 +1908,17 @@
         position: fixed;
         inset-block: 0;
         inset-inline-start: 0;
-        inline-size: 296px;
+        inline-size: min(85vw, 320px);
         block-size: 100vh;
-        transform: translateX(-102%);
+        block-size: 100dvh;
+        transform: translateX(-100%);
         transition: transform var(--motion-duration-base) var(--motion-ease-standard);
         box-shadow: var(--pc-shadow);
+        overflow: hidden;
     }
 
     [dir='rtl'] .pc-sidebar {
-        inset-inline-start: auto;
-        inset-inline-end: 0;
-        transform: translateX(102%);
+        transform: translateX(100%);
     }
 
     .pc-sidebar.is-open {
@@ -1932,7 +1944,7 @@
         position: fixed;
         inset: 0;
         z-index: 35;
-        background: rgba(24, 34, 50, 0.38);
+        background: rgba(0, 0, 0, 0.4);
         border: 0;
     }
 
@@ -2019,6 +2031,19 @@
 
     .pc-table {
         min-inline-size: 640px;
+    }
+
+    .pc-callout {
+        flex-wrap: wrap;
+    }
+
+    .pc-callout > div {
+        flex: 1 1 200px;
+        min-inline-size: 0;
+    }
+
+    .pc-callout .pc-badge {
+        margin-inline-start: 0;
     }
 }
 
@@ -2785,6 +2810,182 @@
 .pc-app .cms-preview {
     max-inline-size: 58rem;
     margin-inline: auto;
+}
+
+/* ---------- Operations / Phase 5 compatibility within the unified shell ---------- */
+
+.pc-app .notice,
+.pc-app .phase5-notice {
+    padding: 13px 15px;
+    border: 1px solid color-mix(in srgb, var(--pc-warning) 28%, white);
+    border-radius: var(--pc-radius-sm);
+    background: #fbf5e9;
+    color: var(--pc-warning);
+    font-size: 0.8rem;
+}
+
+.pc-app .phase5-page {
+    display: grid;
+    gap: 18px;
+}
+
+.pc-app .phase5-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 14px;
+    align-items: start;
+}
+
+.pc-app .phase5-grid--wide {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+}
+
+.pc-app .phase5-stat {
+    display: grid;
+    gap: 5px;
+    padding: 15px;
+    border: 1px solid var(--pc-border);
+    border-radius: var(--pc-radius-sm);
+    background: var(--pc-surface-2);
+}
+
+.pc-app .phase5-stat__value {
+    font-size: 1.45rem;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    color: var(--pc-text);
+}
+
+.pc-app .phase5-stat__label {
+    font-size: 0.73rem;
+    color: var(--pc-muted);
+}
+
+.pc-app .phase5-gate,
+.pc-app .phase5-kv > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-block: 10px;
+    border-block-end: 1px solid var(--pc-border);
+    font-size: 0.82rem;
+}
+
+.pc-app .phase5-gate:last-child,
+.pc-app .phase5-kv > div:last-child {
+    border-block-end: 0;
+}
+
+.pc-app .phase5-gate.is-off,
+.pc-app .phase5-muted,
+.pc-app .phase5-kv dt {
+    color: var(--pc-muted);
+}
+
+.pc-app .phase5-kv {
+    margin: 0;
+}
+
+.pc-app .phase5-kv dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.pc-app .phase5-inline {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.pc-app .phase5-code,
+.pc-app .pc-directional {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-variant-numeric: tabular-nums;
+}
+
+.pc-app .phase5-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+}
+
+.pc-app .phase5-timeline {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pc-app .phase5-timeline__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 11px;
+    padding-block: 11px;
+    border-block-end: 1px solid var(--pc-border);
+}
+
+.pc-app .phase5-timeline__item:last-child {
+    border-block-end: 0;
+}
+
+.pc-app .phase5-timeline__marker {
+    inline-size: 9px;
+    block-size: 9px;
+    margin-block-start: 5px;
+    border-radius: 50%;
+    background: var(--pc-teal);
+    box-shadow: 0 0 0 4px var(--pc-teal-soft);
+}
+
+.pc-app .phase5-timeline__title {
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.pc-app .phase5-timeline__meta {
+    font-size: 0.72rem;
+    color: var(--pc-muted);
+}
+
+.pc-app .phase5-progress {
+    inline-size: 100%;
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--pc-border);
+    overflow: hidden;
+}
+
+.pc-app .phase5-progress > span {
+    display: block;
+    block-size: 100%;
+    background: var(--pc-teal);
+}
+
+.pc-app .phase5-flag {
+    color: var(--pc-muted);
+    font-size: 0.76rem;
+    font-weight: 650;
+}
+
+.pc-app .phase5-flag.is-on {
+    color: var(--pc-teal);
+}
+
+.pc-app .pc-skeleton {
+    block-size: 32px;
+    border-radius: var(--pc-radius-sm);
+    background: linear-gradient(90deg, var(--pc-surface-2), var(--pc-border), var(--pc-surface-2));
+    background-size: 200% 100%;
+    animation: pc-skeleton 1.2s linear infinite;
+}
+
+@keyframes pc-skeleton {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
 }
 
 @media (max-width: 1100px) {

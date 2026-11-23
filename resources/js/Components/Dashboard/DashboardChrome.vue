@@ -11,6 +11,7 @@ const props = defineProps({
     mode: { type: String, default: 'admin' },
     title: { type: String, default: '' },
     subtitle: { type: String, default: '' },
+    eyebrow: { type: String, default: '' },
 })
 
 const { page, t, localPath, direction, locale } = useI18n()
@@ -160,6 +161,7 @@ watch([locale, direction], ([loc, dir]) => {
 }, { immediate: true })
 
 watch(mobileOpen, (open) => {
+    document.body.style.overflow = open && ! isDesktop.value ? 'hidden' : ''
     if (open && ! isDesktop.value) {
         requestAnimationFrame(() => {
             const items = focusables()
@@ -174,6 +176,7 @@ onMounted(() => {
     onMql = (event) => {
         isDesktop.value = event.matches
         if (event.matches) mobileOpen.value = false
+        document.body.style.overflow = mobileOpen.value && ! event.matches ? 'hidden' : ''
     }
     mql.addEventListener?.('change', onMql)
     document.addEventListener('keydown', onKeydown)
@@ -184,6 +187,7 @@ onBeforeUnmount(() => {
     mql?.removeEventListener?.('change', onMql)
     document.removeEventListener('keydown', onKeydown)
     document.removeEventListener('click', onDocumentClick)
+    document.body.style.overflow = ''
 })
 </script>
 
@@ -322,10 +326,14 @@ onBeforeUnmount(() => {
 
                 <main id="pc-main" class="pc-content" tabindex="-1" :inert="mobileOpen && !isDesktop">
                     <PageHeader
-                        :eyebrow="workspaceLabel"
+                        :eyebrow="props.eyebrow || workspaceLabel"
                         :title="pageTitle"
                         :subtitle="pageSubtitle"
-                    />
+                    >
+                        <template v-if="$slots.actions" #actions>
+                            <slot name="actions" />
+                        </template>
+                    </PageHeader>
 
                     <div v-if="flash.success || flash.error" class="pc-stack" style="margin-block-end: 20px">
                         <div v-if="flash.success" class="pc-callout" role="status">
