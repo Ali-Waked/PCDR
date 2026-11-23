@@ -608,6 +608,29 @@ final class PublicWebsiteTest extends TestCase
         $this->assertContains(url('/ar/strategic-areas'), $urls);
     }
 
+    public function test_public_home_exposes_published_cms_content_only(): void
+    {
+        $published = Article::create([
+            'status' => ContentStatus::Published,
+            'published_at' => now()->subDay(),
+        ]);
+        $this->translate($published, 'published-home-article', 'Published home article', ['excerpt' => 'Public excerpt']);
+
+        $draft = Article::create(['status' => ContentStatus::Draft]);
+        $this->translate($draft, 'draft-home-article', 'Draft home article');
+
+        $props = $this->inertiaPage($this->get('/en'))['props'];
+        $titles = array_column($props['articles'], 'title');
+
+        $this->assertNotEmpty($props['vision']);
+        $this->assertContains('Published home article (en)', $titles);
+        $this->assertNotContains('Draft home article (en)', $titles);
+        $this->assertIsArray($props['pillars']);
+        $this->assertIsArray($props['programs']);
+        $this->assertIsArray($props['publications']);
+        $this->assertIsArray($props['sections']);
+    }
+
     /**
      * The shared header and footer consume the CMS-seeded menus through the public
      * navigation composable. Compiled labels remain only as an unseeded fallback.
@@ -674,7 +697,7 @@ final class PublicWebsiteTest extends TestCase
     {
         $expected = [
             'css/pcdr-home.css' => '96924ce85a556fa24c6de13be445293abaa3e783acd4e192df40164695cd527c',
-            'views/app.blade.php' => '24798ab9d7f1f6611cbac16bc2d2ac74c30decae1599e4a1abf44c8c277aecd6',
+            'views/app.blade.php' => '4b2c58383781c6634ec8dfdf5cd2d144a117a829747255d39825c163f9027c46',
             'js/Components/LanguageSwitcher.vue' => 'd5182c3b3a9e7f8007b2ffbbdc3fa58b7c3c4c7b6754623ba7c2a9624dda03f1',
         ];
 
@@ -716,6 +739,20 @@ final class PublicWebsiteTest extends TestCase
                 'title' => $title.' ('.$locale.')',
             ], $fields));
         }
+    }
+
+    public function test_public_pages_share_single_footer_component_without_variants(): void
+    {
+        $layout = (string) file_get_contents(resource_path('js/Layouts/PublicLayout.vue'));
+        $home = (string) file_get_contents(resource_path('js/Pages/Public/Home.vue'));
+        $footer = (string) file_get_contents(resource_path('js/Components/Public/SiteFooter.vue'));
+
+        $this->assertStringContainsString('<SiteFooter />', $layout);
+        $this->assertStringContainsString('<SiteFooter />', $home);
+        $this->assertStringNotContainsString('variant', $footer);
+        $this->assertStringNotContainsString('minimal', $footer);
+        $this->assertStringContainsString('footerGroups', $footer);
+        $this->assertStringContainsString('ps-footer__group', $footer);
     }
 
     /** @return array<string, mixed> */

@@ -55,6 +55,7 @@ return [
         'settings.view' => 'View public site settings',
         'settings.update' => 'Edit public site settings',
         'inquiries.view' => 'View inquiries',
+        'inquiries.update' => 'Update inquiry status',
 
         // Phase 4 operational modules. The keys match config/permissions.php.
         'locations.view' => 'View locations',
@@ -102,6 +103,12 @@ return [
      * Project lifecycle is deliberately distinct from publication workflow.
      */
     'project_statuses' => ['planned', 'ongoing', 'completed', 'archived'],
+
+    /**
+     * Operational handling states for public enquiries. These are workflow
+     * labels only and carry no institutional approval meaning.
+     */
+    'inquiry_statuses' => ['new', 'in_progress', 'resolved', 'closed'],
 
     'editor' => [
         'allowed_tags' => ['p', 'br', 'strong', 'em', 'u', 'h2', 'h3', 'h4',

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import CmsLayout from '../../../Layouts/CmsLayout.vue'
 import EmptyState from '../../../Components/EmptyState.vue'
@@ -15,6 +15,18 @@ const props = defineProps({
 const { t, localPath } = useI18n()
 const basePath = localPath('cms/media')
 
+const searchQuery = ref(props.filters?.q || '')
+const selectedType = ref(props.filters?.type || '')
+
+watch(() => props.filters, (filters) => {
+    searchQuery.value = filters?.q || ''
+    selectedType.value = filters?.type || ''
+}, { deep: true })
+
+function submitFilters() {
+    router.get(basePath, { q: searchQuery.value, type: selectedType.value }, { preserveScroll: true })
+}
+
 const upload = useForm({
     file: null,
     is_restricted: false,
@@ -26,7 +38,10 @@ const upload = useForm({
 
 const fileInput = ref(null)
 const editing = ref(null)
+const confirmId = ref(null)
 const signedLinks = ref({})
+const previewItem = ref(null)
+const previewUrl = ref('')
 const editForm = useForm({
     translations: {
         ar: { alt_text: '', caption: '' },
@@ -46,11 +61,21 @@ function submitUpload() {
     })
 }
 
+function translatedValue(item, code, field) {
+    return item.translations?.[code]?.[field] ?? (field === 'alt_text' ? item.alt : item.caption) ?? ''
+}
+
 function openEditor(item) {
     editing.value = item.id
     editForm.translations = {
-        ar: { alt_text: item.alt || '', caption: item.caption || '' },
-        en: { alt_text: item.alt || '', caption: item.caption || '' },
+        ar: {
+            alt_text: translatedValue(item, 'ar', 'alt_text'),
+            caption: translatedValue(item, 'ar', 'caption'),
+        },
+        en: {
+            alt_text: translatedValue(item, 'en', 'alt_text'),
+            caption: translatedValue(item, 'en', 'caption'),
+        },
     }
 }
 
@@ -62,14 +87,44 @@ function saveEditor() {
 }
 
 function remove(item) {
-    router.delete(`${basePath}/${item.id}`, { preserveScroll: true })
+    router.delete(`${basePath}/${item.id}`, {
+        preserveScroll: true,
+        onSuccess: () => { confirmId.value = null },
+    })
 }
 
 function signedLink(item) {
-    fetch(`${basePath}/${item.id}/signed`, { headers: { Accept: 'application/json' } })
+    return fetch(`${basePath}/${item.id}/signed`, { headers: { Accept: 'application/json' } })
         .then((response) => response.ok ? response.json() : Promise.reject(new Error('failed')))
-        .then((data) => { signedLinks.value[item.id] = data.url })
-        .catch(() => { signedLinks.value[item.id] = '' })
+        .then((data) => {
+            signedLinks.value[item.id] = data.url
+            return data.url
+        })
+        .catch(() => {
+            signedLinks.value[item.id] = ''
+            return ''
+        })
+}
+
+async function openPreview(item) {
+    if (!item.restricted && item.url) {
+        previewItem.value = item
+        previewUrl.value = item.url
+        return
+    }
+
+    const url = await signedLink(item)
+    if (!url) {
+        return
+    }
+
+    previewItem.value = item
+    previewUrl.value = url
+}
+
+function closePreview() {
+    previewItem.value = null
+    previewUrl.value = ''
 }
 </script>
 
@@ -84,6 +139,10 @@ function signedLink(item) {
                     <span v-if="upload.errors.file" class="error" role="alert">{{ upload.errors.file }}</span>
                 </label>
                 <label class="checkbox-row"><input v-model="upload.is_restricted" type="checkbox"><span>{{ t('cms_restricted_file') }}</span></label>
+                <label v-for="code in ['ar', 'en']" :key="`upload-alt-${code}`" class="field">
+                    <span>{{ code === 'ar' ? t('cms_arabic') : t('cms_english') }} — {{ t('ui.alt_text') }}</span>
+                    <input v-model="upload.translations[code].alt_text" class="input" type="text" maxlength="255">
+                </label>
                 <div class="form-grid form-grid--two">
                     <label v-for="code in ['ar', 'en']" :key="`upload-${code}`" class="field">
                         <span>{{ code === 'ar' ? t('cms_arabic') : t('cms_english') }} — {{ t('ui.cms_description') }}</span>
@@ -102,6 +161,33 @@ function signedLink(item) {
                 <h2 style="font-size: 1.05rem; margin: 0">{{ t('ui.cms_media') }}</h2>
                 <span class="small-caps">{{ pagination.total }} {{ t('documents') }}</span>
             </div>
+
+            <div v-if="previewUrl" class="cms-card" role="dialog" aria-modal="true" :aria-label="t('cms_preview')" style="margin-block-end: 1rem">
+                <div class="cms-card__head">
+                    <h3 style="font-size: 1rem; margin: 0">{{ previewItem?.name }}</h3>
+                    <button class="btn btn-ghost btn-small" type="button" @click="closePreview">{{ t('cms_close', t('ui.cancel')) }}</button>
+                </div>
+                <img v-if="previewItem?.type === 'image'" :src="previewUrl" :alt="previewItem?.alt || previewItem?.name" style="display: block; max-inline-size: 100%; max-block-size: 70vh; margin-inline: auto">
+                <a v-else class="btn btn-secondary" :href="previewUrl" target="_blank" rel="noopener noreferrer">{{ t('open_original') }}</a>
+            </div>
+
+            <form class="form-grid form-grid--two" style="margin-block-end: 1rem" @submit.prevent="submitFilters">
+                <label class="field">
+                    <span>{{ t('ui.search') }}</span>
+                    <input v-model="searchQuery" class="input" type="search" name="q">
+                </label>
+                <label class="field">
+                    <span>{{ t('cms_type', t('ui.status')) }}</span>
+                    <select v-model="selectedType" class="select" name="type">
+                        <option value="">{{ t('ui.all') }}</option>
+                        <option value="image">{{ t('cms_media_type_image', 'image') }}</option>
+                        <option value="document">{{ t('cms_media_type_document', 'document') }}</option>
+                    </select>
+                </label>
+                <div class="form-actions">
+                    <button class="btn btn-primary btn-small" type="submit">{{ t('ui.search') }}</button>
+                </div>
+            </form>
 
             <div v-if="items.length" class="table-wrap">
                 <table class="cms-table">
@@ -129,14 +215,19 @@ function signedLink(item) {
                             <td>
                                 <div class="header-actions">
                                     <button class="btn btn-secondary btn-small" type="button" @click="openEditor(item)">{{ t('cms_edit') }}</button>
+                                    <button class="btn btn-ghost btn-small" type="button" :aria-label="t('cms_preview')" @click="openPreview(item)">{{ t('cms_preview') }}</button>
                                     <a v-if="item.url" class="btn btn-ghost btn-small" :href="item.url" target="_blank" rel="noopener noreferrer">{{ t('open_original') }}</a>
                                     <button v-else class="btn btn-ghost btn-small" type="button" @click="signedLink(item)">{{ t('cms_signed_link') }}</button>
-                                    <button class="btn btn-danger btn-small" type="button" @click="remove(item)">{{ t('cms_delete') }}</button>
+                                    <button class="btn btn-danger btn-small" type="button" @click="confirmId = item.id">{{ t('cms_delete') }}</button>
                                 </div>
                                 <div v-if="signedLinks[item.id]" style="margin-block-start: 0.5rem">
                                     <input class="input" type="text" dir="ltr" readonly :value="signedLinks[item.id]" @focus="$event.target.select()">
                                 </div>
                                 <form v-if="editing === item.id" style="margin-block-start: 0.6rem; display: grid; gap: 0.5rem" @submit.prevent="saveEditor">
+                                    <label v-for="code in ['ar', 'en']" :key="`edit-alt-${code}`" class="field">
+                                        <span>{{ code === 'ar' ? t('cms_arabic') : t('cms_english') }} — {{ t('ui.alt_text') }}</span>
+                                        <input v-model="editForm.translations[code].alt_text" class="input" type="text" maxlength="255">
+                                    </label>
                                     <label v-for="code in ['ar', 'en']" :key="`edit-${code}`" class="field">
                                         <span>{{ code === 'ar' ? t('cms_arabic') : t('cms_english') }} — {{ t('ui.cms_description') }}</span>
                                         <input v-model="editForm.translations[code].caption" class="input" type="text" maxlength="500">
@@ -146,6 +237,13 @@ function signedLink(item) {
                                         <button class="btn btn-ghost btn-small" type="button" @click="editing = null">×</button>
                                     </div>
                                 </form>
+                                <div v-if="confirmId === item.id" class="alert alert--error" style="margin-block-start: 0.6rem" role="alert">
+                                    <span>{{ t('cms_confirm_delete') }}</span>
+                                    <div class="header-actions">
+                                        <button class="btn btn-danger btn-small" type="button" @click="remove(item)">{{ t('cms_delete') }}</button>
+                                        <button class="btn btn-ghost btn-small" type="button" @click="confirmId = null">{{ t('cms_close', t('ui.cancel')) }}</button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

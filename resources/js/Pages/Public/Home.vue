@@ -9,6 +9,13 @@ import '../../../css/public-site.css'
 import '../../../css/pcdr-home.css'
 
 const props = defineProps({
+    vision: { type: String, default: '' },
+    pillars: { type: Array, default: () => [] },
+    framework: { type: Array, default: () => [] },
+    articles: { type: Array, default: () => [] },
+    programs: { type: Array, default: () => [] },
+    publications: { type: Array, default: () => [] },
+    sections: { type: Array, default: () => [] },
     meta: { type: Object, default: null },
 })
 
@@ -121,12 +128,8 @@ const content = {
         knowledge: {
             eyebrow: 'المعرفة والإعلام',
             title: 'تقارير ودراسات وقصص',
-            note: 'محتوى توضيحي فقط — ليس أخباراً أو أنشطة فعلية للجمعية.',
-            articles: [
-                { tag: 'توضيحي · أخبار وتقارير', title: 'عنوان تقرير توضيحي' },
-                { tag: 'توضيحي · دراسات واحتياجات', title: 'عنوان دراسة احتياجات توضيحية' },
-                { tag: 'توضيحي · قصص مجتمعية', title: 'قصة مجتمعية توضيحية' },
-            ],
+            note: 'آخر التحديثات المنشورة من الأخبار والإصدارات المعتمدة.',
+            empty: 'لا توجد مواد منشورة بعد.',
         },
         cta: {
             title: 'لأن التعافي مسؤولية مشتركة',
@@ -245,12 +248,8 @@ const content = {
         knowledge: {
             eyebrow: 'Knowledge and media',
             title: 'Reports, studies and stories',
-            note: 'Demonstration content only — not real organizational news or activities.',
-            articles: [
-                { tag: 'Demo · News & reports', title: 'Sample report headline' },
-                { tag: 'Demo · Studies & needs', title: 'Sample needs-assessment title' },
-                { tag: 'Demo · Community stories', title: 'Sample community story' },
-            ],
+            note: 'The latest published news and approved publications.',
+            empty: 'No published items yet.',
         },
         cta: {
             title: 'Because recovery is a shared responsibility',
@@ -286,7 +285,98 @@ function routeFor(anchor) {
     return routes[anchor] || anchor
 }
 
-const copy = computed(() => content[locale.value] || content.ar)
+function filled(value) {
+    return typeof value === 'string' && value.trim() !== ''
+}
+
+function sectionByKey(key) {
+    return (props.sections || []).find((section) => section && section.key === key) || null
+}
+
+const publishedPillars = computed(() => (props.pillars || [])
+    .filter((pillar) => pillar && filled(pillar.title))
+    .map((pillar) => ({
+        title: pillar.title,
+        body: filled(pillar.description) ? pillar.description : (pillar.shortTitle || ''),
+        url: pillar.url || routeFor('#areas'),
+    })))
+
+const publishedPrograms = computed(() => (props.programs || [])
+    .filter((program) => program && filled(program.title))
+    .map((program) => ({
+        title: program.title,
+        url: program.url || routeFor('#programs'),
+    })))
+
+const knowledgeItems = computed(() => {
+    const news = (props.articles || []).filter((item) => item && filled(item.title)).map((item) => ({
+        tag: item.category || '',
+        title: item.title,
+        url: item.url || routeFor('#knowledge'),
+        date: item.publishedAt || '',
+    }))
+    const publications = (props.publications || []).filter((item) => item && filled(item.title)).map((item) => ({
+        tag: item.category || '',
+        title: item.title,
+        url: item.url || routeFor('#knowledge'),
+        date: item.date || '',
+    }))
+
+    return [...news, ...publications].slice(0, 6)
+})
+
+const copy = computed(() => {
+    const base = content[locale.value] || content.ar
+    const introSection = sectionByKey('intro')
+    const areasSection = sectionByKey('areas')
+    const frameworkSection = sectionByKey('framework')
+    const ctaSection = sectionByKey('cta')
+    const frameworkSteps = (props.framework || [])
+        .map((step, index) => ({
+            title: step?.label || '',
+            body: base.approach.steps[index]?.body || '',
+        }))
+        .filter((step) => filled(step.title))
+
+    return {
+        ...base,
+        about: {
+            ...base.about,
+            eyebrow: introSection?.eyebrow || base.about.eyebrow,
+            title: introSection?.title || base.about.title,
+            vision: filled(props.vision) ? props.vision : base.about.vision,
+        },
+        areas: {
+            ...base.areas,
+            eyebrow: areasSection?.eyebrow || base.areas.eyebrow,
+            title: areasSection?.title || base.areas.title,
+            pillars: publishedPillars.value.length > 0 ? publishedPillars.value : base.areas.pillars,
+        },
+        approach: {
+            ...base.approach,
+            eyebrow: frameworkSection?.eyebrow || base.approach.eyebrow,
+            title: frameworkSection?.title || base.approach.title,
+            steps: frameworkSteps.length > 0 ? frameworkSteps : base.approach.steps,
+        },
+        programs: {
+            ...base.programs,
+            eyebrow: areasSection?.eyebrow || base.programs.eyebrow,
+            tiles: publishedPrograms.value.length > 0
+                ? publishedPrograms.value
+                : base.programs.tiles.map((title) => ({ title, url: routeFor('#programs') })),
+        },
+        knowledge: {
+            ...base.knowledge,
+            articles: knowledgeItems.value,
+        },
+        cta: {
+            ...base.cta,
+            eyebrow: ctaSection?.eyebrow || base.cta.eyebrow || '',
+            title: ctaSection?.title || base.cta.title,
+            lead: ctaSection?.body || base.cta.lead,
+        },
+    }
+})
 const otherLocale = computed(() => (locale.value === 'ar' ? 'en' : 'ar'))
 const title = computed(() => (
     locale.value === 'ar'
@@ -544,7 +634,10 @@ onBeforeUnmount(() => {
                     <ol class="pillars" data-stagger>
                         <li v-for="(pillar, index) in copy.areas.pillars" :key="pillar.title" class="rv">
                             <span class="n">{{ String(index + 1).padStart(2, '0') }}</span>
-                            <h3>{{ pillar.title }}</h3>
+                            <h3>
+                                <a v-if="pillar.url && pillar.url !== routeFor('#areas')" :href="pillar.url">{{ pillar.title }}</a>
+                                <template v-else>{{ pillar.title }}</template>
+                            </h3>
                             <p>{{ pillar.body }}</p>
                         </li>
                     </ol>
@@ -573,13 +666,13 @@ onBeforeUnmount(() => {
                     <div class="bento" data-stagger>
                         <a
                             v-for="(tile, index) in copy.programs.tiles"
-                            :key="tile"
+                            :key="tile.url || tile.title"
                             class="tile rv"
                             :class="`t${index + 1}`"
-                            :href="routeFor('#programs')"
+                            :href="tile.url || routeFor('#programs')"
                         >
                             <small>{{ String(index + 1).padStart(2, '0') }}</small>
-                            <h3>{{ tile }}</h3>
+                            <h3>{{ tile.title || tile }}</h3>
                         </a>
                     </div>
                 </div>
@@ -633,10 +726,14 @@ onBeforeUnmount(() => {
                     <p class="eyebrow rv">{{ copy.knowledge.eyebrow }}</p>
                     <h2 data-split class="rv"><SplitText :text="copy.knowledge.title" /></h2>
                     <p class="note rv">{{ copy.knowledge.note }}</p>
-                    <div class="news" data-stagger>
-                        <article v-for="article in copy.knowledge.articles" :key="article.title" class="rv">
-                            <span class="tag">{{ article.tag }}</span>
-                            <h3>{{ article.title }}</h3>
+                    <p v-if="!copy.knowledge.articles.length" class="note rv">{{ copy.knowledge.empty }}</p>
+                    <div v-else class="news" data-stagger>
+                        <article v-for="article in copy.knowledge.articles" :key="article.url || article.title" class="rv">
+                            <span v-if="article.tag" class="tag">{{ article.tag }}</span>
+                            <h3>
+                                <a v-if="article.url" :href="article.url">{{ article.title }}</a>
+                                <template v-else>{{ article.title }}</template>
+                            </h3>
                         </article>
                     </div>
                 </div>

@@ -8,6 +8,7 @@ use App\Actions\TransitionContentStatus;
 use App\Enums\ContentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ContentRevision;
+use App\Models\Media;
 use App\Services\CmsAccess;
 use App\Services\TranslationSaver;
 use Illuminate\Database\Eloquent\Model;
@@ -286,8 +287,32 @@ abstract class ContentController extends Controller
                     ->get(['id', 'locale', 'status', 'note', 'created_at'])
                     ->all()
                 : [],
-            'options' => $this->options(),
+            'options' => array_merge($this->options(), ['media' => $this->mediaOptions()]),
         ]);
+    }
+
+    /** @return list<array{id: int, name: string, url: string, alt: string, type: string}> */
+    private function mediaOptions(): array
+    {
+        if (! auth()->check() || ! app(CmsAccess::class)->allows(auth()->user(), 'media.view')) {
+            return [];
+        }
+
+        return Media::query()
+            ->images()
+            ->where('is_restricted', false)
+            ->with('translations')
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn (Media $media) => [
+                'id' => $media->id,
+                'name' => $media->original_name,
+                'url' => $media->url(),
+                'alt' => $media->t('alt_text', app()->getLocale()),
+                'type' => $media->type->value,
+            ])
+            ->all();
     }
 
     /** @return array<string, mixed> */

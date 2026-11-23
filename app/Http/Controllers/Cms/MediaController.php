@@ -54,6 +54,12 @@ final class MediaController extends Controller
                 'height' => $item->height,
                 'alt' => $item->t('alt_text', $locale),
                 'caption' => $item->t('caption', $locale),
+                'translations' => collect(config('website.locales', ['ar', 'en']))
+                    ->mapWithKeys(fn (string $code) => [$code => [
+                        'alt_text' => $item->t('alt_text', $code) ?: '',
+                        'caption' => $item->t('caption', $code) ?: '',
+                    ]])
+                    ->all(),
             ])->items(),
             'pagination' => [
                 'currentPage' => $media->currentPage(),

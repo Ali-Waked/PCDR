@@ -177,6 +177,10 @@ Route::prefix('{locale}')
                 Route::put('/settings', [SettingController::class, 'update'])->middleware('cms:settings.update')->name('settings.update');
 
                 Route::get('/inquiries', [InquiryController::class, 'index'])->middleware('cms:inquiries.view')->name('inquiries.index');
+                Route::put('/inquiries/{type}/{inquiry}/status', [InquiryController::class, 'status'])
+                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->middleware('cms:inquiries.update')
+                    ->name('inquiries.status');
             });
         });
 

@@ -21,9 +21,16 @@ use Inertia\Response;
  */
 final class AuthController extends Controller
 {
+    public static function localAuthEnabled(): bool
+    {
+        $configured = config('cms.local_auth_enabled');
+
+        return $configured === null ? ! app()->isProduction() : (bool) $configured;
+    }
+
     public function showLogin(string $locale): Response
     {
-        abort_unless($this->enabled(), 404);
+        abort_unless(self::localAuthEnabled(), 404);
 
         return Inertia::render('Cms/Login', [
             'bootstrapHint' => (bool) config('cms.bootstrap.email') && ! app()->isProduction(),
@@ -32,7 +39,7 @@ final class AuthController extends Controller
 
     public function login(string $locale, Request $request): RedirectResponse
     {
-        abort_unless($this->enabled(), 404);
+        abort_unless(self::localAuthEnabled(), 404);
 
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -63,12 +70,5 @@ final class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('cms.login', ['locale' => $locale]);
-    }
-
-    private function enabled(): bool
-    {
-        $configured = config('cms.local_auth_enabled');
-
-        return $configured === null ? ! app()->isProduction() : (bool) $configured;
     }
 }

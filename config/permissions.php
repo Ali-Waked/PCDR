@@ -52,6 +52,7 @@ return [
     'content.review' => ['module' => 'content', 'label' => 'Review content', 'protected' => false],
     'content.publish' => ['module' => 'content', 'label' => 'Publish content', 'protected' => false],
     'content.archive' => ['module' => 'content', 'label' => 'Archive content', 'protected' => false],
+    'inquiries.update' => ['module' => 'content', 'label' => 'Update inquiry status', 'protected' => false],
 
     /*
      * Phase 4 operational permissions. These are technical/operational
