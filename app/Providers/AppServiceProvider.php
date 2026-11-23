@@ -43,7 +43,19 @@ class AppServiceProvider extends ServiceProvider
             Gate::policy($model, $policy);
         }
 
-        Gate::before(fn (User $user, string $ability): ?bool => $user->isPlatformOwner() ? true : null);
+        Gate::before(function (User $user, string $ability): ?bool {
+            if (! $user->isPlatformOwner()) {
+                return null;
+            }
+
+            $rbac = App::make(RbacService::class);
+
+            if ($rbac->isAuthorityAbility($ability) || $rbac->isAuthorityPermission($ability)) {
+                return false;
+            }
+
+            return true;
+        });
 
         foreach (array_keys(config('permissions', [])) as $permission) {
             Gate::define($permission, fn (User $user) => App::make(RbacService::class)->has($user, (string) $permission));

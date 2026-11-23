@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
  * services apply resource-level authorization and governance gates as a second
  * boundary. Approval and publication routes intentionally do not exist.
  */
-Route::prefix('operations/phase5')->name('phase5.')->group(function (): void {
+Route::middleware('account.active')->prefix('operations/phase5')->name('phase5.')->group(function (): void {
     Route::get('dashboard', [DashboardController::class, 'index'])
         ->middleware('permission:dashboards.view')->name('dashboard');
     Route::get('activity', [ActivityController::class, 'index'])
