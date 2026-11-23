@@ -115,6 +115,25 @@ return new class extends Migration
             $table->unique(['resource', 'owner_id', 'media_id', 'usage'], 'document_links_owner_media_unique');
             $table->index(['resource', 'owner_id'], 'document_links_owner_index');
         });
+
+        /*
+         * Distribution records reference inventory items, so the parent table
+         * must exist before geography and operations are created. MySQL and
+         * MariaDB resolve foreign keys at DDL time; SQLite would mask this.
+         */
+        Schema::create('inventory_items', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code', 64)->unique();
+            $table->string('category', 64);
+            $table->string('unit', 32);
+            $table->string('sku', 64)->nullable()->unique();
+            $table->decimal('min_stock_threshold', 18, 3)->default(0);
+            $table->string('status', 32)->default('active');
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['status', 'category']);
+        });
     }
 
     private function createGeographyAndOperations(): void
@@ -237,20 +256,6 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index('status');
-        });
-
-        Schema::create('inventory_items', function (Blueprint $table): void {
-            $table->id();
-            $table->string('code', 64)->unique();
-            $table->string('category', 64);
-            $table->string('unit', 32);
-            $table->string('sku', 64)->nullable()->unique();
-            $table->decimal('min_stock_threshold', 18, 3)->default(0);
-            $table->string('status', 32)->default('active');
-            $table->timestamps();
-            $table->softDeletes();
-
-            $table->index(['status', 'category']);
         });
 
         Schema::create('inventory_balances', function (Blueprint $table): void {
@@ -743,12 +748,14 @@ return new class extends Migration
 
         Schema::dropIfExists('inventory_movements');
         Schema::dropIfExists('inventory_balances');
-        Schema::dropIfExists('inventory_items');
-        Schema::dropIfExists('warehouses');
 
         Schema::dropIfExists('distribution_records');
         Schema::dropIfExists('distribution_rounds');
         Schema::dropIfExists('distribution_plans');
+
+        Schema::dropIfExists('inventory_items');
+        Schema::dropIfExists('warehouses');
+
         Schema::dropIfExists('activities');
         Schema::dropIfExists('interventions');
         Schema::dropIfExists('locations');
@@ -758,6 +765,8 @@ return new class extends Migration
         Schema::dropIfExists('operational_translations');
 
         Schema::table('projects', function (Blueprint $table): void {
+            $table->dropUnique('projects_code_unique');
+            $table->dropForeign(['project_manager_id']);
             $table->dropColumn([
                 'code', 'project_manager_id', 'responsible_team', 'proposed_budget',
                 'approved_budget', 'budget_currency', 'actual_start_date', 'actual_end_date',
@@ -765,6 +774,8 @@ return new class extends Migration
         });
 
         Schema::table('programs', function (Blueprint $table): void {
+            $table->dropUnique('programs_code_unique');
+            $table->dropForeign(['program_manager_id']);
             $table->dropColumn([
                 'code', 'program_manager_id', 'responsible_unit', 'category',
                 'proposed_budget', 'approved_budget', 'budget_currency',

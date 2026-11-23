@@ -139,7 +139,7 @@ final class RbacService
             }
         }
 
-        return false;
+        return $this->matchesAuthorityStem($compact);
     }
 
     public function isAuthorityAbility(string $ability): bool
@@ -166,6 +166,22 @@ final class RbacService
 
         foreach ($tokens as $token) {
             if (in_array($token, $abilities, true)) {
+                return true;
+            }
+        }
+
+        return $this->matchesAuthorityStem($compact);
+    }
+
+    private function matchesAuthorityStem(string $compact): bool
+    {
+        /** @var list<string> $stems */
+        $stems = config('governance.authority.term_stems', []);
+
+        foreach ($stems as $stem) {
+            $stem = (string) preg_replace('/[^a-z0-9]/', '', strtolower((string) $stem));
+
+            if ($stem !== '' && str_contains($compact, $stem)) {
                 return true;
             }
         }

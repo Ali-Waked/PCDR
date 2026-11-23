@@ -74,13 +74,16 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
         $rbac = app(RbacService::class);
         $authorityKeys = [
             'content.approve',
+            'content.approvals',
             'content.rejection',
             'content.sign-off',
             'institutional.appoint',
             'governance.ratify',
             'authority.signoff',
+            'documents.signoff_request',
             'future.module.delegate',
             'future.module.nomination',
+            'future.module.ratified',
         ];
 
         foreach ($authorityKeys as $permission) {
@@ -90,10 +93,15 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
             $this->assertFalse(app(CmsAccess::class)->allows($owner, $permission), $permission);
         }
 
-        foreach (['approve', 'approveDocument', 'institutional approval', 'sign-off'] as $ability) {
+        foreach (['approve', 'approveDocument', 'institutional approval', 'sign-off', 'signOffRequest', 'approver', 'ratified'] as $ability) {
+            $this->assertTrue($rbac->isAuthorityAbility($ability), $ability);
             $this->assertFalse(Gate::forUser($owner)->allows($ability), $ability);
         }
 
+        $this->assertFalse($rbac->isAuthorityPermission('documents.review'));
+        $this->assertFalse($rbac->isAuthorityPermission('content.publish'));
+        $this->assertFalse($rbac->isAuthorityAbility('publishDocument'));
+        $this->assertTrue($rbac->has($owner, 'documents.review'));
         $this->assertTrue($rbac->has($owner, 'content.publish'));
         $this->assertTrue(Gate::forUser($owner)->allows('publishDocument'));
     }
@@ -102,7 +110,7 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
     {
         $owner = User::factory()->platformOwner()->create();
 
-        foreach (['content.approve', 'content.sign-off', 'institutional.appoint', 'governance.ratify', 'future.module.signoff'] as $key) {
+        foreach (['content.approve', 'content.sign-off', 'institutional.appoint', 'governance.ratify', 'future.module.signoff', 'documents.signoff_request', 'content.approvals'] as $key) {
             $this->actingAs($owner)->post('/ar/admin/permissions', [
                 'key' => $key,
                 'name' => 'Reserved authority',
@@ -120,6 +128,12 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
 
         $this->actingAs($owner)->put("/ar/admin/permissions/{$permission->id}", [
             'key' => 'content.approval',
+            'name' => 'Reserved authority',
+            'module' => 'governance',
+        ])->assertSessionHasErrors('key');
+
+        $this->actingAs($owner)->put("/ar/admin/permissions/{$permission->id}", [
+            'key' => 'documents.signoff_request',
             'name' => 'Reserved authority',
             'module' => 'governance',
         ])->assertSessionHasErrors('key');

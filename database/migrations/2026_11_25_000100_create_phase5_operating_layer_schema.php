@@ -365,7 +365,7 @@ return new class extends Migration
 
         Schema::create('notification_deliveries', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('notification_id')->nullable()->constrained('notifications')->nullOnDelete();
+            $table->foreignUlid('notification_id')->nullable()->constrained('notifications')->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('channel', 32);
             $table->string('provider', 96)->default('none');

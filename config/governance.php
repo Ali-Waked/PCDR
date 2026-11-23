@@ -60,6 +60,22 @@ return [
             'institutionalauthority',
             'governanceauthority',
         ],
+        // Stems catch inflected and compound future keys that exact suffixes
+        // miss (for example "content.approvals" or "signOffRequest").
+        'term_stems' => [
+            'approv',
+            'reject',
+            'appoint',
+            'delegat',
+            'signoff',
+            'signature',
+            'ratif',
+            'authoriz',
+            'nominat',
+            'institutional',
+            'governance',
+            'authority',
+        ],
         'reason' => [
             'ar' => 'صلاحية الموافقة المؤسسية ليست جزءًا من الصلاحية التقنية وتتطلب تفويضًا رسميًا منفصلًا.',
             'en' => 'Institutional approval authority is outside technical control and requires separate formal authorization.',

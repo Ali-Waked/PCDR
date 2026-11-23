@@ -29,7 +29,7 @@ return [
         'approval_statuses' => [],
         'auto_publish_allowed' => false,
         'approval_notice' => [
-            'ar' => 'هذهخطوة تقنية فقط ولا تمثل موافقة مؤسسية؛ الموافقة الرسمية معلقة حتى توثيق الصلاحية.',
+            'ar' => 'هذه خطوة تقنية فقط ولا تمثل موافقة مؤسسية؛ الموافقة الرسمية معلقة حتى توثيق الصلاحية.',
             'en' => 'This is a technical step only and does not represent institutional approval; formal authority is pending documentation.',
         ],
     ],
