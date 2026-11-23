@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import SplitText from '../../Components/StaticHome/SplitText.vue'
-import LanguageSwitcher from '../../Components/LanguageSwitcher.vue'
+import SiteHeader from '../../Components/Public/SiteHeader.vue'
+import SiteFooter from '../../Components/Public/SiteFooter.vue'
 import { useI18n } from '../../composables/useI18n'
-import { usePublicNavigation } from '../../composables/usePublicNavigation'
+import '../../../css/public-site.css'
 import '../../../css/pcdr-home.css'
 
 const props = defineProps({
@@ -13,18 +14,7 @@ const props = defineProps({
 
 const root = ref(null)
 const intro = ref(null)
-const header = ref(null)
 const heroArt = ref(null)
-const navOpen = ref(false)
-const moreOpen = ref(false)
-const moreRef = ref(null)
-
-watch(navOpen, (open) => {
-    if (typeof document !== 'undefined') {
-        document.body.classList.toggle('pcdr-menu-open', open)
-    }
-    if (!open) moreOpen.value = false
-})
 
 const content = {
     ar: {
@@ -277,26 +267,7 @@ const content = {
     },
 }
 
-const { locale, direction, alternateUrl, localPath, page } = useI18n()
-const { links: navLinks, cta: navCta } = usePublicNavigation()
-
-const currentPath = computed(() => (page.url || '/').split('?')[0])
-const visibleNavLinks = computed(() => navLinks.value.slice(0, 6))
-const moreNavLinks = computed(() => navLinks.value.slice(6))
-const moreActive = computed(() => moreNavLinks.value.some((item) => isNavActive(item.url)))
-
-function isNavActive(url) {
-    if (!url) return false
-    const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin
-    let path = url
-    try { path = new URL(url, origin).pathname } catch {}
-    const home = localPath()
-    if (path === home) return currentPath.value === path
-    return currentPath.value === path || currentPath.value.startsWith(path + '/')
-}
-
-function toggleMore() { moreOpen.value = !moreOpen.value }
-function closeMore(event) { if (moreRef.value && !moreRef.value.contains(event.target)) moreOpen.value = false }
+const { locale, direction, alternateUrl, localPath } = useI18n()
 
 function routeFor(anchor) {
     const routes = {
@@ -367,17 +338,6 @@ function setupMotion() {
 
     document.documentElement.style.scrollBehavior = 'smooth'
     document.documentElement.style.scrollPaddingTop = '76px'
-
-    if (header.value) {
-        const sentinel = document.getElementById('sentinel')
-        if (sentinel && 'IntersectionObserver' in window) {
-            const headerObserver = new IntersectionObserver(([entry]) => {
-                header.value?.classList.toggle('solid', ! entry.isIntersecting)
-            })
-            headerObserver.observe(sentinel)
-            observers.push(headerObserver)
-        }
-    }
 
     if ('IntersectionObserver' in window) {
         const revealObserver = new IntersectionObserver((entries, observer) => {
@@ -500,27 +460,16 @@ function setupMotion() {
     })
 }
 
-function onGlobalKeydown(event) {
-    if (event.key === 'Escape') {
-        if (moreOpen.value) { moreOpen.value = false; moreRef.value?.querySelector('button')?.focus(); return }
-        if (navOpen.value) { navOpen.value = false; document.getElementById('burger')?.focus() }
-    }
-}
-
 onMounted(() => {
     setupMotion()
-    document.addEventListener('click', closeMore)
-    document.addEventListener('keydown', onGlobalKeydown)
 })
 onBeforeUnmount(() => {
     cleanupMotion()
-    document.removeEventListener('click', closeMore)
-    document.removeEventListener('keydown', onGlobalKeydown)
 })
 </script>
 
 <template>
-    <div ref="root" class="pcdr-home" :lang="locale" :dir="direction">
+    <div ref="root" class="pcdr-home public-shell" :lang="locale" :dir="direction">
         <Head>
             <title>{{ title }}</title>
             <meta name="description" :content="description">
@@ -541,87 +490,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="progress" aria-hidden="true"></div>
         <a class="skip" href="#main">{{ copy.skip }}</a>
-        <i id="sentinel" aria-hidden="true"></i>
-
-        <header ref="header" class="site-header">
-            <div class="container bar">
-                <Link class="brand" :href="localPath()" aria-label="PCDR" @click="navOpen = false">
-                    <img :src="logoSmall" width="52" height="52" :alt="copy.logoAlt">
-                    <b>PCDR</b>
-                </Link>
-
-                <nav id="nav" :class="{ open: navOpen }" :aria-label="copy.navAria">
-                    <ul class="nav-links">
-                        <li v-for="link in visibleNavLinks" :key="link.key">
-                            <Link
-                                :href="link.url"
-                                :class="{ 'is-active': isNavActive(link.url) }"
-                                :aria-current="isNavActive(link.url) ? 'page' : undefined"
-                                @click="navOpen = false"
-                            >{{ link.label }}</Link>
-                        </li>
-                        <li v-if="moreNavLinks.length" ref="moreRef" class="nav-more">
-                            <button
-                                type="button"
-                                class="nav-more-btn"
-                                :class="{ 'is-active': moreActive }"
-                                :aria-expanded="String(moreOpen)"
-                                aria-haspopup="true"
-                                @click="toggleMore"
-                            >
-                                {{ locale === 'en' ? 'More' : 'المزيد' }}
-                                <svg class="nav-more-caret" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                            <ul v-show="moreOpen" class="nav-more-menu" role="menu">
-                                <li v-for="link in moreNavLinks" :key="link.key" role="none">
-                                    <Link
-                                        :href="link.url"
-                                        class="nav-more-link"
-                                        :class="{ 'is-active': isNavActive(link.url) }"
-                                        role="menuitem"
-                                        :aria-current="isNavActive(link.url) ? 'page' : undefined"
-                                        @click="navOpen = false"
-                                    >{{ link.label }}</Link>
-                                </li>
-                            </ul>
-                        </li>
-                        <template v-for="link in moreNavLinks" :key="`m-${link.key}`">
-                            <li class="nav-item-mobile-only">
-                                <Link
-                                    :href="link.url"
-                                    :class="{ 'is-active': isNavActive(link.url) }"
-                                    :aria-current="isNavActive(link.url) ? 'page' : undefined"
-                                    @click="navOpen = false"
-                                >{{ link.label }}</Link>
-                            </li>
-                        </template>
-                    </ul>
-                    <div class="nav-panel-extra">
-                        <Link class="btn btn-primary nav-panel-cta" :href="navCta.url" @click="navOpen = false">{{ navCta.label }}</Link>
-                        <div class="nav-lang-row">
-                            <span class="nav-lang-label">{{ locale === 'en' ? 'Language' : 'تغيير اللغة' }}</span>
-                            <LanguageSwitcher />
-                        </div>
-                    </div>
-                </nav>
-
-                <div class="actions">
-                    <LanguageSwitcher class="actions-lang" />
-                    <Link class="btn btn-primary hide-sm" :href="navCta.url">{{ navCta.label }}</Link>
-                    <button
-                        id="burger"
-                        class="burger"
-                        type="button"
-                        :aria-expanded="String(navOpen)"
-                        aria-controls="nav"
-                        :aria-label="copy.navAria"
-                        @click="navOpen = !navOpen"
-                    >
-                        <span></span><span></span><span></span>
-                    </button>
-                </div>
-            </div>
-        </header>
+        <SiteHeader :transparent="true" />
 
         <main id="main">
             <section class="hero" id="top">
@@ -786,27 +655,6 @@ onBeforeUnmount(() => {
             </section>
         </main>
 
-        <footer class="site-footer" id="footer">
-            <div class="container fgrid">
-                <div>
-                    <a class="brand" :href="routeFor('#top')">
-                        <img :src="logoSmall" width="56" height="56" alt="شعار PCDR">
-                        <b>PCDR</b>
-                    </a>
-                    <p>{{ copy.footer.description }}</p>
-                </div>
-                <ul>
-                    <li><a :href="routeFor('#about')">{{ copy.nav[1].label }}</a></li>
-                    <li><a :href="routeFor('#areas')">{{ copy.nav[2].label }}</a></li>
-                    <li><a :href="routeFor('#programs')">{{ copy.nav[3].label }}</a></li>
-                    <li><a :href="routeFor('#targets')">{{ copy.nav[4].label }}</a></li>
-                </ul>
-                <div>
-                    <h3>{{ copy.footer.contactTitle }}</h3>
-                    <p>{{ copy.footer.contactBody }}</p>
-                </div>
-            </div>
-            <p class="copy container">© 2026 PCDR</p>
-        </footer>
+        <SiteFooter />
     </div>
 </template>

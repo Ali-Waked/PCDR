@@ -56,19 +56,6 @@
 .pcdr-home nav .nav-links a::after{content:"";position:absolute;inset-inline:0;bottom:0;height:2px;background:var(--teal);transform:scaleX(0);transition:transform var(--m-fast) var(--ease-em)}
 .pcdr-home nav .nav-links a:hover::after,.pcdr-home nav .nav-links a.is-active::after{transform:scaleX(1)}
 .pcdr-home nav .nav-links a.is-active{font-weight:700}
-.pcdr-home .nav-item-mobile-only{display:none}
-.pcdr-home .nav-more{position:relative}
-.pcdr-home .nav-more-btn{appearance:none;border:0;background:transparent;cursor:pointer;font:inherit;color:inherit;position:relative;font-weight:500;font-size:.98rem;padding-block:.5rem;white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem}
-.pcdr-home .nav-more-btn::after{content:"";position:absolute;inset-inline:0;bottom:0;height:2px;background:var(--teal);transform:scaleX(0);transition:transform var(--m-fast) var(--ease-em)}
-.pcdr-home .nav-more-btn:hover::after,.pcdr-home .nav-more-btn.is-active::after{transform:scaleX(1)}
-.pcdr-home .nav-more-btn.is-active{font-weight:700}
-.pcdr-home .nav-more-caret{transition:transform var(--m-fast) var(--ease)}
-.pcdr-home .nav-more-btn[aria-expanded="true"] .nav-more-caret{transform:rotate(180deg)}
-.pcdr-home .nav-more-menu{position:absolute;inset-block-start:calc(100% + .5rem);inset-inline-end:0;min-inline-size:220px;padding:.5rem;background:#fff;border:1px solid var(--navy-100);border-radius:var(--r-sm);box-shadow:0 8px 24px rgba(37,51,75,.12);z-index:60;list-style:none;margin:0}
-.pcdr-home .nav-more-link{display:block;padding:.65rem .75rem;border-radius:calc(var(--r-sm) - 2px);color:var(--navy-900);font-size:.92rem;font-weight:500;white-space:nowrap;text-decoration:none}
-.pcdr-home .nav-more-link:hover,.pcdr-home .nav-more-link.is-active{background:var(--sand-100)}
-.pcdr-home .nav-more-link.is-active{font-weight:700}
-.pcdr-home .nav-panel-extra{display:none}
 .pcdr-home .actions{display:flex;align-items:center;gap:.7rem;flex-shrink:0}
 .pcdr-home .actions .btn{white-space:nowrap}
 .pcdr-home .actions-lang{flex:0 0 auto}
@@ -367,9 +354,10 @@ body.pcdr-menu-open{overflow:hidden}
 .pcdr-home .cta::before, .pcdr-home .cta::after{content:"";position:absolute;inset-inline-start:50%;top:50%;width:70vmin;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:1.5px solid var(--teal);opacity:0;animation:cring 6s ease-out infinite}
 .pcdr-home .cta::after{animation-delay:3s}
 @keyframes cring{from{opacity:.5;scale:.3}to{opacity:0;scale:2}}
-.pcdr-home .cta .btn-primary{background:var(--teal);border-color:var(--teal);color:var(--navy-900)}
-.pcdr-home .cta .btn-ghost{border-color:rgba(255,255,255,.7);color:#fff}
-.pcdr-home .cta .btn-ghost:hover{background:#fff;color:var(--navy-900)}
+.pcdr-home .cta .btn-primary{background:#71BCB7;border-color:#71BCB7;color:#25334B}
+.pcdr-home .cta .btn-primary:hover,.pcdr-home .cta .btn-primary:focus-visible{background:#8ACBC7;border-color:#8ACBC7;color:#25334B}
+.pcdr-home .cta .btn-ghost{background:transparent;border:2px solid #FFFFFF;color:#FFFFFF;opacity:1}
+.pcdr-home .cta .btn-ghost:hover,.pcdr-home .cta .btn-ghost:focus-visible{background:rgba(255,255,255,.12);border-color:#FFFFFF;color:#FFFFFF}
 @media (max-width:860px){
 .pcdr-home .hero{padding-bottom:6rem}
 .pcdr-home .steps li{top:calc(var(--hh) + var(--i)*10px + 8px);min-height:300px;grid-template-columns:1fr}

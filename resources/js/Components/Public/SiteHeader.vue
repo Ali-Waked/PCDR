@@ -1,31 +1,31 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import LanguageSwitcher from '../LanguageSwitcher.vue'
 import { useI18n } from '../../composables/useI18n'
 import { usePublicNavigation } from '../../composables/usePublicNavigation'
 
-const { page, t, site, localPath, locale } = useI18n()
+const props = defineProps({
+    transparent: { type: Boolean, default: false },
+})
+
+const { page, t, site, localPath } = useI18n()
 const { links, cta } = usePublicNavigation()
 
 const logo = '/assets/pcdr-homepage/logo/pcdr-logo.png'
 const open = ref(false)
-const moreOpen = ref(false)
 const scrolled = ref(false)
-const moreRef = ref(null)
+const navListRef = ref(null)
+const ink = ref({ x: 0, w: 0, visible: false, instant: false })
+const hoveredKey = ref(null)
+const reducedMotion = ref(false)
+
 const currentPath = computed(() => (page.url || '/').split('?')[0])
 const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin
-
-const visibleLinks = computed(() => links.value.slice(0, 6))
-const moreLinks = computed(() => links.value.slice(6))
-const moreActive = computed(() => moreLinks.value.some((item) => isActive(item.url)))
+const isTransparent = computed(() => props.transparent && !scrolled.value && !open.value)
 
 function pathOf(url) {
-    try {
-        return new URL(url, origin).pathname
-    } catch {
-        return String(url)
-    }
+    try { return new URL(url, origin).pathname } catch { return String(url) }
 }
 
 function isActive(url) {
@@ -36,62 +36,81 @@ function isActive(url) {
     return currentPath.value === path || currentPath.value.startsWith(path + '/')
 }
 
-function closeMenu() {
-    open.value = false
-    moreOpen.value = false
+const activeKey = computed(() => links.value.find((l) => isActive(l.url))?.key || null)
+const inkTargetKey = computed(() => hoveredKey.value || activeKey.value)
+
+function closeMenu() { open.value = false }
+
+function onScroll() { scrolled.value = window.scrollY > 8 }
+
+const NAV_BP = 1280
+
+function updateInk(instant = false) {
+    if (typeof window === 'undefined') return
+    const list = navListRef.value
+    if (!list || window.innerWidth < NAV_BP) { ink.value = { ...ink.value, visible: false, instant }; return }
+    const key = inkTargetKey.value
+    if (!key) { ink.value = { ...ink.value, visible: false, instant }; return }
+    const link = list.querySelector(`[data-nav-key="${key}"]`)
+    if (!link || !link.offsetParent) { ink.value = { ...ink.value, visible: false, instant }; return }
+    const listRect = list.getBoundingClientRect()
+    const rect = link.getBoundingClientRect()
+    const x = rect.left - listRect.left
+    ink.value = { x, w: rect.width, visible: true, instant: instant || reducedMotion.value }
 }
 
-function toggleMore() {
-    moreOpen.value = !moreOpen.value
-}
+function onHover(key) { hoveredKey.value = key; updateInk() }
+function onLeave() { hoveredKey.value = null; updateInk() }
 
-function onScroll() {
-    scrolled.value = window.scrollY > 8
-}
-
-function onDocClick(event) {
-    if (moreRef.value && !moreRef.value.contains(event.target)) {
-        moreOpen.value = false
-    }
-}
+let ro = null
+let mql = null
+let onMql = null
+let onResize = null
 
 function onKeydown(event) {
-    if (event.key === 'Escape') {
-        if (moreOpen.value) {
-            moreOpen.value = false
-            moreRef.value?.querySelector('button')?.focus()
-            return
-        }
-        if (open.value) {
-            open.value = false
-            document.querySelector('.ps-burger')?.focus()
-        }
+    if (event.key === 'Escape' && open.value) {
+        open.value = false
+        document.querySelector('.ps-burger')?.focus()
     }
 }
 
-watch(() => page.url, closeMenu)
+watch(() => page.url, () => { closeMenu(); nextTick(() => updateInk(true)) })
 watch(open, (value) => {
     if (typeof document !== 'undefined') document.body.classList.toggle('ps-menu-open', value)
-    if (!value) moreOpen.value = false
+    if (!value) nextTick(() => updateInk(true))
 })
+watch([activeKey, () => links.value], () => nextTick(() => updateInk(true)), { deep: true })
 
 onMounted(() => {
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
-    document.addEventListener('click', onDocClick)
     document.addEventListener('keydown', onKeydown)
+    mql = window.matchMedia('(prefers-reduced-motion: reduce)')
+    reducedMotion.value = mql.matches
+    onMql = (e) => { reducedMotion.value = e.matches; updateInk(true) }
+    mql.addEventListener?.('change', onMql)
+    nextTick(() => updateInk(true))
+    onResize = () => updateInk(true)
+    if (typeof ResizeObserver !== 'undefined' && navListRef.value) {
+        ro = new ResizeObserver(() => updateInk(true))
+        ro.observe(navListRef.value)
+    }
+    window.addEventListener('resize', onResize, { passive: true })
+    if (document.fonts?.ready) document.fonts.ready.then(() => updateInk(true))
 })
 
 onBeforeUnmount(() => {
     window.removeEventListener('scroll', onScroll)
-    document.removeEventListener('click', onDocClick)
     document.removeEventListener('keydown', onKeydown)
+    window.removeEventListener('resize', onResize)
+    ro?.disconnect()
+    mql?.removeEventListener?.('change', onMql)
     if (typeof document !== 'undefined') document.body.classList.remove('ps-menu-open')
 })
 </script>
 
 <template>
-    <header class="ps-header" :class="{ 'is-scrolled': scrolled }">
+    <header class="ps-header" :class="{ 'is-scrolled': scrolled, 'is-transparent': isTransparent, 'is-open': open }">
         <div class="ps-container ps-header__inner">
             <Link :href="localPath()" class="ps-brand" :aria-label="site.name || 'PCDR'" @click="closeMenu">
                 <img :src="logo" width="48" height="48" :alt="site.shortName || 'PCDR'">
@@ -102,59 +121,31 @@ onBeforeUnmount(() => {
             </Link>
 
             <nav id="public-nav" class="ps-nav" :class="{ 'is-open': open }" :aria-label="t('ui.main_navigation', t('cms_menu_primary'))">
-                <ul class="ps-nav__list">
-                    <li v-for="item in visibleLinks" :key="item.key" class="ps-nav__item">
+                <ul ref="navListRef" class="ps-nav__list" @mouseleave="onLeave">
+                    <span
+                        class="ps-nav__ink"
+                        :class="{ 'is-visible': ink.visible, 'is-instant': ink.instant }"
+                        :style="{ transform: `translateX(${ink.x}px)`, width: `${ink.w}px` }"
+                        aria-hidden="true"
+                    ></span>
+                    <li v-for="(item, i) in links" :key="item.key" class="ps-nav__item" :style="{ '--nav-i': i }">
                         <Link
                             :href="item.url"
                             class="ps-nav__link"
-                            :class="{ 'is-active': isActive(item.url) }"
+                            :data-nav-key="item.key"
                             :aria-current="isActive(item.url) ? 'page' : undefined"
+                            @mouseenter="onHover(item.key)"
+                            @focus="onHover(item.key)"
+                            @blur="onLeave"
                             @click="closeMenu"
                         >
-                            {{ item.label }}
+                            <span class="ps-nav__label ps-nav__label--full">{{ item.label }}</span>
+                            <span class="ps-nav__label ps-nav__label--short" aria-hidden="true">{{ item.shortLabel }}</span>
+                            <span class="ps-nav__active-dot" aria-hidden="true"></span>
+                            <span class="ps-nav__mobile-bar" aria-hidden="true"></span>
+                            <span class="ps-nav__mobile-dot" aria-hidden="true"></span>
                         </Link>
                     </li>
-                    <li v-if="moreLinks.length" ref="moreRef" class="ps-nav__item ps-nav__more">
-                        <button
-                            type="button"
-                            class="ps-nav__link ps-nav__more-btn"
-                            :class="{ 'is-active': moreActive }"
-                            :aria-expanded="String(moreOpen)"
-                            aria-haspopup="true"
-                            @click="toggleMore"
-                        >
-                            {{ t('ui.more', locale === 'en' ? 'More' : 'المزيد') }}
-                            <svg class="ps-nav__more-caret" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
-                        <ul v-show="moreOpen" class="ps-nav__more-menu" role="menu">
-                            <li v-for="item in moreLinks" :key="item.key" role="none">
-                                <Link
-                                    :href="item.url"
-                                    class="ps-nav__more-link"
-                                    :class="{ 'is-active': isActive(item.url) }"
-                                    role="menuitem"
-                                    :aria-current="isActive(item.url) ? 'page' : undefined"
-                                    @click="closeMenu"
-                                >
-                                    {{ item.label }}
-                                </Link>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- mobile-only: show all links in panel -->
-                    <template v-for="item in moreLinks" :key="`m-${item.key}`">
-                        <li class="ps-nav__item ps-nav__item--mobile-only">
-                            <Link
-                                :href="item.url"
-                                class="ps-nav__link"
-                                :class="{ 'is-active': isActive(item.url) }"
-                                :aria-current="isActive(item.url) ? 'page' : undefined"
-                                @click="closeMenu"
-                            >
-                                {{ item.label }}
-                            </Link>
-                        </li>
-                    </template>
                 </ul>
                 <div class="ps-nav__extra">
                     <Link :href="cta.url" class="ps-btn ps-btn-primary" @click="closeMenu">{{ cta.label }}</Link>
