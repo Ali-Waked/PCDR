@@ -52,9 +52,13 @@ export function useI18n() {
     }
 
     function alternateUrl(code) {
-        const path = (page.url || '/').split('?')[0]
-        const suffix = path.replace(/^\/(ar|en)/, '') || ''
-        return `/${code}${suffix}`
+        const raw = page.url || '/'
+        const [beforeHash, hash = ''] = raw.split('#')
+        const [pathPart, query = ''] = beforeHash.split('?')
+        const suffix = pathPart.replace(/^\/(ar|en)/, '') || ''
+        const q = query ? `?${query}` : ''
+        const h = hash ? `#${hash}` : ''
+        return `/${code}${suffix}${q}${h}`
     }
 
     function richText(value) {

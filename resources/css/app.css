@@ -1638,29 +1638,66 @@ table.cms-table tbody tr:hover {
     color: var(--pcdr-muted);
 }
 
-.admin-user {
-    display: none;
-    line-height: 1.2;
+.admin-brand-link--compact { gap: 0.55rem; }
+.admin-brand-logo {
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
 }
-
-.admin-user strong,
-.admin-user small {
-    display: block;
-}
-
-.admin-user strong {
-    font-size: 0.8rem;
+.admin-brand-name {
+    font-size: 1rem;
+    font-weight: 700;
     color: var(--pcdr-navy-900);
+    letter-spacing: 0.01em;
 }
+.admin-topbar__lang-desktop { display: none; }
+.admin-role-badge--desktop { display: none; }
 
-.admin-user small {
-    max-inline-size: 12rem;
-    overflow: hidden;
-    color: var(--pcdr-muted);
-    font-size: 0.68rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.admin-user-menu { position: relative; }
+.admin-avatar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border: 1px solid var(--pcdr-border);
+    border-radius: 50%;
+    background: var(--pcdr-navy-100);
+    color: var(--pcdr-navy-900);
+    cursor: pointer;
+    font: 700 0.82rem/1 Inter, "IBM Plex Sans Arabic", system-ui, sans-serif;
 }
+.admin-avatar-btn__initials { line-height: 1; }
+.admin-user-popover {
+    position: absolute;
+    inset-block-start: calc(100% + 0.5rem);
+    inset-inline-end: 0;
+    z-index: 80;
+    min-inline-size: min(18rem, calc(100vw - 2rem));
+    padding: 1rem;
+    border: 1px solid var(--pcdr-border);
+    border-radius: var(--pcdr-radius-lg);
+    background: var(--pcdr-surface);
+    box-shadow: 0 12px 30px rgb(37 51 75 / 0.12);
+}
+.admin-user-popover__identity { display: grid; gap: 0.15rem; margin-block-end: 0.75rem; }
+.admin-user-popover__identity strong { font-size: 0.9rem; color: var(--pcdr-navy-900); }
+.admin-user-popover__identity small { font-size: 0.78rem; color: var(--pcdr-muted); word-break: break-word; }
+.admin-user-popover__badge { margin-block-end: 0.75rem; }
+.admin-user-popover__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-block: 0.75rem;
+    border-block: 1px solid var(--pcdr-border);
+    margin-block-end: 0.75rem;
+}
+.admin-user-popover__label { font-size: 0.82rem; color: var(--pcdr-ink); font-weight: 600; }
+.admin-user-popover__logout { inline-size: 100%; justify-content: center; }
+.admin-sidebar__lang { padding-block-start: 1rem; margin-block-start: auto; }
 
 .admin-shell__body {
     display: flex;
@@ -1671,40 +1708,49 @@ table.cms-table tbody tr:hover {
 }
 
 .admin-sidebar {
+    --topbar-h: 4.3rem;
+    --dir-sign: 1;
     position: fixed;
-    inset-block-start: 4.3rem;
+    inset-block: var(--topbar-h) 0;
     inset-inline-start: 0;
-    z-index: 35;
+    z-index: 70;
     display: flex;
     flex-direction: column;
-    inline-size: min(19rem, 88vw);
-    block-size: calc(100vh - 4.3rem);
+    inline-size: min(86vw, 20rem);
+    max-block-size: calc(100dvh - var(--topbar-h));
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 1.1rem;
+    padding-block-end: max(1.1rem, env(safe-area-inset-bottom));
     background: var(--pcdr-surface);
     border-inline-end: 1px solid var(--pcdr-border);
-    transform: translateX(-100%);
-    transition: transform var(--motion-duration-base) var(--motion-ease-standard);
+    transform: translateX(calc(var(--dir-sign) * -100%));
+    transition: transform var(--motion-duration-base) var(--motion-ease-standard), visibility var(--motion-duration-base) var(--motion-ease-standard);
+    visibility: hidden;
 }
 
 [dir='rtl'] .admin-sidebar {
-    inset-inline-start: auto;
-    inset-inline-end: 0;
+    --dir-sign: -1;
     border-inline-end: 0;
     border-inline-start: 1px solid var(--pcdr-border);
-    transform: translateX(100%);
 }
 
-.admin-sidebar.is-open,
-[dir='rtl'] .admin-sidebar.is-open {
+.admin-sidebar.is-open {
     transform: translateX(0);
+    visibility: visible;
 }
 
 .admin-nav-scrim {
     position: fixed;
-    inset: 4.3rem 0 0;
-    z-index: 30;
-    background: rgb(37 51 75 / 0.35);
+    inset: 0;
+    z-index: 60;
+    background: rgb(37 51 75 / 0.45);
+    animation: admin-scrim-in 0.2s ease;
+}
+@keyframes admin-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+body.admin-nav-open {
+    overflow: hidden;
 }
 
 .admin-sidebar nav {
@@ -1718,11 +1764,24 @@ table.cms-table tbody tr:hover {
 .admin-sidebar__label {
     margin-block-end: 0.4rem;
     color: var(--pcdr-teal-700);
-    font-size: 0.68rem;
+    font-size: 0.8125rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
 }
+.admin-sidebar__label-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    inline-size: 100%;
+    min-block-size: 44px;
+    padding: 0.35rem 0.25rem;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: start;
+}
+.admin-sidebar__chevron { font-size: 0.75rem; color: var(--pcdr-muted); }
 
 .admin-sidebar ul {
     display: grid;
@@ -1737,12 +1796,12 @@ table.cms-table tbody tr:hover {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    min-block-size: 2.35rem;
-    padding: 0.4rem 0.65rem;
+    min-block-size: 44px;
+    padding: 0.55rem 0.65rem;
     border-radius: var(--pcdr-radius-md);
     border-inline-start: 3px solid transparent;
     color: var(--pcdr-muted);
-    font-size: 0.82rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     text-decoration: none;
     transition: background var(--motion-duration-fast) var(--motion-ease-standard), color var(--motion-duration-fast) var(--motion-ease-standard);
@@ -2069,21 +2128,28 @@ table.cms-table tbody tr:hover {
 }
 
 @media (min-width: 768px) {
-    .admin-topbar__context { display: flex; }
     .auth-shell__main { grid-template-columns: 1fr 1fr; align-items: start; }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1100px) {
+    .admin-topbar__context { display: flex; }
+    .admin-topbar__lang-desktop { display: inline-flex; }
+    .admin-sidebar__lang { display: none; }
+    .admin-user-popover__lang { display: none; }
     .admin-nav-toggle,
     .admin-nav-scrim { display: none; }
 
     .admin-sidebar {
         position: sticky;
-        inset-block-start: 4.3rem;
+        inset-block: 4.3rem auto;
+        inset-inline-start: 0;
         inline-size: 17.5rem;
         flex: none;
         block-size: calc(100vh - 4.3rem);
+        max-block-size: none;
         transform: none;
+        visibility: visible;
+        z-index: 30;
     }
 
     [dir='rtl'] .admin-sidebar { transform: none; }

@@ -22,14 +22,17 @@ export function useLocale() {
 
     function pathForLocale(target) {
         const current = page.url || `/${locale.value}`
-        const segments = current.split('?')[0].split('/').filter(Boolean)
+        const [beforeHash, hash = ''] = current.split('#')
+        const [pathPart, query = ''] = beforeHash.split('?')
+        const segments = pathPart.split('/').filter(Boolean)
         if (['ar', 'en'].includes(segments[0])) {
             segments[0] = target
         } else {
             segments.unshift(target)
         }
-        const query = current.includes('?') ? `?${current.split('?')[1]}` : ''
-        return `/${segments.join('/')}${query}`
+        const q = query ? `?${query}` : ''
+        const h = hash ? `#${hash}` : ''
+        return `/${segments.join('/')}${q}${h}`
     }
 
     return { locale, direction, isRtl, t, localePath, pathForLocale }
