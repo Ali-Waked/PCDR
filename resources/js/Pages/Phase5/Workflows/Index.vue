@@ -66,7 +66,7 @@ function instanceUrl(instance) {
         <Phase5Section :title="label('definitions', locale)" flush>
             <Phase5Table :columns="definitionColumns" :rows="definitionRows" compact />
             <div style="padding: 0 1.25rem 1.25rem">
-                <Phase5Pagination :paginator="definitions" />
+                <Phase5Pagination :paginator="definitions" page-key="definitionPage" />
             </div>
         </Phase5Section>
 
@@ -77,7 +77,7 @@ function instanceUrl(instance) {
                 </template>
             </Phase5Table>
             <div style="padding: 0 1.25rem 1.25rem">
-                <Phase5Pagination :paginator="instances" />
+                <Phase5Pagination :paginator="instances" page-key="instancePage" />
             </div>
         </Phase5Section>
 

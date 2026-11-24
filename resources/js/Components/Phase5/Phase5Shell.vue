@@ -1,6 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
-import CmsLayout from '../../Layouts/CmsLayout.vue'
+import AppLayout from '../../Layouts/AppLayout.vue'
 import { useI18n } from '../../composables/useI18n'
 import { label } from './phase5'
 
@@ -19,25 +19,17 @@ const backText = () => props.backLabel || label('back', locale.value) || t('phas
 </script>
 
 <template>
-    <CmsLayout :title="title" :subtitle="subtitle">
-        <div class="phase5-page">
-            <header class="phase5-page__head">
-                <div>
-                    <span v-if="eyebrow" class="small-caps phase5-page__eyebrow">{{ eyebrow }}</span>
-                    <h1>{{ title }}</h1>
-                    <p v-if="subtitle" class="phase5-page__subtitle">{{ subtitle }}</p>
-                </div>
-                <div class="phase5-page__actions">
-                    <Link v-if="back" :href="back" class="btn btn-ghost btn-small">
-                        <span aria-hidden="true">←</span> {{ backText() }}
-                    </Link>
-                    <slot name="actions" />
-                </div>
-            </header>
+    <AppLayout :title="title" :subtitle="subtitle" :eyebrow="eyebrow">
+        <template #actions>
+            <Link v-if="back" :href="back" class="pc-btn pc-btn--ghost pc-btn--sm">
+                <span aria-hidden="true">←</span> {{ backText() }}
+            </Link>
+            <slot name="actions" />
+        </template>
 
-            <div v-if="notice" class="notice phase5-notice" role="note">{{ notice }}</div>
-
+        <div class="pc-stack">
+            <div v-if="notice" class="pc-callout pc-callout--sand" role="note">{{ notice }}</div>
             <slot />
         </div>
-    </CmsLayout>
+    </AppLayout>
 </template>

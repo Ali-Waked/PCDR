@@ -5,6 +5,7 @@ import Phase5Shell from '../../../Components/Phase5/Phase5Shell.vue'
 import Phase5Section from '../../../Components/Phase5/Phase5Section.vue'
 import Phase5Table from '../../../Components/Phase5/Phase5Table.vue'
 import Phase5Pagination from '../../../Components/Phase5/Phase5Pagination.vue'
+import SelectionControl from '../../../Components/Selection/SelectionControl.vue'
 import Badge from '../../../Components/Ui/Badge.vue'
 import { useI18n } from '../../../composables/useI18n'
 import { label, phase5Url, rowsOf, shortText, toneFor } from '../../../Components/Phase5/phase5'
@@ -22,10 +23,27 @@ const props = defineProps({
 const { locale, formatDate } = useI18n()
 
 const title = computed(() => label('automations', locale.value))
-const definitions = computed(() => rowsOf(props.definitions))
-const executions = computed(() => rowsOf(props.executions))
+const definitionRows = computed(() => rowsOf(props.definitions))
+const executionRows = computed(() => rowsOf(props.executions))
 const fieldKeys = computed(() => Object.keys(props.fields ?? {}))
 const operatorKeys = computed(() => Object.keys(props.operators ?? {}))
+
+const triggerOptions = computed(() => props.triggers.map((trigger) => ({
+    value: trigger,
+    label: label(trigger, locale.value, trigger),
+})))
+const conditionFieldOptions = computed(() => fieldKeys.value.map((key) => ({
+    value: key,
+    label: label(key, locale.value, key),
+})))
+const operatorOptions = computed(() => operatorKeys.value.map((key) => ({
+    value: key,
+    label: label(key, locale.value, key),
+})))
+const actionOptions = computed(() => props.actions.map((action) => ({
+    value: action,
+    label: label(action, locale.value, action),
+})))
 
 const ACTION_FIELDS = {
     create_notification: ['category', 'priority', 'title_key', 'preview_key'],
@@ -129,7 +147,7 @@ function submit() {
         </div>
 
         <Phase5Section :title="label('definitions', locale)" flush>
-            <Phase5Table :columns="definitionColumns" :rows="definitions" compact>
+            <Phase5Table :columns="definitionColumns" :rows="definitionRows" compact>
                 <template #cell-conditions="{ value }">{{ serialize(value) }}</template>
                 <template #cell-actions_list="{ value }">{{ serialize(value) }}</template>
                 <template #cell-actions_column="{ row }">
@@ -139,12 +157,12 @@ function submit() {
                 </template>
             </Phase5Table>
             <div style="padding: 0 1.25rem 1.25rem">
-                <Phase5Pagination :paginator="definitions" />
+                <Phase5Pagination :paginator="props.definitions" page-key="definitionPage" />
             </div>
         </Phase5Section>
 
         <Phase5Section :title="label('executions', locale)" flush>
-            <Phase5Table :columns="executionColumns" :rows="executions" compact>
+            <Phase5Table :columns="executionColumns" :rows="executionRows" compact>
                 <template #cell-action="{ row }">
                     <button
                         v-if="row.status === 'failed'"
@@ -158,7 +176,7 @@ function submit() {
                 </template>
             </Phase5Table>
             <div style="padding: 0 1.25rem 1.25rem">
-                <Phase5Pagination :paginator="executions" />
+                <Phase5Pagination :paginator="props.executions" page-key="executionPage" />
             </div>
         </Phase5Section>
 
@@ -174,11 +192,15 @@ function submit() {
                         <input id="phase5-automation-category" v-model="form.category" class="input" />
                     </div>
                     <div class="field">
-                        <label for="phase5-automation-trigger">{{ label('triggers', locale) }}</label>
-                        <select id="phase5-automation-trigger" v-model="form.trigger_event" class="select" required>
-                            <option value="">{{ label('choose', locale) }}</option>
-                            <option v-for="trigger in triggers" :key="trigger" :value="trigger">{{ label(trigger, locale, trigger) }}</option>
-                        </select>
+                        <SelectionControl
+                            v-model="form.trigger_event"
+                            :label="label('triggers', locale)"
+                            :options="triggerOptions"
+                            :placeholder="label('choose', locale)"
+                            :error="form.errors.trigger_event || ''"
+                            :searchable="triggerOptions.length > 6"
+                            required
+                        />
                     </div>
                     <div class="field">
                         <label for="phase5-automation-retry">{{ label('attempts', locale) }}</label>
@@ -190,18 +212,22 @@ function submit() {
                     <legend>{{ label('conditions', locale) }}</legend>
                     <div class="phase5-form__grid">
                         <div class="field">
-                            <label for="phase5-condition-field">{{ label('fields', locale) }}</label>
-                            <select id="phase5-condition-field" v-model="form.conditions[0].field" class="select">
-                                <option value="">{{ label('choose', locale) }}</option>
-                                <option v-for="key in fieldKeys" :key="key" :value="key">{{ label(key, locale, key) }}</option>
-                            </select>
+                            <SelectionControl
+                                v-model="form.conditions[0].field"
+                                :label="label('fields', locale)"
+                                :options="conditionFieldOptions"
+                                :placeholder="label('choose', locale)"
+                                :searchable="conditionFieldOptions.length > 6"
+                            />
                         </div>
                         <div class="field">
-                            <label for="phase5-condition-operator">{{ label('operator', locale) }}</label>
-                            <select id="phase5-condition-operator" v-model="form.conditions[0].operator" class="select">
-                                <option value="">{{ label('choose', locale) }}</option>
-                                <option v-for="key in operatorKeys" :key="key" :value="key">{{ label(key, locale, key) }}</option>
-                            </select>
+                            <SelectionControl
+                                v-model="form.conditions[0].operator"
+                                :label="label('operator', locale)"
+                                :options="operatorOptions"
+                                :placeholder="label('choose', locale)"
+                                :searchable="operatorOptions.length > 6"
+                            />
                         </div>
                         <div class="field">
                             <label for="phase5-condition-value">{{ label('value', locale) }}</label>
@@ -214,11 +240,13 @@ function submit() {
                     <legend>{{ label('actions', locale) }}</legend>
                     <div class="phase5-form__grid">
                         <div class="field">
-                            <label for="phase5-action-name">{{ label('actions', locale) }}</label>
-                            <select id="phase5-action-name" v-model="form.actions[0].action" class="select">
-                                <option value="">{{ label('choose', locale) }}</option>
-                                <option v-for="action in actions" :key="action" :value="action">{{ label(action, locale, action) }}</option>
-                            </select>
+                            <SelectionControl
+                                v-model="form.actions[0].action"
+                                :label="label('actions', locale)"
+                                :options="actionOptions"
+                                :placeholder="label('choose', locale)"
+                                :searchable="actionOptions.length > 6"
+                            />
                         </div>
                         <div v-for="key in actionFields" :key="key" class="field">
                             <label :for="`phase5-action-${key}`">{{ label(key, locale) }}</label>

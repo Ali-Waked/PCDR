@@ -1,7 +1,7 @@
 <script setup>
 import { useI18n } from '../../composables/useI18n'
 import Badge from '../Ui/Badge.vue'
-import EmptyState from '../EmptyState.vue'
+import EmptyState from '../Dashboard/EmptyState.vue'
 import { asBoolean, label, shortText, toneFor } from './phase5'
 
 const props = defineProps({
@@ -42,9 +42,9 @@ function display(row, column) {
 </script>
 
 <template>
-    <div class="phase5-table-wrap">
+    <div class="pc-table-wrap">
         <div v-if="rows.length" class="phase5-table-scroll">
-            <table class="phase5-table" :class="{ 'is-compact': compact }">
+            <table class="pc-table" :class="{ 'is-compact': compact }">
                 <thead>
                     <tr>
                         <th v-for="column in columns" :key="column.key" :scope="'col'">

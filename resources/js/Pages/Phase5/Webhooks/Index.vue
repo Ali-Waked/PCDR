@@ -5,6 +5,7 @@ import Phase5Shell from '../../../Components/Phase5/Phase5Shell.vue'
 import Phase5Section from '../../../Components/Phase5/Phase5Section.vue'
 import Phase5Table from '../../../Components/Phase5/Phase5Table.vue'
 import Phase5Pagination from '../../../Components/Phase5/Phase5Pagination.vue'
+import MultiSelect from '../../../Components/Selection/MultiSelect.vue'
 import Badge from '../../../Components/Ui/Badge.vue'
 import { useI18n } from '../../../composables/useI18n'
 import { label, phase5Url, rowsOf, toneFor } from '../../../Components/Phase5/phase5'
@@ -51,14 +52,10 @@ const form = useForm({
     active: false,
 })
 
-function toggleEvent(event) {
-    const index = form.events.indexOf(event)
-    if (index >= 0) {
-        form.events.splice(index, 1)
-    } else {
-        form.events.push(event)
-    }
-}
+const eventOptions = computed(() => props.events.map((event) => ({
+    value: event,
+    label: label(event, locale.value, event),
+})))
 
 function submit() {
     form.post(phase5Url('webhooks.endpoints.store', {}, locale.value), {
@@ -101,7 +98,7 @@ function retry(delivery) {
                 </template>
             </Phase5Table>
             <div style="padding: 0 1.25rem 1.25rem">
-                <Phase5Pagination :paginator="endpoints" />
+                <Phase5Pagination :paginator="endpoints" page-key="endpointPage" />
             </div>
         </Phase5Section>
 
@@ -123,7 +120,7 @@ function retry(delivery) {
                 </template>
             </Phase5Table>
             <div style="padding: 0 1.25rem 1.25rem">
-                <Phase5Pagination :paginator="deliveries" />
+                <Phase5Pagination :paginator="deliveries" page-key="deliveryPage" />
             </div>
         </Phase5Section>
 
@@ -149,13 +146,16 @@ function retry(delivery) {
                     </div>
                 </div>
 
-                <fieldset style="margin: 1.25rem 0 0; border: 1px solid var(--pcdr-border, #d9dfe7); border-radius: 0.5rem; padding: 1rem">
-                    <legend>{{ label('events', locale) }}</legend>
-                    <label v-for="event in events" :key="event" class="checkbox-row">
-                        <input type="checkbox" :checked="form.events.includes(event)" @change="toggleEvent(event)" />
-                        <span>{{ label(event, locale, event) }}</span>
-                    </label>
-                </fieldset>
+                <div style="margin: 1.25rem 0 0">
+                    <MultiSelect
+                        v-model="form.events"
+                        :label="label('events', locale)"
+                        :options="eventOptions"
+                        :error="form.errors.events || ''"
+                        :empty-text="label('no_results', locale, locale === 'ar' ? 'لا توجد نتائج' : 'No results')"
+                        clearable
+                    />
+                </div>
 
                 <div v-if="Object.keys(form.errors).length" class="notice" role="alert">
                     <span v-for="(message, field) in form.errors" :key="field">{{ message }}</span>

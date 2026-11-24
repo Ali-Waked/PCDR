@@ -1,5 +1,7 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
+import SelectionControl from '../Selection/SelectionControl.vue'
+import StatusSelect from '../Selection/StatusSelect.vue'
 import { useI18n } from '../../composables/useI18n'
 import { label, optionLabel, optionValue } from './phase5'
 
@@ -37,69 +39,87 @@ function submit() {
 function fieldId(field) {
     return `phase5-${props.action.replace(/[^a-zA-Z0-9]+/g, '-')}-${field.name}`
 }
+
+function isStatusField(field) {
+    return /status/i.test(field.name) || Boolean(field.status)
+}
+
+function selectOptions(field) {
+    return (field.options ?? []).map((option) => ({
+        ...(option && typeof option === 'object' ? option : {}),
+        value: optionValue(option),
+        label: optionLabel(option, locale.value),
+    }))
+}
 </script>
 
 <template>
-    <form class="phase5-form" :class="{ 'is-compact': compact }" @submit.prevent="submit">
-        <div class="phase5-form__grid">
-            <div v-for="field in fields" :key="field.name" class="field" :class="{ 'is-wide': field.wide }">
-                <label :for="fieldId(field)">{{ field.label || label(field.name, locale) }}</label>
+    <form class="pc-form-grid phase5-form" :class="{ 'is-compact': compact }" @submit.prevent="submit">
+        <div v-for="field in fields" :key="field.name" class="pc-field" :class="{ 'pc-field--full': field.wide }">
+            <label v-if="field.type !== 'checkbox'" class="pc-label" :for="fieldId(field)">
+                {{ field.label || label(field.name, locale) }}
+            </label>
 
-                <select
-                    v-if="field.type === 'select'"
-                    :id="fieldId(field)"
-                    v-model="form[field.name]"
-                    class="select"
-                >
-                    <option value="">{{ field.placeholder || label('choose', locale) }}</option>
-                    <option
-                        v-for="option in field.options ?? []"
-                        :key="optionValue(option)"
-                        :value="optionValue(option)"
-                    >
-                        {{ optionLabel(option, locale) }}
-                    </option>
-                </select>
+            <StatusSelect
+                v-if="field.type === 'select' && isStatusField(field)"
+                v-model="form[field.name]"
+                :label="field.label || label(field.name, locale)"
+                :name="field.name"
+                :options="selectOptions(field)"
+                :placeholder="field.placeholder || label('choose', locale)"
+                :required="Boolean(field.required)"
+                :error="form.errors[field.name] || ''"
+                :searchable="(field.options ?? []).length > 8"
+            />
+            <SelectionControl
+                v-else-if="field.type === 'select'"
+                v-model="form[field.name]"
+                :label="field.label || label(field.name, locale)"
+                :name="field.name"
+                :options="selectOptions(field)"
+                :placeholder="field.placeholder || label('choose', locale)"
+                :searchable="(field.options ?? []).length > 6"
+                :required="Boolean(field.required)"
+                :error="form.errors[field.name] || ''"
+            />
 
-                <textarea
-                    v-else-if="field.type === 'textarea'"
-                    :id="fieldId(field)"
-                    v-model="form[field.name]"
-                    class="textarea"
-                    :placeholder="field.placeholder || ''"
-                    :maxlength="field.maxlength"
-                    rows="4"
-                />
+            <textarea
+                v-else-if="field.type === 'textarea'"
+                :id="fieldId(field)"
+                v-model="form[field.name]"
+                class="pc-textarea"
+                :placeholder="field.placeholder || ''"
+                :maxlength="field.maxlength"
+                rows="4"
+            />
 
-                <label v-else-if="field.type === 'checkbox'" class="checkbox-row" :for="fieldId(field)">
-                    <input
-                        :id="fieldId(field)"
-                        v-model="form[field.name]"
-                        type="checkbox"
-                        class="input"
-                    />
-                    <span>{{ field.hint || field.label || label(field.name, locale) }}</span>
-                </label>
-
+            <label v-else-if="field.type === 'checkbox'" class="pc-checkbox" :for="fieldId(field)">
                 <input
-                    v-else
                     :id="fieldId(field)"
                     v-model="form[field.name]"
-                    class="input"
-                    :type="field.type || 'text'"
-                    :placeholder="field.placeholder || ''"
-                    :maxlength="field.maxlength"
-                    :min="field.min"
-                    :step="field.step"
+                    type="checkbox"
                 />
+                <span>{{ field.hint || field.label || label(field.name, locale) }}</span>
+            </label>
 
-                <span v-if="field.help && field.type !== 'checkbox'" class="hint">{{ field.help }}</span>
-                <span v-if="form.errors[field.name]" class="error" role="alert">{{ form.errors[field.name] }}</span>
-            </div>
+            <input
+                v-else
+                :id="fieldId(field)"
+                v-model="form[field.name]"
+                class="pc-input"
+                :type="field.type || 'text'"
+                :placeholder="field.placeholder || ''"
+                :maxlength="field.maxlength"
+                :min="field.min"
+                :step="field.step"
+            />
+
+            <span v-if="field.help && field.type !== 'checkbox'" class="pc-hint">{{ field.help }}</span>
+            <span v-if="form.errors[field.name]" class="pc-error" role="alert">{{ form.errors[field.name] }}</span>
         </div>
 
-        <div class="phase5-form__actions">
-            <button type="submit" class="btn btn-primary" :disabled="form.processing" :aria-busy="form.processing">
+        <div class="pc-form-actions phase5-form__actions">
+            <button type="submit" class="pc-btn pc-btn--primary" :disabled="form.processing" :aria-busy="form.processing">
                 {{ submitLabel || label('save', locale) }}
             </button>
             <slot name="actions" />

@@ -7,16 +7,18 @@ defineProps({
 </script>
 
 <template>
-    <section class="pcdr-card phase5-section" :class="{ 'is-flush': flush }">
-        <header v-if="title || $slots.actions" class="phase5-section__head">
+    <section class="pc-card phase5-section">
+        <header v-if="title || $slots.actions" class="pc-card__head">
             <div>
-                <h2 v-if="title">{{ title }}</h2>
-                <p v-if="subtitle" class="phase5-section__subtitle">{{ subtitle }}</p>
+                <h2 v-if="title" class="pc-card__title">{{ title }}</h2>
+                <p v-if="subtitle" class="pc-card__subtitle">{{ subtitle }}</p>
             </div>
-            <div v-if="$slots.actions" class="phase5-section__actions">
+            <div v-if="$slots.actions" class="pc-page-actions">
                 <slot name="actions" />
             </div>
         </header>
-        <slot />
+        <div class="pc-card__body" :class="{ 'pc-card__body--flush': flush }">
+            <slot />
+        </div>
     </section>
 </template>

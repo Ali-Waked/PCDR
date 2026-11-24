@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import Phase5Shell from '../../../Components/Phase5/Phase5Shell.vue'
 import Phase5Section from '../../../Components/Phase5/Phase5Section.vue'
+import SelectionControl from '../../../Components/Selection/SelectionControl.vue'
 import Badge from '../../../Components/Ui/Badge.vue'
 import { useI18n } from '../../../composables/useI18n'
 import { label, optionLabel, optionValue, phase5Url } from '../../../Components/Phase5/phase5'
@@ -35,6 +36,11 @@ const rows = computed(() => (props.categories ?? []).flatMap((category) => (prop
 })))
 
 const form = useForm({ preferences: rows.value })
+
+const digestSelectOptions = computed(() => props.digestOptions.map((option) => ({
+    value: optionValue(option),
+    label: optionLabel(option, locale.value),
+})))
 
 function isMandatory(category) {
     return (props.mandatoryCategories ?? []).includes(category)
@@ -89,11 +95,13 @@ function submit() {
                                     </label>
                                 </td>
                                 <td>
-                                    <select v-model="form.preferences[index].digest" class="select">
-                                        <option v-for="option in digestOptions" :key="optionValue(option)" :value="optionValue(option)">
-                                            {{ optionLabel(option, locale) }}
-                                        </option>
-                                    </select>
+                                    <SelectionControl
+                                        v-model="form.preferences[index].digest"
+                                        :aria-label="label('digest', locale)"
+                                        :options="digestSelectOptions"
+                                        :searchable="false"
+                                        size="sm"
+                                    />
                                 </td>
                                 <td>
                                     <div class="phase5-inline">
