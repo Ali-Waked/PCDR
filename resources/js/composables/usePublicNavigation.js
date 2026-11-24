@@ -4,7 +4,7 @@ import { useI18n } from './useI18n'
 const ITEMS = [
     { key: 'home', path: '', ar: 'الرئيسية', en: 'Home', shortAr: 'الرئيسية', shortEn: 'Home' },
     { key: 'about', path: 'about', ar: 'عن الجمعية', en: 'About', shortAr: 'عن الجمعية', shortEn: 'About' },
-    { key: 'pillars', path: 'strategic-areas', ar: 'المحاور الاستراتيجية', en: 'Strategic Axes', shortAr: 'المحاور', shortEn: 'Axes' },
+    { key: 'pillars', path: 'strategic-areas', ar: 'المحاور الاستراتيجية', en: 'Strategic Areas', shortAr: 'المحاور', shortEn: 'Areas' },
     { key: 'programs', path: 'programs', ar: 'البرامج والمشاريع', en: 'Programs & Projects', shortAr: 'البرامج', shortEn: 'Programs' },
     { key: 'news', path: 'news', ar: 'الأخبار والأنشطة', en: 'News & Activities', shortAr: 'الأخبار', shortEn: 'News' },
     { key: 'publications', path: 'publications', ar: 'التقارير والإصدارات', en: 'Reports & Publications', shortAr: 'التقارير', shortEn: 'Reports' },
@@ -18,28 +18,47 @@ const FOOTER_GROUPS = [
         key: 'about',
         ar: 'عن الجمعية',
         en: 'About',
-        items: ['about', 'pillars', 'programs'],
+        items: [
+            { key: 'about' },
+            { key: 'pillars' },
+            { key: 'programs' },
+        ],
     },
     {
         key: 'knowledge',
         ar: 'المعرفة والمساءلة',
         en: 'Knowledge & Accountability',
-        items: ['news', 'publications', 'transparency'],
+        items: [
+            { key: 'news' },
+            { key: 'publications' },
+            { key: 'transparency' },
+            { key: 'complaints' },
+        ],
     },
     {
         key: 'involve',
         ar: 'شارك معنا',
         en: 'Get Involved',
-        items: ['partnerships', 'get-involved', 'contact'],
+        items: [
+            { key: 'partnerships' },
+            { key: 'involve' },
+            { key: 'contact', ar: 'تواصل معنا', en: 'Contact Us' },
+        ],
     },
 ]
 
 const EXTRA_ITEMS = {
-    'get-involved': { key: 'get-involved', path: 'get-involved', ar: 'شارك معنا', en: 'Join Us', shortAr: 'شارك معنا', shortEn: 'Join Us' },
+    involve: { key: 'involve', path: 'get-involved', ar: 'شارك معنا', en: 'Get Involved', shortAr: 'شارك معنا', shortEn: 'Get Involved' },
+    'get-involved': { key: 'get-involved', path: 'get-involved', ar: 'شارك معنا', en: 'Get Involved', shortAr: 'شارك معنا', shortEn: 'Get Involved' },
+    complaints: { key: 'complaints', path: 'complaints', ar: 'صندوق الشكاوى', en: 'Complaints Box', shortAr: 'صندوق الشكاوى', shortEn: 'Complaints Box' },
 }
 
-function resolveItem(key) {
-    return ITEMS.find((item) => item.key === key) || EXTRA_ITEMS[key] || null
+function resolveItem(entry) {
+    const key = typeof entry === 'string' ? entry : entry?.key
+    const base = ITEMS.find((item) => item.key === key) || EXTRA_ITEMS[key] || null
+    if (!base) return null
+    if (typeof entry === 'string' || !entry) return base
+    return { ...base, ...entry }
 }
 
 function pathOf(url) {
@@ -107,39 +126,29 @@ export function usePublicNavigation() {
     })
 
     const footerGroups = computed(() => {
-        if (seededFooter.value.length > 0) {
-            return FOOTER_GROUPS.map((group) => ({
-                key: group.key,
-                title: isEn.value ? group.en : group.ar,
-                items: group.items
-                    .map(resolveItem)
-                    .filter(Boolean)
-                    .map((item) => {
-                        const seeded = seededFooter.value.find((link) => link.path === pathOf(localPath(item.path)))
-
-                        return {
-                            key: item.key,
-                            label: seeded ? seeded.label : (isEn.value ? item.en : item.ar),
-                            url: seeded ? seeded.url : localPath(item.path),
-                            external: seeded ? seeded.external : false,
-                        }
-                    }),
-            }))
-        }
-
-        return FOOTER_GROUPS.map((group) => ({
-            key: group.key,
-            title: isEn.value ? group.en : group.ar,
-            items: group.items
+        return FOOTER_GROUPS.map((group) => {
+            const items = group.items
                 .map(resolveItem)
                 .filter(Boolean)
-                .map((item) => ({
-                    key: item.key,
-                    label: isEn.value ? item.en : item.ar,
-                    url: localPath(item.path),
-                    path: item.path,
-                })),
-        }))
+                .map((item) => {
+                    const url = localPath(item.path)
+                    const label = (isEn.value ? item.en : item.ar || '').trim()
+
+                    return {
+                        key: item.key,
+                        label,
+                        url,
+                        external: false,
+                    }
+                })
+                .filter((item) => item.label && item.url)
+
+            return {
+                key: group.key,
+                title: isEn.value ? group.en : group.ar,
+                items,
+            }
+        }).filter((group) => group.items.length > 0)
     })
 
     return { links, cta, footerGroups }

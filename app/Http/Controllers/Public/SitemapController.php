@@ -15,7 +15,7 @@ use Illuminate\Http\Response;
 final class SitemapController
 {
     private const STATIC_PATHS = ['', 'about', 'strategic-areas', 'programs', 'news',
-        'publications', 'transparency', 'partnerships', 'get-involved', 'contact'];
+        'publications', 'transparency', 'partnerships', 'get-involved', 'contact', 'complaints'];
 
     public function __invoke(): Response
     {

@@ -17,7 +17,6 @@ const { t, localPath, site } = useI18n()
 const hasContact = computed(() => Object.values(props.contact || {}).some(Boolean))
 const closingActions = computed(() => [
     { label: t('volunteer_form'), url: localPath('get-involved'), primary: true },
-    { label: t('partnership_form'), url: localPath('get-involved'), primary: false },
 ])
 </script>
 

@@ -8,7 +8,6 @@ use App\Enums\ContentStatus;
 use App\Models\Article;
 use App\Models\ContactMessage;
 use App\Models\Page;
-use App\Models\PartnershipInquiry;
 use App\Models\Program;
 use App\Models\Project;
 use App\Models\Publication;
@@ -246,33 +245,21 @@ final class PublicWebsiteTest extends TestCase
         $response->assertSessionHas('flash.success', __('website.forms.received', ['reference' => $record->reference], 'en'));
     }
 
-    public function test_valid_partnership_inquiry_is_persisted_with_reference_and_hashed_ip(): void
+    public function test_partnership_inquiry_application_route_is_removed(): void
     {
-        $email = $this->uniqueEmail('partnership-valid');
-        $ip = '203.0.113.12';
+        foreach (['ar', 'en'] as $locale) {
+            $this->post("/{$locale}/partnership/inquiry", [
+                'organization' => 'Test Organization',
+                'contact_name' => 'Test Contact',
+                'email' => $this->uniqueEmail('partnership-removed'),
+                'website' => 'https://example.org',
+                'interest' => 'Coordination',
+                'message' => 'We would like to discuss a possible partnership.',
+                'consent' => '1',
+            ])->assertNotFound();
+        }
 
-        $response = $this->post('/en/partnership/inquiry', [
-            'organization' => 'Test Organization',
-            'contact_name' => 'Test Contact',
-            'email' => $email,
-            'website' => 'https://example.org',
-            'interest' => 'Coordination',
-            'message' => 'We would like to discuss a possible partnership.',
-            'consent' => '1',
-        ], ['REMOTE_ADDR' => $ip]);
-
-        $response->assertRedirect();
-        $record = PartnershipInquiry::query()->where('email', $email)->firstOrFail();
-
-        $this->assertDatabaseCount('partnership_inquiries', 1);
-        $this->assertTrue(Str::isUlid($record->reference));
-        $this->assertTrue((bool) $record->consent);
-        $this->assertSame('en', $record->locale);
-        $this->assertSame('new', $record->status);
-        $this->assertSame('https://example.org', $record->website);
-        $this->assertSame(hash('sha256', $ip.'|'.config('app.key')), $record->ip_hash);
-        $this->assertStringNotContainsString($ip, (string) $record->ip_hash);
-        $response->assertSessionHas('flash.success', __('website.forms.received', ['reference' => $record->reference], 'en'));
+        $this->assertDatabaseCount('partnership_inquiries', 0);
     }
 
     #[DataProvider('inquiryFormProvider')]
@@ -312,7 +299,7 @@ final class PublicWebsiteTest extends TestCase
         $this->assertDatabaseCount($table, 0);
     }
 
-    public function test_invalid_contact_and_partnership_payloads_are_rejected(): void
+    public function test_invalid_contact_payload_is_rejected(): void
     {
         $contact = $this->post('/ar/contact/inquiry', [
             'category' => 'not-a-category',
@@ -325,19 +312,6 @@ final class PublicWebsiteTest extends TestCase
         $contact->assertRedirect();
         $contact->assertSessionHasErrors(['category', 'name', 'email', 'message']);
         $this->assertDatabaseCount('contact_messages', 0);
-
-        $partnership = $this->post('/ar/partnership/inquiry', [
-            'organization' => '',
-            'contact_name' => '',
-            'email' => 'not-an-email',
-            'website' => 'not-a-url',
-            'interest' => '',
-            'message' => 'too short',
-            'consent' => '1',
-        ]);
-        $partnership->assertRedirect();
-        $partnership->assertSessionHasErrors(['organization', 'contact_name', 'email', 'website', 'interest', 'message']);
-        $this->assertDatabaseCount('partnership_inquiries', 0);
     }
 
     public function test_sitemap_contains_static_locale_paths_and_only_published_slugs(): void
@@ -413,7 +387,7 @@ final class PublicWebsiteTest extends TestCase
         $this->assertStringContainsString('xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"', $xml);
 
         foreach (['ar', 'en'] as $locale) {
-            foreach (['', 'about', 'strategic-areas', 'programs', 'news', 'publications', 'transparency', 'partnerships', 'get-involved', 'contact'] as $path) {
+            foreach (['', 'about', 'strategic-areas', 'programs', 'news', 'publications', 'transparency', 'partnerships', 'get-involved', 'contact', 'complaints'] as $path) {
                 $this->assertStringContainsString(url('/'.$locale.($path ? '/'.$path : '')), $xml);
             }
         }
@@ -523,19 +497,6 @@ final class PublicWebsiteTest extends TestCase
                 ],
                 'website',
             ],
-            'partnership' => [
-                '/ar/partnership/inquiry',
-                'partnership_inquiries',
-                [
-                    'organization' => 'Test Organization',
-                    'contact_name' => 'Test Contact',
-                    'website' => 'https://example.org',
-                    'interest' => 'Coordination',
-                    'message' => 'We would like to discuss a partnership.',
-                    'consent' => '1',
-                ],
-                'homepage',
-            ],
         ];
     }
 
@@ -558,6 +519,7 @@ final class PublicWebsiteTest extends TestCase
             'partnerships' => 'Public/Partnerships',
             'get-involved' => 'Public/Involve',
             'contact' => 'Public/Contact',
+            'complaints' => 'Public/Complaints',
         ];
 
         foreach ($routes as $path => $component) {
@@ -632,17 +594,17 @@ final class PublicWebsiteTest extends TestCase
     }
 
     /**
-     * The shared header and footer consume the CMS-seeded menus through the public
-     * navigation composable. Compiled labels remain only as an unseeded fallback.
+     * The shared header consumes the CMS-seeded primary menu through the public
+     * navigation composable. The footer uses a canonical 3-group structure to keep
+     * the second footer section identical across all public pages and locales.
      */
     public function test_public_shell_uses_seeded_primary_menu(): void
     {
         $composable = (string) file_get_contents(resource_path('js/composables/usePublicNavigation.js'));
         $this->assertStringContainsString('page.props.navigation', $composable);
         $this->assertStringContainsString('seededNavigation.value.primary', $composable);
-        $this->assertStringContainsString('seededNavigation.value.footer', $composable);
         $this->assertStringContainsString('if (seededPrimary.value.length > 0)', $composable);
-        $this->assertStringContainsString('if (seededFooter.value.length > 0)', $composable);
+        $this->assertStringContainsString('const FOOTER_GROUPS = [', $composable);
 
         $header = (string) file_get_contents(resource_path('js/Components/Public/SiteHeader.vue'));
         $this->assertStringContainsString("from '../../composables/usePublicNavigation'", $header);
@@ -668,7 +630,8 @@ final class PublicWebsiteTest extends TestCase
             "path: 'transparency'",
             "path: 'partnerships'",
             "path: 'contact'",
-            "localPath('get-involved')",
+            "path: 'get-involved'",
+            "path: 'complaints'",
         ];
 
         foreach ($paths as $path) {
@@ -678,13 +641,15 @@ final class PublicWebsiteTest extends TestCase
         $labels = [
             ["ar: 'الرئيسية'", "en: 'Home'"],
             ["ar: 'عن الجمعية'", "en: 'About'"],
-            ["ar: 'المحاور الاستراتيجية'", "en: 'Strategic Axes'"],
+            ["ar: 'المحاور الاستراتيجية'", "en: 'Strategic Areas'"],
             ["ar: 'البرامج والمشاريع'", "en: 'Programs & Projects'"],
             ["ar: 'الأخبار والأنشطة'", "en: 'News & Activities'"],
             ["ar: 'التقارير والإصدارات'", "en: 'Reports & Publications'"],
             ["ar: 'الشفافية والمساءلة'", "en: 'Transparency & Accountability'"],
             ["ar: 'الشراكات'", "en: 'Partnerships'"],
-            ["ar: 'اتصل بنا'", "en: 'Contact'"],
+            ["ar: 'تواصل معنا'", "en: 'Contact Us'"],
+            ["ar: 'شارك معنا'", "en: 'Get Involved'"],
+            ["ar: 'صندوق الشكاوى'", "en: 'Complaints Box'"],
         ];
 
         foreach ($labels as [$arabic, $english]) {
@@ -696,7 +661,7 @@ final class PublicWebsiteTest extends TestCase
     public function test_approved_homepage_baseline_files_remain_byte_identical(): void
     {
         $expected = [
-            'css/pcdr-home.css' => '96924ce85a556fa24c6de13be445293abaa3e783acd4e192df40164695cd527c',
+            'css/pcdr-home.css' => 'd555d276d7abbce07004fc4f73c54e4a104a5e0f9bffa26ff47df71e299dc9c9',
             'views/app.blade.php' => '2a7affa19d09acda482e3d3dbce2ef97d374c259eaaa677848145c24ba871765',
             'js/Components/LanguageSwitcher.vue' => 'd5182c3b3a9e7f8007b2ffbbdc3fa58b7c3c4c7b6754623ba7c2a9624dda03f1',
         ];
@@ -753,6 +718,33 @@ final class PublicWebsiteTest extends TestCase
         $this->assertStringNotContainsString('minimal', $footer);
         $this->assertStringContainsString('footerGroups', $footer);
         $this->assertStringContainsString('ps-footer__group', $footer);
+    }
+
+    /**
+     * Regression: the homepage footer navigation groups are <nav> elements inside
+     * the `.pcdr-home` shell. Legacy homepage header styles used bare
+     * `.pcdr-home nav` selectors, which hid the shared footer groups (and the
+     * shared header menu) at <=1100px because they set visibility:hidden.
+     * Those rules must stay scoped to the legacy `.site-header` markup so they
+     * can never leak into the shared SiteFooter/SiteHeader components.
+     */
+    public function test_homepage_styles_do_not_hide_shared_footer_navigation(): void
+    {
+        $css = (string) file_get_contents(resource_path('css/pcdr-home.css'));
+
+        $this->assertStringNotContainsString('.pcdr-home nav{', $css);
+        $this->assertStringNotContainsString('.pcdr-home nav.open', $css);
+        $this->assertStringContainsString('.pcdr-home .site-header nav{position:fixed', $css);
+        $this->assertStringContainsString('.pcdr-home .site-header nav.open', $css);
+
+        $footer = (string) file_get_contents(resource_path('js/Components/Public/SiteFooter.vue'));
+        $this->assertStringContainsString('<nav', $footer);
+        $this->assertStringContainsString('ps-footer__group', $footer);
+
+        $home = (string) file_get_contents(resource_path('js/Pages/Public/Home.vue'));
+        $this->assertStringContainsString('pcdr-home public-shell', $home);
+        $this->assertStringContainsString('<SiteFooter />', $home);
+        $this->assertStringContainsString('class="sec cta"', $home);
     }
 
     /** @return array<string, mixed> */
