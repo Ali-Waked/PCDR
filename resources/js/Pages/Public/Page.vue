@@ -2,6 +2,7 @@
 import PublicLayout from '../../Layouts/PublicLayout.vue'
 import PublicPageHero from '../../Components/Public/PublicPageHero.vue'
 import PublicCta from '../../Components/Public/PublicCta.vue'
+import SafeRichText from '../../Components/Public/SafeRichText.vue'
 import { useI18n } from '../../composables/useI18n'
 
 const props = defineProps({
@@ -9,7 +10,7 @@ const props = defineProps({
     meta: { type: Object, default: null },
 })
 
-const { t, localPath, richText, site } = useI18n()
+const { t, localPath, site } = useI18n()
 const closingActions = [
     { label: t('back_home'), url: localPath(), primary: true },
     { label: t('nav.contact'), url: localPath('contact'), primary: false },
@@ -28,7 +29,7 @@ const closingActions = [
 
         <section class="ps-section">
             <div class="ps-container">
-                <article class="ps-article ps-lede" style="white-space: pre-line">{{ richText(props.page.body) }}</article>
+                <SafeRichText :html="props.page.bodyHtml" class="ps-article ps-lede" style="white-space: pre-line" />
             </div>
         </section>
 

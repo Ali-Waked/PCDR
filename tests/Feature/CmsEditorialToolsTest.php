@@ -8,9 +8,9 @@ use App\Enums\MediaType;
 use App\Models\Article;
 use App\Models\ContactMessage;
 use App\Models\Media;
-use App\Models\Page;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\StrategicPillar;
 use App\Models\User;
 use App\Services\AccessManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,7 +55,13 @@ final class CmsEditorialToolsTest extends TestCase
             'type' => 'image',
         ]))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Cms/Media/Index')
-            ->where('filters', ['type' => 'image', 'q' => 'field-photo'])
+            ->where('filters', [
+                'type' => 'image',
+                'visibility' => '',
+                'q' => 'field-photo',
+                'sort' => 'newest',
+            ])
+            ->where('stats.all', 2)
             ->where('pagination.total', 1)
             ->where('items.0.id', $image->getKey())
             ->where('items.0.translations.ar.alt_text', 'صورة الميدان')
@@ -134,7 +140,7 @@ final class CmsEditorialToolsTest extends TestCase
         $this->assertSame('new', $message->fresh()->status);
     }
 
-    public function test_content_editor_offers_public_media_only_to_users_with_media_view_permission(): void
+    public function test_content_editor_offers_typed_media_options_with_restricted_signatures(): void
     {
         $article = Article::create(['status' => 'draft', 'display_order' => 0]);
         foreach (['ar', 'en'] as $locale) {
@@ -146,26 +152,30 @@ final class CmsEditorialToolsTest extends TestCase
         }
 
         $publicImage = $this->createMedia('cover.png', MediaType::Image, false);
-        $this->createMedia('private.pdf', MediaType::Document, true);
+        $restrictedDocument = $this->createMedia('private.pdf', MediaType::Document, true);
 
         $this->actingAs($this->bootstrapUser())
             ->get(route('cms.news.edit', ['locale' => self::LOCALE, 'content' => $article->getKey()]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Cms/Content/Edit')
-                ->where('options.media.0.id', $publicImage->getKey())
-                ->where('options.media.0.url', $publicImage->url())
-                ->missing('options.media.1'));
+                ->where('options.media', fn ($options) => $options->count() === 2
+                    && $options->firstWhere('id', $publicImage->getKey())['type'] === 'image'
+                    && $options->firstWhere('id', $publicImage->getKey())['restricted'] === false
+                    && $options->firstWhere('id', $publicImage->getKey())['url'] === $publicImage->url()
+                    && $options->firstWhere('id', $restrictedDocument->getKey())['type'] === 'document'
+                    && $options->firstWhere('id', $restrictedDocument->getKey())['restricted'] === true
+                    && str_contains($options->firstWhere('id', $restrictedDocument->getKey())['url'], 'signature=')));
 
-        $page = Page::create(['status' => 'draft', 'display_order' => 0]);
-        $page->translations()->create([
+        $pillar = StrategicPillar::create(['code' => 'ED', 'status' => 'draft', 'display_order' => 0]);
+        $pillar->translations()->create([
             'locale' => self::LOCALE,
-            'slug' => 'editorial-page',
-            'title' => 'Page title',
+            'slug' => 'editorial-pillar',
+            'title' => 'Pillar title',
         ]);
 
-        $this->actingAs($this->userWith(['pages.view']))
-            ->get(route('cms.pages.edit', ['locale' => self::LOCALE, 'content' => $page->getKey()]))
+        $this->actingAs($this->userWith(['pillars.view']))
+            ->get(route('cms.pillars.edit', ['locale' => self::LOCALE, 'content' => $pillar->getKey()]))
             ->assertOk()
             ->assertInertia(fn (Assert $pageProps) => $pageProps
                 ->component('Cms/Content/Edit')

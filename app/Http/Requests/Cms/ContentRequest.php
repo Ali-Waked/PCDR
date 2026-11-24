@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 abstract class ContentRequest extends FormRequest
 {
-    protected string $permission = 'pages.view';
+    protected string $permission = 'pillars.view';
 
     public function authorize(): bool
     {

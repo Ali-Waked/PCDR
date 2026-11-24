@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import CmsDashboardLayout from '../../Layouts/CmsDashboardLayout.vue'
+import AdminHintBox from '../../Components/Dashboard/AdminHintBox.vue'
 import MetricCard from '../../Components/Dashboard/MetricCard.vue'
 import StatusBadge from '../../Components/Dashboard/StatusBadge.vue'
 import EmptyState from '../../Components/Dashboard/EmptyState.vue'
@@ -16,13 +17,6 @@ const props = defineProps({
 
 const { t, localPath, formatDate } = useI18n()
 
-const primaryMetrics = computed(() => [
-    { key: 'pages', label: t('ui.cms_pages'), value: props.metrics.pages, icon: 'file', href: localPath('cms/pages') },
-    { key: 'published', label: t('ui.published'), value: props.metrics.publishedPages, icon: 'check', href: localPath('cms/pages') },
-    { key: 'drafts', label: t('ui.draft'), value: props.metrics.draftPages, icon: 'edit', tone: 'sand', href: localPath('cms/pages') },
-    { key: 'review', label: t('ui.pending_review'), value: props.metrics.pendingReview, icon: 'clock', tone: 'navy', href: localPath('cms/pages') },
-])
-
 const libraryMetrics = computed(() => [
     { key: 'articles', label: t('ui.articles'), value: props.metrics.articles, icon: 'newspaper', href: localPath('cms/news') },
     { key: 'publications', label: t('ui.documents'), value: props.metrics.publications, icon: 'folder', href: localPath('cms/publications') },
@@ -33,11 +27,9 @@ const libraryMetrics = computed(() => [
 const inquiryMetrics = computed(() => [
     { key: 'contact', label: t('ui.cms_inquiries_contact'), value: props.inquiries.contact, icon: 'mail' },
     { key: 'volunteer', label: t('ui.cms_inquiries_volunteer'), value: props.inquiries.volunteer, icon: 'users', tone: 'sand' },
-    { key: 'partnership', label: t('ui.cms_inquiries_partnership'), value: props.inquiries.partnership, icon: 'link', tone: 'navy' },
 ])
 
 const quickActions = computed(() => [
-    { label: t('ui.cms_new_page'), href: localPath('cms/pages/create'), icon: 'plus' },
     { label: t('ui.cms_review_inquiries'), href: localPath('cms/inquiries'), icon: 'mail' },
     { label: t('ui.cms_email_templates'), href: localPath('cms/email-templates'), icon: 'template' },
     { label: t('ui.cms_settings'), href: localPath('cms/settings'), icon: 'settings' },
@@ -45,26 +37,13 @@ const quickActions = computed(() => [
 </script>
 
 <template>
-    <CmsDashboardLayout :title="t('ui.cms_dashboard')" :subtitle="t('cms_welcome')">
+    <CmsDashboardLayout
+        :title="t('ui.cms_dashboard')"
+        :subtitle="t('cms_welcome')"
+        :hint="t('ui.dashboard_content_studio_hint')"
+    >
         <div class="pc-stack pcdr-enter">
-            <div class="pc-callout pc-callout--sand">
-                <UiIcon name="info" :size="17" />
-                <span>{{ t('cms_plan_notice') }}</span>
-            </div>
-
-            <section aria-labelledby="cms-content-overview">
-                <div class="pc-card__head pc-card__head--plain" style="padding-inline: 0">
-                    <div>
-                        <h2 id="cms-content-overview" class="pc-card__title">{{ t('cms_metrics') }}</h2>
-                        <p class="pc-card__subtitle">{{ t('cms_welcome') }}</p>
-                    </div>
-                </div>
-                <div class="pc-metric-grid" style="margin-block-start: 14px">
-                    <Link v-for="metric in primaryMetrics" :key="metric.key" :href="metric.href" style="text-decoration: none; color: inherit">
-                        <MetricCard :label="metric.label" :value="metric.value" :icon="metric.icon" :tone="metric.tone" />
-                    </Link>
-                </div>
-            </section>
+            <AdminHintBox :text="t('ui.cms_dashboard_hint')" />
 
             <section aria-labelledby="cms-library-overview">
                 <div class="pc-card__head pc-card__head--plain" style="padding-inline: 0">

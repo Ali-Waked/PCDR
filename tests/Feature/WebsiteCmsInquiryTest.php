@@ -108,7 +108,7 @@ final class WebsiteCmsInquiryTest extends TestCase
 
     public function test_inquiry_index_requires_view_permission_and_scopes_assigned_records(): void
     {
-        $unauthorized = $this->userWith(['pages.view']);
+        $unauthorized = $this->userWith(['pillars.view']);
         $this->actingAs($unauthorized)->get(route('cms.inquiries.index', ['locale' => self::LOCALE]))->assertForbidden();
 
         $viewer = $this->userWith(['inquiries.view', 'inquiries.view_assigned']);
@@ -122,7 +122,40 @@ final class WebsiteCmsInquiryTest extends TestCase
                 ->where('inquiries.contact', fn ($rows): bool => count($rows) === 1
                     && $rows[0]['id'] === $assigned->id)
                 ->where('pagination.contact.total', 1)
-                ->where('can.viewAll', false));
+                ->where('pagination.contact.pageName', 'contactPage')
+                ->where('counts.total', 1)
+                ->where('counts.new', 1)
+                ->where('counts.unassigned', 0)
+                ->where('inquiries.contact.0.senderName', 'Contact Sender')
+                ->where('inquiries.contact.0.subject', 'Website inquiry')
+                ->where('can.viewAll', false)
+                ->where('can.update', false));
+    }
+
+    public function test_inquiry_index_counts_normalize_status_aliases_and_ignore_list_filters(): void
+    {
+        $editor = $this->bootstrapUser();
+        $other = User::factory()->create();
+
+        $this->createContact(['status' => 'unread', 'assigned_to' => $other->id]);
+        $this->createContact(['status' => 'open']);
+        $this->createContact(['status' => 'answered']);
+        $this->createContact(['status' => 'rejected']);
+        $this->createContact(['status' => 'new']);
+
+        $this->actingAs($editor)->get(route('cms.inquiries.index', [
+            'locale' => self::LOCALE,
+            'status' => 'new',
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('counts.total', 5)
+            ->where('counts.new', 2)
+            ->where('counts.in_progress', 1)
+            ->where('counts.resolved', 1)
+            ->where('counts.closed', 1)
+            ->where('counts.unassigned', 4)
+            ->where('pagination.contact.total', 2)
+            ->where('canonicalStatuses', ['new', 'in_progress', 'resolved', 'closed'])
+            ->where('filters.status', 'new'));
     }
 
     public function test_scoped_support_user_cannot_mutate_an_unassigned_inquiry_by_direct_id(): void

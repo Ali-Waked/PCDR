@@ -28,7 +28,7 @@ const { t, localPath } = useI18n()
 
         <section class="ps-section">
             <div class="ps-container">
-                <SectionHeading :title="t('ui.cms_programs')" :body="t('planning_targets_notice')" />
+                <SectionHeading :title="t('ui.cms_programs')" :body="t('strategic_statement')" />
                 <div v-if="programs.length" class="ps-grid" data-stagger>
                     <ProgramCard v-for="(program, index) in programs" :key="index" :program="program" />
                 </div>
@@ -38,7 +38,7 @@ const { t, localPath } = useI18n()
 
         <section class="ps-section ps-surface-sand">
             <div class="ps-container">
-                <SectionHeading :title="t('projects')" :body="t('planning_targets_notice')" />
+                <SectionHeading :title="t('projects')" :body="t('strategic_statement')" />
                 <div v-if="projects.length" class="ps-rows">
                     <article v-for="(project, index) in projects" :key="index" class="ps-row" v-reveal>
                         <span class="ps-row__num">{{ String(index + 1).padStart(2, '0') }}</span>

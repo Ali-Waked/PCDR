@@ -9,7 +9,7 @@ use App\Actions\UploadMedia;
 use App\Enums\ContentStatus;
 use App\Enums\ProjectStatus;
 use App\Exceptions\InvalidWorkflowTransition;
-use App\Http\Controllers\Cms\PageController;
+use App\Http\Controllers\Cms\ArticleController;
 use App\Models\Article;
 use App\Models\Concerns\HasTranslations;
 use App\Models\ContentRevision;
@@ -142,14 +142,12 @@ final class CmsWorkflowTest extends TestCase
     {
         return [
             'cms.dashboard',
-            'cms.pages.index', 'cms.pages.create',
             'cms.pillars.index', 'cms.pillars.create',
             'cms.programs.index', 'cms.programs.create',
             'cms.projects.index', 'cms.projects.create',
             'cms.news.index', 'cms.news.create',
             'cms.publications.index', 'cms.publications.create',
             'cms.media.index',
-            'cms.navigation.index',
             'cms.homepage.index',
             'cms.settings.index',
             'cms.inquiries.index',
@@ -177,15 +175,12 @@ final class CmsWorkflowTest extends TestCase
     {
         $guestUris = [
             '/ar/cms',
-            '/ar/cms/pages',
-            '/ar/cms/pages/create',
             '/ar/cms/pillars',
             '/ar/cms/programs',
             '/ar/cms/projects',
             '/ar/cms/news',
             '/ar/cms/publications',
             '/ar/cms/media',
-            '/ar/cms/navigation',
             '/ar/cms/homepage',
             '/ar/cms/settings',
             '/ar/cms/inquiries',
@@ -202,9 +197,9 @@ final class CmsWorkflowTest extends TestCase
             }
         }
 
-        $post = $this->post('/ar/cms/pages', $this->contentPayload('guest-page'));
+        $post = $this->post('/ar/cms/news', $this->contentPayload('guest-news'));
         $this->assertFalse($post->isSuccessful());
-        $this->assertDatabaseCount('pages', 0);
+        $this->assertDatabaseCount('articles', 0);
 
         $media = $this->post('/ar/cms/media', ['file' => $this->fakePng()]);
         $this->assertFalse($media->isSuccessful());
@@ -221,21 +216,16 @@ final class CmsWorkflowTest extends TestCase
 
         $requests = [
             ['get', 'cms.dashboard', []],
-            ['get', 'cms.pages.index', []],
-            ['get', 'cms.pages.create', []],
-            ['post', 'cms.pages.store', []],
-            ['post', 'cms.pages.status', ['content' => 1]],
             ['get', 'cms.pillars.index', []],
             ['get', 'cms.programs.index', []],
             ['get', 'cms.projects.index', []],
             ['get', 'cms.news.index', []],
             ['post', 'cms.news.store', []],
+            ['post', 'cms.news.status', ['content' => 1]],
             ['get', 'cms.publications.index', []],
             ['get', 'cms.media.index', []],
             ['post', 'cms.media.store', []],
             ['get', 'cms.media.signed', ['media' => 1]],
-            ['get', 'cms.navigation.index', []],
-            ['put', 'cms.navigation.update', ['menu' => 1]],
             ['get', 'cms.homepage.index', []],
             ['put', 'cms.homepage.update', []],
             ['get', 'cms.settings.index', []],
@@ -301,71 +291,6 @@ final class CmsWorkflowTest extends TestCase
     // ---------------------------------------------------------------------
     // 4. Store / update, translations and revisions
     // ---------------------------------------------------------------------
-
-    public function test_bootstrap_user_can_store_page_with_translations(): void
-    {
-        $user = $this->loginAsBootstrap();
-
-        $this->performCmsRequest(fn () => $this->post(
-            route('cms.pages.store', ['locale' => self::LOCALE]),
-            $this->contentPayload('about-us'),
-        ));
-
-        $page = Page::query()->firstOrFail();
-        $this->assertSame('draft', $page->status->value);
-        $this->assertSame(5, $page->display_order);
-
-        $this->assertDatabaseHas('page_translations', [
-            'page_id' => $page->getKey(),
-            'locale' => 'ar',
-            'title' => 'عنوان المحتوى',
-            'slug' => 'about-us',
-            'summary' => 'ملخص المحتوى',
-            'body' => '<p>Safe body</p>',
-            'seo_title' => 'SEO عربي',
-            'seo_description' => 'وصف سيو عربي',
-        ]);
-        $this->assertDatabaseHas('page_translations', [
-            'page_id' => $page->getKey(),
-            'locale' => 'en',
-            'title' => 'Content title',
-            'slug' => 'about-us-en',
-            'body' => '<p>English body</p>',
-        ]);
-
-        // ContentController::revision() fails on the enum cast before writing
-        // the row; see the reported bug. The actor is still propagated as the
-        // request user in the intended payload.
-        $this->assertSame($user->getKey(), auth()->id());
-    }
-
-    public function test_normal_page_update_cannot_bypass_the_workflow(): void
-    {
-        $this->loginAsBootstrap();
-        $page = $this->createPage('edit-me');
-
-        $payload = $this->contentPayload('edit-me');
-        $payload['status'] = 'published'; // stripped by the normal update path
-        $payload['display_order'] = 9;
-        $payload['translations']['ar']['title'] = 'عنوان محدّث';
-
-        $this->performCmsRequest(fn () => $this->put(
-            route('cms.pages.update', ['locale' => self::LOCALE, 'content' => $page->getKey()]),
-            $payload,
-        ));
-
-        $page->refresh();
-        $this->assertSame('draft', $page->status->value);
-        $this->assertNull($page->published_at);
-        $this->assertSame(9, $page->display_order);
-
-        $this->assertDatabaseHas('page_translations', [
-            'page_id' => $page->getKey(),
-            'locale' => 'ar',
-            'title' => 'عنوان محدّث',
-            'slug' => 'edit-me',
-        ]);
-    }
 
     public function test_bootstrap_user_can_store_and_update_article_translations(): void
     {
@@ -440,8 +365,8 @@ final class CmsWorkflowTest extends TestCase
         // writer can be exercised here without the production enum-cast defect.
         $request = Request::create('/');
         $request->setUserResolver(static fn () => $user);
-        $method = new \ReflectionMethod(PageController::class, 'revision');
-        $method->invoke(app(PageController::class), $page, $request, 'created');
+        $method = new \ReflectionMethod(ArticleController::class, 'revision');
+        $method->invoke(app(ArticleController::class), $page, $request, 'created');
 
         $revision = ContentRevision::query()->firstOrFail();
         $this->assertSame($page->getMorphClass(), $revision->revisionable_type);
@@ -520,18 +445,26 @@ final class CmsWorkflowTest extends TestCase
     public function test_status_endpoint_cannot_skip_workflow_steps(): void
     {
         $this->loginAsBootstrap();
-        $page = $this->createPage('http-invalid-transition');
+        $article = Article::create([
+            'status' => ContentStatus::Draft->value,
+            'display_order' => 0,
+        ]);
+        $article->translations()->create([
+            'locale' => self::LOCALE,
+            'slug' => 'http-invalid-transition',
+            'title' => 'خبر انتقال غير صالح',
+        ]);
         $revisionsBefore = ContentRevision::query()->count();
 
-        $response = $this->post(route('cms.pages.status', [
+        $response = $this->post(route('cms.news.status', [
             'locale' => self::LOCALE,
-            'content' => $page->getKey(),
+            'content' => $article->getKey(),
         ]), ['status' => 'published']);
 
         // Invalid workflow jumps are rejected with a conflict and no write.
         $this->assertSame(409, $response->status());
-        $this->assertSame('draft', $page->fresh()->status->value);
-        $this->assertNull($page->fresh()->published_at);
+        $this->assertSame('draft', $article->fresh()->status->value);
+        $this->assertNull($article->fresh()->published_at);
         $this->assertSame($revisionsBefore, ContentRevision::query()->count());
     }
 

@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Cms;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
-use App\Models\Page;
 use App\Models\Program;
 use App\Models\Project;
 use App\Models\Publication;
@@ -25,10 +24,9 @@ final class PreviewController extends Controller
 {
     /** @var array<string, array{model: class-string<Model>, permission: string}> */
     private const RESOURCES = [
-        'pages' => ['model' => Page::class, 'permission' => 'pages.view'],
         'news' => ['model' => Article::class, 'permission' => 'news.view'],
         'programs' => ['model' => Program::class, 'permission' => 'programs.view'],
-        'projects' => ['model' => Project::class, 'permission' => 'projects.view'],
+        'projects' => ['model' => Project::class, 'permission' => 'programs.view'],
         'pillars' => ['model' => StrategicPillar::class, 'permission' => 'pillars.view'],
         'publications' => ['model' => Publication::class, 'permission' => 'publications.view'],
     ];

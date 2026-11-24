@@ -3,6 +3,7 @@ import PublicLayout from '../../../Layouts/PublicLayout.vue'
 import PublicPageHero from '../../../Components/Public/PublicPageHero.vue'
 import PublicCta from '../../../Components/Public/PublicCta.vue'
 import RelatedContent from '../../../Components/Public/RelatedContent.vue'
+import SafeRichText from '../../../Components/Public/SafeRichText.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -12,7 +13,7 @@ const props = defineProps({
     meta: { type: Object, default: null },
 })
 
-const { t, localPath, formatDate, richText } = useI18n()
+const { t, localPath, formatDate } = useI18n()
 </script>
 
 <template>
@@ -36,7 +37,7 @@ const { t, localPath, formatDate, richText } = useI18n()
 
         <section class="ps-section">
             <div class="ps-container">
-                <article class="ps-article ps-lede" style="white-space: pre-line">{{ richText(props.article.body) }}</article>
+                <SafeRichText :html="props.article.bodyHtml" class="ps-article ps-lede" style="white-space: pre-line" />
 
                 <div v-if="props.article.image" class="ps-cover">
                     <img :src="props.article.image" :alt="props.article.imageAlt || props.article.title">

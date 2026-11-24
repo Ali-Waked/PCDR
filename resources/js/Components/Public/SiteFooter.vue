@@ -12,12 +12,20 @@ const fallbackGroups = computed(() => {
     const isEn = locale.value === 'en'
     const L = (path, ar, en) => ({ key: path, label: isEn ? en : ar, url: localPath(path) })
     return [
-        { key: 'about', title: isEn ? 'About' : 'عن الجمعية', items: [L('about','عن الجمعية','About'), L('strategic-areas','المحاور الاستراتيجية','Strategic Axes'), L('programs','البرامج والمشاريع','Programs & Projects')] },
-        { key: 'knowledge', title: isEn ? 'Knowledge & Accountability' : 'المعرفة والمساءلة', items: [L('news','الأخبار والأنشطة','News & Activities'), L('publications','التقارير والإصدارات','Reports & Publications'), L('transparency','الشفافية والمساءلة','Transparency & Accountability')] },
-        { key: 'involve', title: isEn ? 'Get Involved' : 'شارك معنا', items: [L('partnerships','الشراكات','Partnerships'), L('get-involved','شارك معنا','Join Us'), L('contact','اتصل بنا','Contact')] },
+        { key: 'about', title: isEn ? 'About' : 'عن الجمعية', items: [L('about','عن الجمعية','About'), L('strategic-areas','المحاور الاستراتيجية','Strategic Areas'), L('programs','البرامج والمشاريع','Programs & Projects')] },
+        { key: 'knowledge', title: isEn ? 'Knowledge & Accountability' : 'المعرفة والمساءلة', items: [L('news','الأخبار والأنشطة','News & Activities'), L('publications','التقارير والإصدارات','Reports & Publications'), L('transparency','الشفافية والمساءلة','Transparency & Accountability'), L('complaints','صندوق الشكاوى','Complaints Box')] },
+        { key: 'involve', title: isEn ? 'Get Involved' : 'شارك معنا', items: [L('partnerships','الشراكات','Partnerships'), L('get-involved','شارك معنا','Get Involved'), L('contact','تواصل معنا','Contact Us')] },
     ]
 })
-const footerGroups = computed(() => (navFooterGroups.value && navFooterGroups.value.length ? navFooterGroups.value : fallbackGroups.value))
+const footerGroups = computed(() => {
+    const groups = (navFooterGroups.value && navFooterGroups.value.length ? navFooterGroups.value : fallbackGroups.value)
+    return groups
+        .map((group) => ({
+            ...group,
+            items: (group.items || []).filter((item) => item && item.label && item.url),
+        }))
+        .filter((group) => group.items.length > 0)
+})
 
 const logo = '/assets/pcdr-homepage/logo/pcdr-logo.png'
 const year = new Date().getFullYear()
@@ -48,7 +56,6 @@ const legalLinks = computed(() => {
     else if (hasRoute('policy.show')) {
         try { links.push({ key: 'privacy', label: locale.value === 'en' ? 'Privacy & Data Protection' : 'الخصوصية وحماية البيانات', url: route('policy.show') }) } catch (_) {}
     }
-    if (hasRoute('complaints')) links.push({ key: 'complaints', label: locale.value === 'en' ? 'Complaints' : 'الشكاوى', url: route('complaints') })
     return links
 })
 
@@ -97,7 +104,7 @@ const footerLabel = computed(() => locale.value === 'en' ? 'Site footer' : 'تذ
                         </span>
                     </Link>
                     <p class="ps-footer__slogan">{{ site.slogan }}</p>
-                    <p class="ps-footer__note">{{ t('planning_targets_notice') }}</p>
+                    <p class="ps-footer__note">{{ t('strategic_statement') }}</p>
                 </div>
 
                 <!-- Link groups -->

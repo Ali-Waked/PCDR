@@ -45,7 +45,7 @@ const closingActions = [
             <div class="ps-container">
                 <div class="ps-grid ps-grid--two">
                     <div>
-                        <SectionHeading :title="t('governance_documents')" :body="t('planning_targets_notice')" />
+                        <SectionHeading :title="t('governance_documents')" :body="t('strategic_statement')" />
                         <div v-if="documents.length" class="ps-rows">
                             <a
                                 v-for="(item, index) in documents"
@@ -62,7 +62,7 @@ const closingActions = [
                         <EmptyState v-else :body="t('no_documents')" />
                     </div>
                     <div>
-                        <SectionHeading :title="t('annual_reports')" :body="t('planning_targets_notice')" />
+                        <SectionHeading :title="t('annual_reports')" :body="t('strategic_statement')" />
                         <div v-if="reports.length" class="ps-rows">
                             <a
                                 v-for="(item, index) in reports"

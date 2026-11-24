@@ -71,7 +71,7 @@ const closingActions = computed(() => [
                     <p class="ps-eyebrow">{{ t('ui.mission') }}</p>
                     <h2>{{ t('about_intro') }}</h2>
                     <p class="ps-lede">{{ mission }}</p>
-                    <p class="ps-notice">{{ t('planning_targets_notice') }}</p>
+                    <p class="ps-notice">{{ t('strategic_statement') }}</p>
                     <a href="#about-vision" class="ps-text-link">{{ t('ui.read_more') }}</a>
                 </div>
             </div>
@@ -144,7 +144,7 @@ const closingActions = computed(() => [
                         <p>{{ pillar.description }}</p>
                     </Link>
                 </div>
-                <p class="ps-notice">{{ t('planning_targets_notice') }}</p>
+                <p class="ps-notice">{{ t('strategic_statement') }}</p>
             </div>
         </section>
 

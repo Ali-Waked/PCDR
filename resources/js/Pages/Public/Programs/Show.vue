@@ -5,6 +5,7 @@ import PublicPageHero from '../../../Components/Public/PublicPageHero.vue'
 import PublicCta from '../../../Components/Public/PublicCta.vue'
 import SectionHeading from '../../../Components/SectionHeading.vue'
 import EmptyState from '../../../Components/EmptyState.vue'
+import SafeRichText from '../../../Components/Public/SafeRichText.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -13,7 +14,7 @@ const props = defineProps({
     meta: { type: Object, default: null },
 })
 
-const { t, localPath, formatDate, richText } = useI18n()
+const { t, localPath, formatDate } = useI18n()
 </script>
 
 <template>
@@ -41,7 +42,7 @@ const { t, localPath, formatDate, richText } = useI18n()
             <div class="ps-container ps-split">
                 <article>
                     <SectionHeading :eyebrow="t('nav.programs')" :title="t('ui.cms_description')" />
-                    <div class="ps-article ps-lede" style="white-space: pre-line">{{ richText(props.program.description) }}</div>
+                    <SafeRichText :html="props.program.descriptionHtml" class="ps-article ps-lede" style="white-space: pre-line" />
                 </article>
                 <aside class="ps-form-card" v-reveal>
                     <p class="ps-eyebrow">{{ t('cms_basic_data') }}</p>

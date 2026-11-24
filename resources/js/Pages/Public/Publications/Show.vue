@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3'
 import PublicLayout from '../../../Layouts/PublicLayout.vue'
 import PublicPageHero from '../../../Components/Public/PublicPageHero.vue'
 import PublicCta from '../../../Components/Public/PublicCta.vue'
+import SafeRichText from '../../../Components/Public/SafeRichText.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -10,14 +11,14 @@ const props = defineProps({
     meta: { type: Object, default: null },
 })
 
-const { t, localPath, formatDate, richText } = useI18n()
+const { t, localPath, formatDate } = useI18n()
 </script>
 
 <template>
     <PublicLayout :meta="meta" page-class="publications-page">
         <PublicPageHero
             :title="props.publication.title"
-            :lead="props.publication.description || ''"
+            :lead="props.publication.descriptionText || ''"
             :breadcrumbs="[
                 { label: t('nav.publications'), url: localPath('publications') },
                 { label: props.publication.title },
@@ -37,7 +38,7 @@ const { t, localPath, formatDate, richText } = useI18n()
                 <div class="ps-form-card" style="max-inline-size: 860px">
                     <p class="ps-eyebrow">{{ t('nav.publications') }}</p>
                     <h2>{{ t('documents') }}</h2>
-                    <div class="ps-article ps-lede" style="white-space: pre-line">{{ richText(props.publication.description) }}</div>
+                    <SafeRichText :html="props.publication.descriptionHtml" class="ps-article ps-lede" style="white-space: pre-line" />
                     <div class="ps-rows">
                         <div v-if="props.publication.pillar" class="ps-row">
                             <span class="ps-row__num">01</span>

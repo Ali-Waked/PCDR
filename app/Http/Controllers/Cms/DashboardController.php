@@ -11,8 +11,6 @@ use App\Models\ContactMessage;
 use App\Models\ContentRevision;
 use App\Models\EmailTemplate;
 use App\Models\Media;
-use App\Models\Page;
-use App\Models\PartnershipInquiry;
 use App\Models\Publication;
 use App\Models\StrategicPillar;
 use App\Models\VolunteerInquiry;
@@ -24,16 +22,10 @@ final class DashboardController extends Controller
 {
     public function __invoke(string $locale): Response
     {
-        abort_unless(auth()->check() && app(CmsAccess::class)->allows(auth()->user(), 'pages.view'), 403);
-
-        $count = fn (string $status): int => Page::query()->where('status', $status)->count();
+        abort_unless(auth()->check() && app(CmsAccess::class)->allows(auth()->user(), 'pillars.view'), 403);
 
         return Inertia::render('Cms/Dashboard', [
             'metrics' => [
-                'pages' => Page::query()->count(),
-                'publishedPages' => $count(ContentStatus::Published->value),
-                'draftPages' => $count(ContentStatus::Draft->value),
-                'pendingReview' => $count(ContentStatus::PendingReview->value),
                 'articles' => Article::query()->where('status', ContentStatus::Published->value)->count(),
                 'publications' => Publication::query()->count(),
                 'pillars' => StrategicPillar::query()->count(),
@@ -43,7 +35,6 @@ final class DashboardController extends Controller
             'inquiries' => [
                 'contact' => ContactMessage::query()->where('status', 'new')->count(),
                 'volunteer' => VolunteerInquiry::query()->where('status', 'new')->count(),
-                'partnership' => PartnershipInquiry::query()->where('status', 'new')->count(),
             ],
             'recentActivity' => ContentRevision::query()
                 ->with('actor')
