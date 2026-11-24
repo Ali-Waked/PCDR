@@ -78,7 +78,8 @@ export function buildPageItems(currentPage, lastPage) {
  * then apply the requested page. Page 1 removes only the active page key.
  */
 export function buildPageUrl(currentUrl, targetPage, pageKey = 'page', extra = {}) {
-    const target = new URL(String(currentUrl || '/'), 'https://pcdr.test')
+    const base = typeof window === 'undefined' ? import.meta.url : window.location.href
+    const target = new URL(String(currentUrl || '/'), base)
     const key = String(pageKey || 'page')
 
     const page = Math.max(1, integer(targetPage, 1) ?? 1)

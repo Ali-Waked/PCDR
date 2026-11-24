@@ -21,7 +21,7 @@ const hoveredKey = ref(null)
 const reducedMotion = ref(false)
 
 const currentPath = computed(() => (page.url || '/').split('?')[0])
-const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin
+const origin = typeof window === 'undefined' ? '' : window.location.origin
 const isTransparent = computed(() => props.transparent && !scrolled.value && !open.value)
 
 function pathOf(url) {

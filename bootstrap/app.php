@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // The platform terminates TLS before traffic reaches the application.
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             // Settings/user-aware locale first; the route segment wins when present.
             SetLocale::class,

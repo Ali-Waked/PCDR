@@ -61,9 +61,11 @@ function resolveItem(entry) {
     return { ...base, ...entry }
 }
 
+const origin = typeof window === 'undefined' ? '' : window.location.origin
+
 function pathOf(url) {
     try {
-        return new URL(String(url || ''), 'http://localhost').pathname.replace(/\/+$/, '') || '/'
+        return new URL(String(url || ''), origin).pathname.replace(/\/+$/, '') || '/'
     } catch (_) {
         return String(url || '')
     }
