@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Models\ContactMessage;
-use App\Models\PartnershipInquiry;
 use App\Models\User;
 use App\Models\VolunteerInquiry;
 use App\Notifications\InquiryReceivedNotification;
@@ -54,14 +53,6 @@ final class StoreInquiry
                 'area_of_interest' => $data['area_of_interest'],
                 'availability' => $data['availability'],
                 'message' => $data['message'] ?? null,
-            ]),
-            'partnership' => PartnershipInquiry::create($payload + [
-                'organization' => $data['organization'],
-                'contact_name' => $data['contact_name'],
-                'email' => $data['email'],
-                'website' => $data['website'] ?? null,
-                'interest' => $data['interest'],
-                'message' => $data['message'],
             ]),
             default => throw new \InvalidArgumentException("Unknown inquiry type: {$type}"),
         };

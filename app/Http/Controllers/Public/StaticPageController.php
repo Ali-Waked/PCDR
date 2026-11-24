@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Public;
 
 use App\Services\ContentQuery;
+use App\Services\PartnerDirectory;
 use App\Services\SiteSettings;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,10 +34,27 @@ final class StaticPageController extends PublicController
         ]);
     }
 
-    public function partnerships(string $locale): Response
+    public function partners(string $locale, Request $request, PartnerDirectory $directory): Response
     {
+        $category = mb_strcut(trim($request->string('category')->toString()), 0, 80);
+        $directoryData = $directory->overview($locale, $category !== '' ? $category : null);
+        $title = __('website.ui.partner_directory.seo_title', [], $locale);
+        $description = __('website.ui.partner_directory.seo_description', [], $locale);
+
         return Inertia::render('Public/Partnerships', [
-            'meta' => $this->seo($locale, __('website.navigation.partnerships', [], $locale), path: "{$locale}/partnerships"),
+            'directory' => $directoryData,
+            'meta' => $this->seo(
+                $locale,
+                $title,
+                $description,
+                path: "{$locale}/partners",
+                overrides: [
+                    'title' => $title,
+                    'description' => $description,
+                    'og' => ['title' => $title, 'description' => $description],
+                    'twitter' => ['title' => $title, 'description' => $description],
+                ],
+            ),
         ]);
     }
 
@@ -56,6 +75,33 @@ final class StaticPageController extends PublicController
         return Inertia::render('Public/Contact', [
             'contact' => $settings->contactDetails($locale),
             'meta' => $this->seo($locale, __('website.navigation.contact', [], $locale), path: "{$locale}/contact"),
+        ]);
+    }
+
+    public function complaints(string $locale, SiteSettings $settings): Response
+    {
+        $title = __('website.navigation.complaints', [], $locale);
+        $description = __('website.ui.complaints.meta_description', [], $locale);
+
+        return Inertia::render('Public/Complaints', [
+            'complaintsEmail' => $settings->complaintsEmail($locale) ?? '',
+            'meta' => $this->seo(
+                $locale,
+                $title,
+                $description,
+                path: "{$locale}/complaints",
+                overrides: [
+                    'title' => __('website.ui.complaints.seo_title', [], $locale),
+                    'og' => [
+                        'title' => __('website.ui.complaints.seo_title', [], $locale),
+                        'description' => $description,
+                    ],
+                    'twitter' => [
+                        'title' => __('website.ui.complaints.seo_title', [], $locale),
+                        'description' => $description,
+                    ],
+                ],
+            ),
         ]);
     }
 }
