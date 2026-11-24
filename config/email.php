@@ -137,4 +137,48 @@ return [
         ],
     ],
     'internal_notification_recipient' => env('EMAIL_INTERNAL_NOTIFICATION_RECIPIENT'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Institutional email brand
+    |--------------------------------------------------------------------------
+    | The static logo is shipped in the public directory. Email clients need an
+    | absolute HTTPS URL, so EMAIL_LOGO_URL must be set in production unless the
+    | configured application URL is itself a public HTTPS URL. When neither is
+    | available the logo is omitted rather than pointing at localhost.
+    |
+    */
+    'brand' => [
+        'logo_path' => 'assets/pcdr-homepage/logo/pcdr-logo.png',
+        'logo_url' => env('EMAIL_LOGO_URL'),
+        'website_url' => env('EMAIL_WEBSITE_URL'),
+        'logo_width' => 72,
+        'logo_height' => 72,
+    ],
+
+    'colors' => [
+        'navy' => '#3E5172',
+        'teal' => '#71BCB7',
+        'sand' => '#DAC3A3',
+        'wheat' => '#D7C5A1',
+        'white' => '#FFFFFF',
+        'navy_900' => '#25334B',
+        'navy_800' => '#30415E',
+        'navy_100' => '#E9EDF2',
+        'teal_700' => '#397F7B',
+        'teal_100' => '#EAF5F4',
+        'sand_100' => '#F7F2EA',
+    ],
+
+    'preview' => [
+        'palette' => [
+            'navy' => '#3E5172',
+            'teal' => '#71BCB7',
+            'sand' => '#DAC3A3',
+            'background' => '#F7F2EA',
+            'surface' => '#FFFFFF',
+            'muted' => '#5C6B82',
+            'border' => '#E9EDF2',
+        ],
+    ],
 ];

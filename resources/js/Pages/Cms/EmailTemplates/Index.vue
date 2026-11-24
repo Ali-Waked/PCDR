@@ -1,246 +1,587 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { router, useHttp } from '@inertiajs/vue3'
 import CmsDashboardLayout from '../../../Layouts/CmsDashboardLayout.vue'
 import CmsStatusBadge from '../../../Components/Dashboard/CmsStatusBadge.vue'
+import ConfirmDialog from '../../../Components/Dashboard/ConfirmDialog.vue'
 import DataTable from '../../../Components/Dashboard/DataTable.vue'
 import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
+import Pagination from '../../../Components/Pagination.vue'
+import SelectionControl from '../../../Components/Selection/SelectionControl.vue'
+import StatusSelect from '../../../Components/Selection/StatusSelect.vue'
 import UiIcon from '../../../Components/Dashboard/UiIcon.vue'
+import EmailPreviewDialog from '../../../Components/EmailTemplates/EmailPreviewDialog.vue'
+import TemplateGuideDialog from '../../../Components/EmailTemplates/TemplateGuideDialog.vue'
+import TemplateWizard from '../../../Components/EmailTemplates/TemplateWizard.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
-    templates: { type: Array, default: () => [] },
+    templates: { type: Object, default: () => ({ data: [], links: [], meta: {} }) },
+    stats: { type: Object, default: () => ({}) },
+    filters: { type: Object, default: () => ({ q: '', status: '', locale: '' }) },
     locales: { type: Array, default: () => ['ar', 'en'] },
-    variables: { type: Object, default: () => ({}) },
+    variableCatalog: { type: Object, default: () => ({}) },
+    starters: { type: Array, default: () => [] },
+    guideExample: { type: String, default: '' },
+    strings: { type: Object, required: true },
+    can: { type: Object, default: () => ({}) },
 })
 
-const { t, localPath } = useI18n()
-const templatesPath = localPath('cms/email-templates')
-const selectedLocale = ref(props.locales?.[0] || 'ar')
-const preview = ref(null)
-const previewError = ref('')
-const editingId = ref(null)
+const { locale, localPath, formatDate } = useI18n()
 
-function blankForm() {
-    return {
-        key: '',
-        is_active: true,
-        sort_order: 0,
-        translations: Object.fromEntries(props.locales.map((locale) => [locale, {
-            name: '', description: '', subject: '', body: '',
-        }])),
-    }
+const templatesPath = localPath('cms/email-templates')
+const previewPath = `${templatesPath}/preview`
+
+const search = ref(props.filters?.q || '')
+const statusFilter = ref(props.filters?.status || '')
+const localeFilter = ref(props.filters?.locale || '')
+
+const wizardOpen = ref(false)
+const wizardTemplate = ref(null)
+const guideOpen = ref(false)
+const previewOpen = ref(false)
+const previewData = ref(null)
+const previewBusy = ref(false)
+const previewError = ref('')
+const previewLocale = ref('')
+const previewDraft = ref(null)
+const previewTemplateId = ref(null)
+const deleting = ref(null)
+const busyAction = ref('')
+
+const savedPreviewHttp = useHttp({ template_id: null, locale: '' })
+const draftPreviewHttp = useHttp({ subject: '', body: '', locale: '' })
+
+function s(key, fallback = '') {
+    return props.strings?.[key] ?? fallback
 }
 
-const form = useForm(blankForm())
+const templateRows = computed(() => props.templates?.data || [])
+const meta = computed(() => props.templates?.meta || {})
+const defaultLocale = computed(() => props.locales.includes(locale.value) ? locale.value : (props.locales[0] || 'ar'))
 
-const activeTranslation = computed(() => form.translations[selectedLocale.value] || { name: '', description: '', subject: '', body: '' })
-const variableList = computed(() => Object.entries(props.variables || {}).map(([key, label]) => ({
-    key,
-    label,
-    token: '{{ ' + key + ' }}',
+const statusFilterOptions = computed(() => [
+    { value: 'active', label: s('active') },
+    { value: 'inactive', label: s('inactive') },
+])
+const localeFilterOptions = computed(() => props.locales.map((code) => ({
+    value: code,
+    label: code.toUpperCase(),
 })))
 
-const columns = computed(() => [
-    { key: 'key', label: t('cms_template_key') },
-    { key: 'name', label: t('cms_name') },
-    { key: 'status', label: t('ui.status') },
-    { key: 'actions', label: t('cms_actions'), align: 'end' },
+if (! previewLocale.value) {
+    previewLocale.value = defaultLocale.value
+}
+
+const hasFilters = computed(() => search.value.trim() !== '' || statusFilter.value !== '' || localeFilter.value !== '')
+
+const metrics = computed(() => [
+    { key: 'total', label: s('stats_total'), value: props.stats?.total ?? 0, icon: 'template', tone: '' },
+    { key: 'active', label: s('stats_active'), value: props.stats?.active ?? 0, icon: 'check', tone: 'pc-metric--teal' },
+    { key: 'inactive', label: s('stats_inactive'), value: props.stats?.inactive ?? 0, icon: 'eyeOff', tone: 'pc-metric--sand' },
+    { key: 'recent', label: s('stats_recent'), value: props.stats?.recent ?? 0, icon: 'clock', tone: 'pc-metric--navy' },
 ])
 
-function edit(template) {
-    editingId.value = template.id
-    preview.value = null
-    form.reset({
-        key: template.key,
-        is_active: template.active,
-        sort_order: template.sortOrder,
-        translations: Object.fromEntries(props.locales.map((locale) => [locale, {
-            name: template.translations?.[locale]?.name || '',
-            description: template.translations?.[locale]?.description || '',
-            subject: template.translations?.[locale]?.subject || '',
-            body: template.translations?.[locale]?.body || '',
-        }])),
+const columns = computed(() => [
+    { key: 'template', label: s('table_template') },
+    { key: 'locales', label: s('table_locale') },
+    { key: 'status', label: s('table_status') },
+    { key: 'updated', label: s('table_updated') },
+    { key: 'actions', label: s('table_actions'), align: 'end' },
+])
+
+function countLabel(count) {
+    return s('results_count', ':count templates').replace(':count', String(count || 0))
+}
+
+function translationFor(template) {
+    return template?.translations?.[locale.value]
+        || template?.translations?.[defaultLocale.value]
+        || template?.translations?.en
+        || template?.translations?.ar
+        || {}
+}
+
+function displayName(template) {
+    return translationFor(template).name || template.key
+}
+
+function descriptionFor(template) {
+    return translationFor(template).description || ''
+}
+
+function formatUpdated(value) {
+    return value ? formatDate(value) : '—'
+}
+
+function isBusy(action, id) {
+    return busyAction.value === `${action}:${id}`
+}
+
+function applyFilters(page = 1) {
+    const params = {
+        q: search.value.trim(),
+        status: statusFilter.value,
+        locale: localeFilter.value,
+    }
+
+    if (page > 1) {
+        params.page = page
+    }
+
+    router.get(templatesPath, params, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
     })
 }
 
-function reset() {
-    editingId.value = null
-    preview.value = null
-    previewError.value = ''
-    form.reset(blankForm())
+function clearFilters() {
+    search.value = ''
+    statusFilter.value = ''
+    localeFilter.value = ''
+    applyFilters()
 }
 
-function save() {
-    const options = { preserveScroll: true, onSuccess: () => reset() }
-    if (editingId.value) {
-        form.put(`${templatesPath}/${editingId.value}`, options)
-    } else {
-        form.post(templatesPath, options)
+function openCreate() {
+    wizardTemplate.value = null
+    wizardOpen.value = true
+}
+
+function openEdit(template) {
+    wizardTemplate.value = template
+    wizardOpen.value = true
+}
+
+function closeWizard() {
+    wizardOpen.value = false
+    wizardTemplate.value = null
+}
+
+function handleSaved() {
+    closeWizard()
+    router.reload({ only: ['templates', 'stats'], preserveScroll: true })
+}
+
+function duplicate(template) {
+    if (isBusy('duplicate', template.id)) {
+        return
     }
+
+    busyAction.value = `duplicate:${template.id}`
+    router.post(`${templatesPath}/${template.id}/duplicate`, {}, {
+        preserveScroll: true,
+        onFinish: () => { busyAction.value = '' },
+        onSuccess: () => router.reload({ only: ['templates', 'stats'] }),
+    })
 }
 
-function remove(template) {
-    form.delete(`${templatesPath}/${template.id}`, { preserveScroll: true, onSuccess: () => {
-        if (editingId.value === template.id) {
-            reset()
-        }
-    } })
+function toggleStatus(template) {
+    if (isBusy('status', template.id)) {
+        return
+    }
+
+    busyAction.value = `status:${template.id}`
+    router.patch(`${templatesPath}/${template.id}/status`, { is_active: ! template.active }, {
+        preserveScroll: true,
+        onFinish: () => { busyAction.value = '' },
+        onSuccess: () => router.reload({ only: ['templates', 'stats'] }),
+    })
 }
 
-function csrfToken() {
-    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)
+function confirmDelete() {
+    const target = deleting.value
+    if (! target) {
+        return
+    }
 
-    return match ? decodeURIComponent(match[1]) : ''
+    busyAction.value = `delete:${target.id}`
+    router.delete(`${templatesPath}/${target.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            busyAction.value = ''
+            deleting.value = null
+        },
+        onSuccess: () => router.reload({ only: ['templates', 'stats'] }),
+    })
 }
 
-async function renderPreview() {
+async function loadSavedPreview() {
+    if (! previewTemplateId.value) {
+        return
+    }
+
+    previewBusy.value = true
     previewError.value = ''
+
+    Object.assign(savedPreviewHttp, {
+        template_id: previewTemplateId.value,
+        locale: previewLocale.value || defaultLocale.value,
+    })
+
     try {
-        const response = await fetch(`${templatesPath}/preview`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-XSRF-TOKEN': csrfToken(),
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: JSON.stringify({
-                subject: activeTranslation.value.subject || '',
-                body: activeTranslation.value.body || '',
-            }),
-        })
-
-        if (!response.ok) {
-            throw new Error(String(response.status))
-        }
-        preview.value = await response.json()
+        previewData.value = await savedPreviewHttp.post(previewPath)
     } catch {
-        previewError.value = t('cms_preview_failed')
+        previewError.value = s('preview_failed')
+    } finally {
+        previewBusy.value = false
     }
+}
+
+async function loadDraftPreview() {
+    if (! previewDraft.value) {
+        return
+    }
+
+    previewBusy.value = true
+    previewError.value = ''
+
+    Object.assign(draftPreviewHttp, {
+        subject: previewDraft.value.subject,
+        body: previewDraft.value.body,
+        locale: previewLocale.value || defaultLocale.value,
+    })
+
+    try {
+        previewData.value = await draftPreviewHttp.post(previewPath)
+    } catch {
+        previewError.value = s('preview_failed')
+    } finally {
+        previewBusy.value = false
+    }
+}
+
+function refreshPreview() {
+    if (previewDraft.value) {
+        return loadDraftPreview()
+    }
+
+    return loadSavedPreview()
+}
+
+function openTemplatePreview(template) {
+    previewDraft.value = null
+    previewTemplateId.value = template.id
+    previewLocale.value = props.locales.includes(locale.value) ? locale.value : defaultLocale.value
+    previewData.value = null
+    previewError.value = ''
+    previewOpen.value = true
+    loadSavedPreview()
+}
+
+function openWizardPreview(payload) {
+    previewDraft.value = {
+        subject: payload?.subject || '',
+        body: payload?.body || '',
+    }
+    previewTemplateId.value = null
+    previewLocale.value = payload?.locale || defaultLocale.value
+    previewData.value = payload?.preview || null
+    previewError.value = ''
+    previewOpen.value = true
+}
+
+function changePreviewLocale(value) {
+    previewLocale.value = value
+    refreshPreview()
 }
 </script>
 
 <template>
-    <CmsDashboardLayout :title="t('ui.cms_email_templates')" :subtitle="t('cms_email_templates_note')">
-        <div class="pc-stack pcdr-enter">
-            <div class="pc-grid pc-grid--content">
-                <section class="pc-card">
-                    <div class="pc-card__head">
-                        <div>
-                            <h2 class="pc-card__title">{{ t('cms_templates') }}</h2>
-                            <p class="pc-card__subtitle">{{ t('ui.dashboard_content_studio') }}</p>
-                        </div>
-                        <button class="pc-btn pc-btn--secondary pc-btn--sm" type="button" @click="reset">
-                            <UiIcon name="plus" :size="15" />
-                            {{ t('cms_new_template') }}
-                        </button>
-                    </div>
+    <CmsDashboardLayout
+        :title="s('page_title')"
+        :subtitle="s('page_description')"
+        :eyebrow="s('page_eyebrow')"
+    >
+        <template #actions>
+            <button type="button" class="pc-btn pc-btn--secondary" data-testid="email-templates-guide" @click="guideOpen = true">
+                <UiIcon name="book" :size="16" />
+                <span>{{ s('guide') }}</span>
+            </button>
+            <button v-if="can.create" type="button" class="pc-btn pc-btn--primary" data-testid="email-templates-create" @click="openCreate">
+                <UiIcon name="plus" :size="16" />
+                <span>{{ s('create') }}</span>
+            </button>
+        </template>
 
-                    <template v-if="templates.length">
+        <div class="pc-stack pcdr-enter et-page">
+            <section class="pc-metric-grid" :aria-label="s('stats_total')">
+                <article v-for="metric in metrics" :key="metric.key" class="pc-metric" :class="metric.tone">
+                    <div class="pc-metric__head">
+                        <span class="pc-metric__label">{{ metric.label }}</span>
+                        <span class="pc-metric__icon"><UiIcon :name="metric.icon" :size="17" /></span>
+                    </div>
+                    <strong class="pc-metric__value">{{ metric.value }}</strong>
+                    <span v-if="metric.key === 'recent'" class="pc-metric__hint">{{ s('stats_recent_note') }}</span>
+                    <span v-else class="pc-metric__hint">&nbsp;</span>
+                </article>
+            </section>
+
+            <section class="pc-card">
+                <div class="pc-card__head">
+                    <div>
+                        <h2 class="pc-card__title">{{ s('page_title') }}</h2>
+                        <p class="pc-card__subtitle">{{ countLabel(meta.total) }}</p>
+                    </div>
+                    <button v-if="can.create" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" @click="openCreate">
+                        <UiIcon name="plus" :size="14" />
+                        {{ s('create') }}
+                    </button>
+                </div>
+
+                <form class="pc-toolbar et-filter-bar" @submit.prevent="applyFilters()">
+                    <div class="pc-search">
+                        <UiIcon name="search" :size="16" />
+                        <input v-model="search" type="search" :placeholder="s('search_placeholder')" :aria-label="s('search')">
+                    </div>
+                    <div class="et-filter-field">
+                        <StatusSelect
+                            v-model="statusFilter"
+                            :aria-label="s('table_status')"
+                            :options="statusFilterOptions"
+                            :placeholder="s('all_statuses')"
+                            clearable
+                            size="sm"
+                        />
+                    </div>
+                    <div class="et-filter-field">
+                        <SelectionControl
+                            v-model="localeFilter"
+                            :aria-label="s('locale_label')"
+                            :options="localeFilterOptions"
+                            :placeholder="s('all_locales')"
+                            clearable
+                            :searchable="false"
+                            size="sm"
+                        />
+                    </div>
+                    <button type="submit" class="pc-btn pc-btn--secondary pc-btn--sm">
+                        <UiIcon name="search" :size="14" />
+                        {{ s('search') }}
+                    </button>
+                    <button v-if="hasFilters" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" @click="clearFilters">
+                        <UiIcon name="close" :size="14" />
+                        {{ s('clear_filters') }}
+                    </button>
+                </form>
+
+                <div class="pc-filter-summary">{{ countLabel(meta.total) }}</div>
+
+                <template v-if="templateRows.length">
+                    <div class="et-desktop-list">
                         <DataTable :columns="columns">
-                            <tr v-for="template in templates" :key="template.id">
-                                <td class="pc-directional" dir="ltr">{{ template.key }}</td>
-                                <td class="pc-table__primary">{{ template.translations?.[selectedLocale]?.name || template.key }}</td>
+                            <tr v-for="template in templateRows" :key="template.id">
                                 <td>
-                                    <CmsStatusBadge :label="template.active ? t('ui.active') : t('ui.inactive')" :status="template.active ? 'active' : 'inactive'" />
+                                    <div class="et-template-cell">
+                                        <span class="et-template-icon"><UiIcon name="mail" :size="16" /></span>
+                                        <div class="et-template-cell__text">
+                                            <span class="pc-table__primary">{{ displayName(template) }}</span>
+                                            <span class="pc-table__secondary pc-directional" dir="ltr">{{ template.key }}</span>
+                                            <small v-if="descriptionFor(template)" class="et-template-description">{{ descriptionFor(template) }}</small>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
+                                    <div class="et-locale-badges">
+                                        <span v-for="code in template.locales" :key="code" class="pc-badge pc-badge--slate">{{ code.toUpperCase() }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <CmsStatusBadge :label="template.active ? s('active') : s('inactive')" :status="template.active ? 'active' : 'inactive'" />
+                                </td>
+                                <td dir="auto">{{ formatUpdated(template.updatedAt) }}</td>
+                                <td>
                                     <div class="pc-table__actions">
-                                        <button class="pc-btn pc-btn--secondary pc-btn--sm" type="button" @click="edit(template)">
-                                            <UiIcon name="edit" :size="14" />
-                                            {{ t('ui.edit') }}
+                                        <button type="button" class="pc-btn pc-btn--secondary pc-btn--sm" data-testid="email-templates-preview" :disabled="previewBusy && previewOpen" @click="openTemplatePreview(template)">
+                                            <UiIcon name="eye" :size="14" />
+                                            <span class="et-action-label">{{ s('preview') }}</span>
                                         </button>
-                                        <button class="pc-btn pc-btn--danger pc-btn--sm" type="button" @click="remove(template)">
+                                        <button v-if="can.update" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" @click="openEdit(template)">
+                                            <UiIcon name="edit" :size="14" />
+                                            <span class="et-action-label">{{ s('edit') }}</span>
+                                        </button>
+                                        <button v-if="can.create" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" :disabled="isBusy('duplicate', template.id)" @click="duplicate(template)">
+                                            <UiIcon name="copy" :size="14" />
+                                            <span class="et-action-label">{{ s('duplicate') }}</span>
+                                        </button>
+                                        <button v-if="can.update" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" :disabled="isBusy('status', template.id)" @click="toggleStatus(template)">
+                                            <UiIcon :name="template.active ? 'eyeOff' : 'check'" :size="14" />
+                                            <span class="et-action-label">{{ template.active ? s('deactivate') : s('activate') }}</span>
+                                        </button>
+                                        <button v-if="can.delete" type="button" class="pc-btn pc-btn--danger pc-btn--sm" @click="deleting = template">
                                             <UiIcon name="trash" :size="14" />
-                                            {{ t('ui.delete') }}
+                                            <span class="et-action-label">{{ s('delete') }}</span>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                         </DataTable>
-                    </template>
-                    <EmptyState v-else :title="t('cms_no_records')" icon="mail" />
-                </section>
-
-                <section class="pc-card">
-                    <div class="pc-card__head">
-                        <div>
-                            <h2 class="pc-card__title">{{ editingId ? t('ui.edit') : t('cms_new_template') }}</h2>
-                            <p class="pc-card__subtitle">{{ selectedLocale.toUpperCase() }}</p>
-                        </div>
                     </div>
-                    <form class="pc-card__body pc-form-grid" @submit.prevent="save">
-                        <label v-if="!editingId" class="pc-field">
-                            <span class="pc-label">{{ t('cms_template_key') }}</span>
-                            <input v-model="form.key" class="pc-input" type="text" maxlength="96" dir="ltr" required>
-                            <span v-if="form.errors.key" class="pc-error" role="alert">{{ form.errors.key }}</span>
-                        </label>
 
-                        <div class="pc-form-grid pc-form-grid--2">
-                            <label class="pc-field">
-                                <span class="pc-label">{{ t('ui.status') }}</span>
-                                <select v-model="form.is_active" class="pc-select">
-                                    <option :value="true">{{ t('ui.active') }}</option>
-                                    <option :value="false">{{ t('ui.inactive') }}</option>
-                                </select>
-                            </label>
-                            <label class="pc-field">
-                                <span class="pc-label">{{ t('ui.language') }}</span>
-                                <select v-model="selectedLocale" class="pc-select">
-                                    <option v-for="locale in locales" :key="locale" :value="locale">{{ locale }}</option>
-                                </select>
-                            </label>
-                        </div>
-
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('cms_name') }}</span>
-                            <input v-model="activeTranslation.name" class="pc-input" type="text" maxlength="160" required>
-                        </label>
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('cms_description') }}</span>
-                            <input v-model="activeTranslation.description" class="pc-input" type="text" maxlength="500">
-                        </label>
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('ui.subject') }}</span>
-                            <input v-model="activeTranslation.subject" class="pc-input" type="text" maxlength="255" required>
-                        </label>
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('cms_body') }}</span>
-                            <textarea v-model="activeTranslation.body" class="pc-textarea" rows="8" maxlength="10000" required></textarea>
-                        </label>
-
-                        <div class="pc-field">
-                            <span class="pc-label">{{ t('cms_allowed_variables') }}</span>
-                            <div class="pc-token-list">
-                                <span v-for="variable in variableList" :key="variable.key" class="pc-token">
-                                    <span>{{ variable.token }}</span>
-                                    <span>{{ variable.label }}</span>
-                                </span>
+                    <div class="et-mobile-list">
+                        <article v-for="template in templateRows" :key="template.id" class="et-mobile-card">
+                            <div class="et-mobile-card__head">
+                                <div>
+                                    <strong>{{ displayName(template) }}</strong>
+                                    <span class="pc-table__secondary pc-directional" dir="ltr">{{ template.key }}</span>
+                                </div>
+                                <CmsStatusBadge :label="template.active ? s('active') : s('inactive')" :status="template.active ? 'active' : 'inactive'" />
                             </div>
-                        </div>
-
-                        <div class="pc-form-actions">
-                            <button class="pc-btn pc-btn--secondary" type="button" :disabled="form.processing" @click="renderPreview">
-                                <UiIcon name="eye" :size="16" />
-                                {{ t('cms_preview') }}
-                            </button>
-                            <button class="pc-btn pc-btn--primary" type="submit" :disabled="form.processing">
-                                <UiIcon name="check" :size="16" />
-                                {{ t('cms_save') }}
-                            </button>
-                        </div>
-                    </form>
-
-                    <div v-if="preview || previewError" class="pc-card__foot">
-                        <div v-if="preview" class="pc-preview-panel">
-                            <strong>{{ preview.subject }}</strong>
-                            <p>{{ preview.body }}</p>
-                        </div>
-                        <p v-if="previewError" class="pc-error" role="alert">{{ previewError }}</p>
+                            <p v-if="descriptionFor(template)" class="et-mobile-card__description">{{ descriptionFor(template) }}</p>
+                            <div class="et-mobile-card__meta">
+                                <div class="et-locale-badges">
+                                    <span v-for="code in template.locales" :key="code" class="pc-badge pc-badge--slate">{{ code.toUpperCase() }}</span>
+                                </div>
+                                <span>{{ formatUpdated(template.updatedAt) }}</span>
+                            </div>
+                            <div class="et-mobile-card__actions">
+                                <button type="button" class="pc-btn pc-btn--secondary pc-btn--sm" data-testid="email-templates-preview-mobile" @click="openTemplatePreview(template)">
+                                    <UiIcon name="eye" :size="14" /> {{ s('preview') }}
+                                </button>
+                                <button v-if="can.update" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" @click="openEdit(template)">
+                                    <UiIcon name="edit" :size="14" /> {{ s('edit') }}
+                                </button>
+                                <button v-if="can.create" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" :disabled="isBusy('duplicate', template.id)" @click="duplicate(template)">
+                                    <UiIcon name="copy" :size="14" /> {{ s('duplicate') }}
+                                </button>
+                                <button v-if="can.update" type="button" class="pc-btn pc-btn--secondary pc-btn--sm" :disabled="isBusy('status', template.id)" @click="toggleStatus(template)">
+                                    <UiIcon :name="template.active ? 'eyeOff' : 'check'" :size="14" />
+                                    {{ template.active ? s('deactivate') : s('activate') }}
+                                </button>
+                                <button v-if="can.delete" type="button" class="pc-btn pc-btn--danger pc-btn--sm" @click="deleting = template">
+                                    <UiIcon name="trash" :size="14" /> {{ s('delete') }}
+                                </button>
+                            </div>
+                        </article>
                     </div>
-                </section>
-            </div>
+                </template>
+
+                <EmptyState v-else :title="s('empty_title')" :message="s('empty_description')" icon="mail">
+                    <button v-if="can.create" type="button" class="pc-btn pc-btn--primary" @click="openCreate">
+                        <UiIcon name="plus" :size="16" />
+                        {{ s('create') }}
+                    </button>
+                </EmptyState>
+
+                <Pagination :pagination="templates" replace />
+            </section>
         </div>
+
+        <TemplateWizard
+            :open="wizardOpen"
+            :template="wizardTemplate"
+            :locales="locales"
+            :variable-catalog="variableCatalog"
+            :starters="starters"
+            :strings="strings"
+            :can="can"
+            :templates-path="templatesPath"
+            :preview-path="previewPath"
+            :initial-locale="defaultLocale"
+            @close="closeWizard"
+            @saved="handleSaved"
+            @open-guide="guideOpen = true"
+            @open-preview="openWizardPreview"
+        />
+
+        <EmailPreviewDialog
+            :open="previewOpen"
+            :preview="previewData"
+            :strings="strings"
+            :busy="previewBusy"
+            :error="previewError"
+            :locales="locales"
+            :active-locale="previewLocale"
+            @close="previewOpen = false"
+            @refresh="refreshPreview"
+            @change-locale="changePreviewLocale"
+        />
+
+        <TemplateGuideDialog :open="guideOpen" :strings="strings" :example="guideExample" @close="guideOpen = false" />
+
+        <ConfirmDialog
+            :open="Boolean(deleting)"
+            :title="s('delete_title')"
+            :message="s('delete_message')"
+            :confirm-label="s('delete')"
+            :cancel-label="s('cancel')"
+            :busy="Boolean(deleting && isBusy('delete', deleting.id))"
+            danger
+            @close="deleting = null"
+            @confirm="confirmDelete"
+        />
     </CmsDashboardLayout>
 </template>
+
+<style scoped>
+.et-page { min-inline-size: 0; }
+.et-filter-bar { align-items: flex-end; }
+.et-filter-field { display: grid; gap: 4px; min-inline-size: 155px; }
+.pc-sr-text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+.et-template-cell { display: flex; align-items: flex-start; gap: 10px; min-inline-size: 0; }
+.et-template-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 32px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: var(--pc-teal-soft, #eaf5f4);
+    color: var(--pc-teal, #397f7b);
+}
+.et-template-cell__text { display: grid; gap: 2px; min-inline-size: 0; }
+.et-template-description { color: var(--pc-muted, #5c6b82); font-size: 0.72rem; line-height: 1.5; overflow-wrap: anywhere; }
+.et-locale-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+.et-desktop-list { display: block; }
+.et-mobile-list { display: none; }
+.et-mobile-card { display: grid; gap: 10px; padding: 16px; border-block-end: 1px solid var(--pc-border, #e9edf2); }
+.et-mobile-card:last-child { border-block-end: 0; }
+.et-mobile-card__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.et-mobile-card__head strong { display: block; font-size: 0.9rem; }
+.et-mobile-card__description { margin: 0; color: var(--pc-muted, #5c6b82); font-size: 0.78rem; line-height: 1.6; }
+.et-mobile-card__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: var(--pc-muted, #5c6b82); font-size: 0.72rem; }
+.et-mobile-card__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.et-pagination { gap: 10px; }
+.et-pagination__pages { display: flex; flex-wrap: wrap; gap: 5px; }
+.et-page-link {
+    min-inline-size: 32px;
+    block-size: 32px;
+    padding-inline: 9px;
+    border: 1px solid var(--pc-border, #e9edf2);
+    border-radius: 8px;
+    background: var(--pc-surface, #fff);
+    color: var(--pc-text-soft, #4b5a70);
+    font: inherit;
+    font-size: 0.76rem;
+    cursor: pointer;
+}
+.et-page-link.is-active { background: var(--pc-teal, #397f7b); border-color: var(--pc-teal, #397f7b); color: #fff; font-weight: 700; }
+
+@media (max-width: 1180px) {
+    .et-action-label { display: none; }
+}
+
+@media (max-width: 900px) {
+    .pc-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .et-desktop-list { display: none; }
+    .et-mobile-list { display: block; }
+}
+
+@media (max-width: 560px) {
+    .pc-metric-grid { grid-template-columns: minmax(0, 1fr); }
+    .et-filter-bar { align-items: stretch; }
+    .et-filter-bar .pc-search { max-inline-size: none; flex-basis: 100%; }
+    .et-filter-field { flex: 1 1 140px; min-inline-size: 0; }
+    .et-pagination__label { flex-basis: 100%; text-align: center; }
+}
+</style>
