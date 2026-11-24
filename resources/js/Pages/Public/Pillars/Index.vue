@@ -28,7 +28,7 @@ const { t, localPath } = useI18n()
 
         <section class="ps-section">
             <div class="ps-container">
-                <SectionHeading :title="t('at_a_glance')" :body="t('planning_targets_notice')" />
+                <SectionHeading :title="t('at_a_glance')" :body="t('strategic_statement')" />
                 <div v-if="pillars.length" class="ps-grid" data-stagger>
                     <PillarTile v-for="pillar in pillars" :key="pillar.code" :pillar="pillar" />
                 </div>

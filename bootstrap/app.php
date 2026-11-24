@@ -12,6 +12,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetWebsiteLocale;
+use App\Support\WorkflowFeedback;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -61,8 +62,22 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
         $exceptions->render(function (InvalidWorkflowTransition|InvalidDomainTransition|MediaInUseException|Phase5GovernanceException $exception, Request $request) {
-            if ($request->expectsJson() || $request->inertia()) {
+            // Explicit JSON clients keep the existing API contract. Inertia
+            // visits must never receive a bare JSON body: they need a redirect
+            // with flashed, localized feedback so the current page survives.
+            if ($request->expectsJson() && ! $request->inertia()) {
                 return response()->json(['message' => $exception->getMessage()], 409);
+            }
+
+            if ($request->inertia()) {
+                $feedback = $exception instanceof InvalidWorkflowTransition
+                    ? WorkflowFeedback::invalidTransition($exception, app()->getLocale())
+                    : WorkflowFeedback::unexpectedFailure(app()->getLocale());
+
+                return back()->with('flash', [
+                    'error' => $feedback['title'],
+                    'workflow' => $feedback,
+                ])->setStatusCode(303);
             }
 
             return back()->with('flash', ['error' => $exception->getMessage()])->setStatusCode(409);

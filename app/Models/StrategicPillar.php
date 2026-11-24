@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\ContentStatus;
 use App\Models\Concerns\HasTranslations;
 use App\Models\Concerns\Publishable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +35,42 @@ class StrategicPillar extends Model
             'is_featured' => 'boolean',
             'display_order' => 'integer',
         ];
+    }
+
+    /**
+     * Search code and translated title, short title, slug and description.
+     * Values are bound by Eloquent; LIKE wildcards in user input are escaped.
+     */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $needle = '%'.addcslashes($term, '%_\\').'%';
+
+        return $query->where(function (Builder $query) use ($needle): void {
+            $query->where('code', 'like', $needle)
+                ->orWhereHas('translations', function (Builder $query) use ($needle): void {
+                    $query->where('title', 'like', $needle)
+                        ->orWhere('short_title', 'like', $needle)
+                        ->orWhere('description', 'like', $needle)
+                        ->orWhere('slug', 'like', $needle);
+                });
+        });
+    }
+
+    public function scopeWorkflowStatus(Builder $query, ContentStatus|string|null $status): Builder
+    {
+        $value = $status instanceof ContentStatus ? $status->value : $status;
+
+        if ($value === null || ! in_array($value, ContentStatus::values(), true)) {
+            return $query;
+        }
+
+        return $query->where('status', $value);
     }
 
     public function translationModel(): string

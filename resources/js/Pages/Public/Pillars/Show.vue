@@ -98,7 +98,7 @@ const { t, localPath } = useI18n()
 
         <PublicCta
             :title="t('nav.involve')"
-            :lede="t('planning_targets_notice')"
+            :lede="t('strategic_statement')"
             :actions="[{ label: t('nav.involve'), url: localPath('get-involved'), primary: true }]"
         />
     </PublicLayout>
