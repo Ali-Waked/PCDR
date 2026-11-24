@@ -43,8 +43,8 @@
 
 ## 4. صلاحيات CMS المستخدمة
 
-- عرض المحتوى: `pages.view`, `news.view`, `programs.view`, `projects.view`, `pillars.view`, `publications.view`, `media.view`
-- التحرير: `pages.create/update/delete/publish/unpublish` ونظائرها لوحدات المحتوى
+- عرض المحتوى: `news.view`, `programs.view`, `projects.view`, `pillars.view`, `publications.view`, `media.view`
+- التحرير: `news.create/update/publish/unpublish` ونظائرها لوحدات المحتوى
 - الوسائط: `media.upload`, `media.update`, `media.delete`
 - الاستفسارات: `inquiries.view`, `inquiries.view_assigned`, `inquiries.update`, `inquiries.assign`, `inquiries.add_internal_note`, `inquiries.reply`
 - القوالب: `email_templates.view/create/update/delete`

@@ -141,7 +141,6 @@ erDiagram
 users.view, users.create, users.update, users.delete, users.restore, users.assign_roles
 roles.view, roles.create, roles.update, roles.delete, roles.assign, roles.grant_protected
 permissions.view
-pages.view, pages.create, pages.update, pages.delete, pages.review, pages.publish, pages.archive
 projects.view, projects.create, projects.update, projects.delete,
 projects.submit, projects.review, projects.publish, projects.archive
 activities.view, activities.create, activities.update, activities.publish

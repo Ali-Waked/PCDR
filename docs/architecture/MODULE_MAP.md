@@ -64,9 +64,9 @@
 
 ### B. CMS
 
-**B1 Pages**
-- **Responsibilities:** Localized page CRUD, workflow, slug management, SEO metadata.
-- **Dependencies:** C3/C4 authz, B6 media, D4 settings, ADR-003/007/008. **Sensitivity:** Internal (drafts)/Public (published). **Permissions:** `pages.view/create/update/delete/review/publish/archive`. **Boundary:** private authoring, public output. **Phase:** P3.
+**B1 Pages — admin module removed; public rendering preserved**
+- **Responsibilities:** No administrative page CRUD remains. Published page records are still rendered by the public website route and sitemap.
+- **Dependencies:** C3/C4 authz, B6 media, D4 settings, ADR-003/007/008. **Sensitivity:** Public (published content only). **Permissions:** none. **Boundary:** public output only. **Phase:** P3 (retired).
 
 **B2 Navigation**
 - **Responsibilities:** Header/footer menus, ordering, visibility, internal route validation.

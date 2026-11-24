@@ -42,7 +42,7 @@ All commands were run from `/root/PCDR/pcdr-phase3`.
 | PHP dependencies | `composer audit --locked` | no advisories |
 | JS dependencies | `npm audit --audit-level=high` | 0 vulnerabilities |
 | Rendered locales | `curl /ar`, `curl /en` | 200; correct `lang`/`dir`/`data-locale`, valid metadata |
-| CMS guest access | `curl /ar/cms/pages` | 302 → `/ar/cms/login` |
+| CMS guest access | `curl /ar/cms/pillars` | 302 → `/ar/cms/login` |
 | Homepage assets | `curl /assets/pcdr-homepage/logo/*` | 200, `image/png` / `image/svg+xml` |
 | Sitemap / robots | `curl /sitemap.xml`, `curl /robots.txt` | 42 URLs, no doubled locale segments; robots includes sitemap and CMS disallows |
 
