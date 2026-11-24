@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Head, Link } from '@inertiajs/vue3'
+import { Head } from '@inertiajs/vue3'
 import SplitText from '../../Components/StaticHome/SplitText.vue'
 import SiteHeader from '../../Components/Public/SiteHeader.vue'
 import SiteFooter from '../../Components/Public/SiteFooter.vue'
@@ -10,6 +10,7 @@ import '../../../css/pcdr-home.css'
 
 const props = defineProps({
     vision: { type: String, default: '' },
+    mission: { type: String, default: '' },
     pillars: { type: Array, default: () => [] },
     framework: { type: Array, default: () => [] },
     articles: { type: Array, default: () => [] },
@@ -23,250 +24,7 @@ const root = ref(null)
 const intro = ref(null)
 const heroArt = ref(null)
 
-const content = {
-    ar: {
-        skip: 'تخطَّ إلى المحتوى',
-        navAria: 'القائمة الرئيسية',
-        langShort: 'EN',
-        langLabel: 'Switch to English',
-        langRowLabel: 'اللغة',
-        partner: 'كن شريكاً',
-        logoAlt: 'شعار جمعية العمل التشاركي في الأزمات والكوارث – قطاع غزة',
-        nav: [
-            { label: 'الرئيسية', href: '#top' },
-            { label: 'من نحن', href: '#about' },
-            { label: 'مجالات عملنا', href: '#areas' },
-            { label: 'برامجنا', href: '#programs' },
-            { label: 'الأثر', href: '#targets' },
-            { label: 'المعرفة والإعلام', href: '#knowledge' },
-            { label: 'تواصل معنا', href: '#contact' },
-        ],
-        hero: {
-            eyebrow: 'العمل التشاركي · قطاع غزة',
-            title: 'من الاستجابة الإنسانية\nإلى التعافي والتنمية المستدامة',
-            lead: 'نعمل على تنسيق الجهود الإنسانية وتعزيز المشاركة المجتمعية، من أجل استجابة أكثر فاعلية وتعافٍ أكثر استدامة، يحفظ كرامة الإنسان ويعزز قدرة المجتمعات على الصمود.',
-            discover: 'تعرّف على عملنا',
-            partner: 'كن شريكاً في الأثر',
-        },
-        about: {
-            eyebrow: 'من نحن',
-            title: 'الإنسان أولاً... والمجتمع شريك في التغيير',
-            visionTitle: 'الرؤية',
-            vision: 'الريادة في العمل الإنساني والتنموي التشاركي، والمساهمة في بناء مجتمع فلسطيني أكثر قدرة على الصمود والتعافي، يتمتع فيه الأفراد والأسر بالكرامة والعدالة وتكافؤ الفرص.',
-            missionTitle: 'الرسالة',
-            mission: 'تنسيق الجهود الإنسانية وتعزيز الشراكات المحلية والدولية، وتقديم الاستجابات الإغاثية والتنموية المتكاملة، وتمكين الفئات الأكثر هشاشة، وتحسين الظروف المعيشية للأسر المتضررة والفقيرة، من خلال برامج مهنية ومستدامة تقوم على المشاركة المجتمعية والشفافية والمساءلة.',
-        },
-        areas: {
-            eyebrow: '١١ محوراً استراتيجياً',
-            title: 'مجالات عملنا',
-            pillars: [
-                { title: 'الاستجابة الإنسانية وإدارة الأزمات والكوارث', body: 'منظومة استجابة سريعة ومنظمة لتلبية الاحتياجات الأساسية للأسر المتضررة.' },
-                { title: 'الأمن الغذائي وتحسين الظروف المعيشية', body: 'وصول عادل ومنتظم للمساعدات الغذائية، مع دعم الزراعة المنزلية.' },
-                { title: 'التمكين الاقتصادي وسبل العيش', body: 'الانتقال بالأسر من الاعتماد على المساعدات إلى دخل مستدام.' },
-                { title: 'الحماية الاجتماعية والرعاية النفسية والاجتماعية', body: 'رعاية متكاملة للأيتام والأشخاص ذوي الإعاقة والنساء والأطفال وكبار السن.' },
-                { title: 'الصحة العامة والمياه والإصحاح البيئي', body: 'الحد من المخاطر الصحية وتحسين خدمات المياه والنظافة.' },
-                { title: 'التعليم وتنمية قدرات الأطفال والشباب', body: 'الحد من الفاقد التعليمي وبناء مهارات المستقبل.' },
-                { title: 'التعافي المبكر وتحسين السكن وإعادة تأهيل المرافق', body: 'تحسين ظروف السكن وإعادة تأهيل المرافق المجتمعية الصغيرة.' },
-                { title: 'المشاركة المجتمعية والتطوع والعمل التشاركي', body: 'لجان وفرق تطوعية تشارك في تحديد الأولويات ومتابعة النتائج.' },
-                { title: 'الشراكات المحلية والدولية واستقطاب التمويل', body: 'بناء شراكات محلية ودولية وتنويع مصادر التمويل.' },
-                { title: 'الإعلام والاتصال والمناصرة', body: 'توثيق الاحتياجات وإبراز الرسالة الإنسانية بشفافية.' },
-                { title: 'البحث وتقييم الاحتياجات وقياس الأثر', body: 'قرارات مبنية على مسوح ودراسات وتقييم موثق للأثر.' },
-            ],
-        },
-        approach: {
-            eyebrow: 'منهجنا الإنساني',
-            title: 'رحلة متصلة وليست تدخلاً عابراً',
-            steps: [
-                { title: 'الاستجابة الطارئة', body: 'تلبية الاحتياجات العاجلة بسرعة وتنظيم.' },
-                { title: 'التعافي المبكر', body: 'استعادة مصادر الرزق والسكن والخدمات الأساسية.' },
-                { title: 'الصمود', body: 'تعزيز قدرة الأسر والمجتمعات على مواجهة الأزمات.' },
-                { title: 'التنمية المستدامة', body: 'مجتمعات منتجة ومعتمدة على ذاتها تصنع مستقبلها.' },
-            ],
-        },
-        programs: {
-            eyebrow: 'مجالات البرامج المقترحة',
-            title: 'البرامج والتدخلات',
-            note: 'مجالات برامجية ضمن الخطة الاستراتيجية 2027–2029، وليست تدخلات منفذة.',
-            tiles: [
-                'الاستجابة للطوارئ', 'الأمن الغذائي', 'سبل العيش والتمكين',
-                'الحماية والدعم النفسي والاجتماعي', 'الصحة والمياه والإصحاح',
-                'التعليم والشباب', 'التعافي المبكر والإيواء', 'المشاركة المجتمعية',
-            ],
-        },
-        targets: {
-            badge: 'مستهدفات الخطة الاستراتيجية 2027',
-            title: 'ما نستهدف الوصول إليه بنهاية 2027',
-            note: 'أرقام تخطيطية تخضع للتمويل والقدرات المتاحة، وهي ليست نتائج محققة.',
-            stats: [
-                { value: 3000, display: '3,000', label: 'الأسر المستهدفة بالتدخلات الإنسانية' },
-                { value: 1500, display: '1,500', label: 'الأسر المستهدفة في الأمن الغذائي' },
-                { value: 200, display: '200', label: 'الشباب المستهدف تدريبهم' },
-                { value: 100, display: '100', label: 'المتطوعون المستهدف إشراكهم' },
-                { value: 50, display: '50', label: 'المشاريع الصغيرة المستهدفة' },
-            ],
-        },
-        community: {
-            eyebrow: 'المنهج التشاركي',
-            title: 'التغيير المستدام يبدأ من المجتمع',
-            body: 'يشارك المجتمع في تحديد الاحتياجات وتصميم التدخلات ومتابعة تنفيذها وتقييم أثرها، بما يعزز الشفافية والعدالة ويحد من الازدواجية.',
-            roles: [
-                { title: 'اللجان المجتمعية', body: 'تحديد الأولويات في الأحياء ومراكز الإيواء.' },
-                { title: 'المتطوعون', body: 'إسناد ميداني وفق مدونة سلوك.' },
-                { title: 'المبادرات المحلية', body: 'مبادرات شبابية ونسوية نطمح إلى دعمها.' },
-                { title: 'الشركاء المؤسسيون', body: 'موارد وخبرات ضمن اتفاقيات واضحة.' },
-            ],
-        },
-        partners: {
-            eyebrow: 'الشراكات',
-            title: 'معاً نحو استجابة إنسانية أكثر تكاملاً',
-            lead: 'نطمح إلى بناء شراكات فاعلة. الفئات التالية مجالات تعاون مخططة وليست اتفاقيات قائمة.',
-            categories: [
-                'المؤسسات الحكومية والمحلية', 'المنظمات الدولية والعربية',
-                'الجامعات والمراكز البحثية', 'القطاع الخاص والمجتمع المدني',
-            ],
-        },
-        knowledge: {
-            eyebrow: 'المعرفة والإعلام',
-            title: 'تقارير ودراسات وقصص',
-            note: 'آخر التحديثات المنشورة من الأخبار والإصدارات المعتمدة.',
-            empty: 'لا توجد مواد منشورة بعد.',
-        },
-        cta: {
-            title: 'لأن التعافي مسؤولية مشتركة',
-            lead: 'نؤمن أن العمل الإنساني الأكثر أثراً يبدأ بالتعاون، ويستمر بالمشاركة، ويصنع مستقبلاً أكثر قدرة على الصمود.',
-            contact: 'تواصل معنا',
-            volunteer: 'كن متطوعاً',
-            explore: 'استكشف مجالات عملنا',
-        },
-        footer: {
-            description: 'جمعية العمل التشاركي في الأزمات والكوارث الخيرية – قطاع غزة. نموذج أولي للهوية الرقمية؛ المحتوى مستمد من الخطة الاستراتيجية 2027–2029.',
-            contactTitle: 'التواصل',
-            contactBody: 'بيانات التواصل والعنوان وحسابات التواصل الاجتماعي ستُضاف بعد اعتمادها.',
-        },
-    },
-    en: {
-        skip: 'Skip to content',
-        navAria: 'Main navigation',
-        langShort: 'ع',
-        langLabel: 'التبديل إلى العربية',
-        langRowLabel: 'Language',
-        partner: 'Partner with us',
-        logoAlt: 'PCDR logo – Participatory Action in Crises and Disasters – Gaza Strip',
-        nav: [
-            { label: 'Home', href: '#top' },
-            { label: 'About', href: '#about' },
-            { label: 'Our Work', href: '#areas' },
-            { label: 'Programs', href: '#programs' },
-            { label: 'Impact', href: '#targets' },
-            { label: 'Knowledge & Media', href: '#knowledge' },
-            { label: 'Contact', href: '#contact' },
-        ],
-        hero: {
-            eyebrow: 'Participatory action · Gaza',
-            title: 'From Humanitarian Response\nto Recovery and Sustainable Development',
-            lead: 'We coordinate humanitarian efforts and strengthen community participation for a more effective response and a more lasting recovery — one that protects human dignity and builds the resilience of communities.',
-            discover: 'Discover our work',
-            partner: 'Be a partner in impact',
-        },
-        about: {
-            eyebrow: 'Who we are',
-            title: 'People First — and Communities as Partners in Change',
-            visionTitle: 'Vision',
-            vision: 'Leadership in participatory humanitarian and development action, contributing to a more resilient Palestinian society where individuals and families enjoy dignity, justice and equal opportunity.',
-            missionTitle: 'Mission',
-            mission: 'Coordinating humanitarian efforts and strengthening local and international partnerships; delivering integrated relief and development responses; empowering the most vulnerable; and improving living conditions for affected and poor families through professional, sustainable programs grounded in community participation, transparency and accountability.',
-        },
-        areas: {
-            eyebrow: '11 strategic pillars',
-            title: 'Our Areas of Work',
-            pillars: [
-                { title: 'Humanitarian response and crisis & disaster management', body: 'A rapid, organized response system that meets the essential needs of affected families.' },
-                { title: 'Food security and living conditions', body: 'Fair and regular access to food assistance, with support for home-based food production.' },
-                { title: 'Economic empowerment and livelihoods', body: 'Moving families from continued reliance on aid toward sustainable income.' },
-                { title: 'Social protection and psychosocial care', body: 'Integrated care for orphans, persons with disabilities, women, children and older people.' },
-                { title: 'Public health, water and sanitation', body: 'Reducing health risks and improving water, hygiene and sanitation services.' },
-                { title: 'Education and youth capacity building', body: 'Limiting learning loss and building the skills of the future.' },
-                { title: 'Early recovery, housing and facilities', body: 'Improving housing conditions and rehabilitating small community facilities.' },
-                { title: 'Community participation and volunteering', body: 'Committees and volunteer teams that help set priorities and follow up on results.' },
-                { title: 'Partnerships and resource mobilization', body: 'Building local and international partnerships and diversifying funding sources.' },
-                { title: 'Media, communication and advocacy', body: 'Documenting needs and presenting our humanitarian message with transparency.' },
-                { title: 'Research, needs assessment and impact measurement', body: 'Decisions grounded in surveys, studies and documented evaluation of impact.' },
-            ],
-        },
-        approach: {
-            eyebrow: 'Our humanitarian approach',
-            title: 'A continuous journey, not a one-off intervention',
-            steps: [
-                { title: 'Emergency response', body: 'Meeting urgent needs quickly and in an organized way.' },
-                { title: 'Early recovery', body: 'Restoring livelihoods, shelter and basic services.' },
-                { title: 'Resilience', body: 'Strengthening the ability of families and communities to face crises.' },
-                { title: 'Sustainable development', body: 'Productive, self-reliant communities that shape their own future.' },
-            ],
-        },
-        programs: {
-            eyebrow: 'Proposed program areas',
-            title: 'Programs and Interventions',
-            note: 'Strategic program areas under the 2027–2029 plan — not completed interventions.',
-            tiles: [
-                'Emergency response', 'Food security', 'Livelihoods',
-                'Protection and psychosocial support', 'Health, water and sanitation',
-                'Education and youth', 'Early recovery and shelter', 'Community participation',
-            ],
-        },
-        targets: {
-            badge: 'Strategic Plan Targets 2027',
-            title: 'Where we aim to be by the end of 2027',
-            note: 'Planned targets, subject to funding and capacity. They are not achieved results.',
-            stats: [
-                { value: 3000, display: '3,000', label: 'Families targeted for humanitarian interventions' },
-                { value: 1500, display: '1,500', label: 'Families targeted for food security support' },
-                { value: 200, display: '200', label: 'Young people targeted for training' },
-                { value: 100, display: '100', label: 'Volunteers targeted for engagement' },
-                { value: 50, display: '50', label: 'Small projects targeted' },
-            ],
-        },
-        community: {
-            eyebrow: 'Participatory approach',
-            title: 'Lasting change starts with the community',
-            body: 'Communities help identify needs, design interventions, follow their implementation and evaluate their impact — which strengthens transparency and fairness and avoids duplication.',
-            roles: [
-                { title: 'Community committees', body: 'Set priorities in neighborhoods and shelters.' },
-                { title: 'Volunteers', body: 'Field support under a code of conduct.' },
-                { title: 'Local initiatives', body: 'Youth- and women-led efforts we aim to back.' },
-                { title: 'Institutional partners', body: 'Resources and expertise in clear agreements.' },
-            ],
-        },
-        partners: {
-            eyebrow: 'Partnerships',
-            title: 'Together toward a more integrated humanitarian response',
-            lead: 'We aspire to build effective partnerships. The categories below are planned areas of cooperation, not existing agreements.',
-            categories: [
-                'Government and local institutions', 'International and Arab organizations',
-                'Universities and research centers', 'Private sector and civil society',
-            ],
-        },
-        knowledge: {
-            eyebrow: 'Knowledge and media',
-            title: 'Reports, studies and stories',
-            note: 'The latest published news and approved publications.',
-            empty: 'No published items yet.',
-        },
-        cta: {
-            title: 'Because recovery is a shared responsibility',
-            lead: 'We believe the most effective humanitarian work begins with cooperation, continues with participation, and builds a future more able to withstand crises.',
-            contact: 'Contact us',
-            volunteer: 'Become a volunteer',
-            explore: 'Explore our areas of work',
-        },
-        footer: {
-            description: 'Participatory Action Association for Crisis and Disaster Response – Gaza Strip. Prototype of the digital identity; content is drawn from the 2027–2029 strategic plan.',
-            contactTitle: 'Contact',
-            contactBody: 'Contact details, address and social accounts will be added once confirmed.',
-        },
-    },
-}
-
-const { locale, direction, alternateUrl, localPath } = useI18n()
+const { locale, direction, alternateUrl, localPath, t, site } = useI18n()
 
 function routeFor(anchor) {
     const routes = {
@@ -286,16 +44,39 @@ function routeFor(anchor) {
 }
 
 function filled(value) {
-    return typeof value === 'string' && value.trim() !== ''
+    return typeof value === 'string' ? value.trim() !== '' : value !== null && value !== undefined
 }
 
-function sectionByKey(key) {
-    return (props.sections || []).find((section) => section && section.key === key) || null
+const sectionsByKey = computed(() => Object.fromEntries(
+    (props.sections || [])
+        .filter((section) => section && section.key)
+        .map((section) => [section.key, section]),
+))
+
+function sectionFor(key) {
+    return sectionsByKey.value[key] || null
+}
+
+function sectionText(key, field, fallback = '') {
+    const value = sectionFor(key)?.[field]
+    return filled(value) ? value : fallback
+}
+
+function itemsFor(key) {
+    return [...(sectionFor(key)?.items || [])]
+        .filter((item) => item && item.published !== false)
+        .sort((first, second) => (first.sortOrder ?? 0) - (second.sortOrder ?? 0))
+}
+
+function textOf(item, field, fallback = '') {
+    const value = item?.[field]
+    return filled(value) ? value : fallback
 }
 
 const publishedPillars = computed(() => (props.pillars || [])
     .filter((pillar) => pillar && filled(pillar.title))
     .map((pillar) => ({
+        key: pillar.code || pillar.id || pillar.title,
         title: pillar.title,
         body: filled(pillar.description) ? pillar.description : (pillar.shortTitle || ''),
         url: pillar.url || routeFor('#areas'),
@@ -304,89 +85,210 @@ const publishedPillars = computed(() => (props.pillars || [])
 const publishedPrograms = computed(() => (props.programs || [])
     .filter((program) => program && filled(program.title))
     .map((program) => ({
+        key: program.id || program.title,
         title: program.title,
         url: program.url || routeFor('#programs'),
     })))
 
 const knowledgeItems = computed(() => {
     const news = (props.articles || []).filter((item) => item && filled(item.title)).map((item) => ({
+        key: `article-${item.id || item.title}`,
         tag: item.category || '',
         title: item.title,
         url: item.url || routeFor('#knowledge'),
-        date: item.publishedAt || '',
     }))
     const publications = (props.publications || []).filter((item) => item && filled(item.title)).map((item) => ({
+        key: `publication-${item.id || item.title}`,
         tag: item.category || '',
         title: item.title,
         url: item.url || routeFor('#knowledge'),
-        date: item.date || '',
     }))
 
     return [...news, ...publications].slice(0, 6)
 })
 
-const copy = computed(() => {
-    const base = content[locale.value] || content.ar
-    const introSection = sectionByKey('intro')
-    const areasSection = sectionByKey('areas')
-    const frameworkSection = sectionByKey('framework')
-    const ctaSection = sectionByKey('cta')
-    const frameworkSteps = (props.framework || [])
-        .map((step, index) => ({
-            title: step?.label || '',
-            body: base.approach.steps[index]?.body || '',
+const heroButtons = computed(() => {
+    const buttons = itemsFor('hero').filter((item) => textOf(item, 'label')).slice(0, 2)
+
+    if (buttons.length === 0 && sectionText('hero', 'ctaLabel')) {
+        return [{
+            key: 'primary',
+            label: sectionText('hero', 'ctaLabel'),
+            url: sectionText('hero', 'ctaLink') || routeFor('#about'),
+        }]
+    }
+
+    return buttons.map((button, index) => ({
+        key: textOf(button, 'key', `hero-${index}`),
+        label: textOf(button, 'label'),
+        url: textOf(button, 'url') || (index === 0 ? routeFor('#about') : routeFor('#partners')),
+    }))
+})
+
+const aboutCards = computed(() => itemsFor('intro')
+    .map((item) => ({
+        key: textOf(item, 'key'),
+        title: textOf(item, 'title'),
+        body: textOf(item, 'body'),
+    }))
+    .filter((card) => filled(card.title) || filled(card.body)))
+
+const frameworkSteps = computed(() => {
+    const steps = itemsFor('framework')
+        .map((step) => ({
+            key: textOf(step, 'key'),
+            title: textOf(step, 'title'),
+            body: textOf(step, 'body'),
         }))
         .filter((step) => filled(step.title))
 
+    if (steps.length > 0) {
+        return steps
+    }
+
+    return (props.framework || [])
+        .filter((step) => step && filled(step.label))
+        .map((step) => ({ key: step.key, title: step.label, body: '' }))
+})
+
+const programTiles = computed(() => {
+    if (publishedPrograms.value.length > 0) {
+        return publishedPrograms.value
+    }
+
+    return itemsFor('programs')
+        .map((tile) => ({
+            key: textOf(tile, 'key'),
+            title: textOf(tile, 'title') || textOf(tile, 'label'),
+            url: textOf(tile, 'url') || routeFor('#programs'),
+        }))
+        .filter((tile) => filled(tile.title))
+})
+
+const targetStats = computed(() => itemsFor('targets')
+    .map((stat) => ({
+        key: textOf(stat, 'key'),
+        value: Number(stat.value ?? 0),
+        display: textOf(stat, 'display', stat.value != null ? String(stat.value) : '0'),
+        label: textOf(stat, 'body') || textOf(stat, 'title'),
+    }))
+    .filter((stat) => filled(stat.label)))
+
+const communityRoles = computed(() => itemsFor('community')
+    .map((role) => ({
+        key: textOf(role, 'key'),
+        title: textOf(role, 'title'),
+        body: textOf(role, 'body'),
+    }))
+    .filter((role) => filled(role.title)))
+
+const partnerCategories = computed(() => itemsFor('partners')
+    .map((category) => ({
+        key: textOf(category, 'key'),
+        label: textOf(category, 'title') || textOf(category, 'label') || textOf(category, 'body'),
+    }))
+    .filter((category) => filled(category.label)))
+
+const ctaButtons = computed(() => {
+    const buttons = itemsFor('cta').filter((item) => textOf(item, 'label'))
+
+    if (buttons.length === 0 && sectionText('cta', 'ctaLabel')) {
+        return [{
+            key: 'contact',
+            label: sectionText('cta', 'ctaLabel'),
+            url: sectionText('cta', 'ctaLink') || routeFor('#footer'),
+        }]
+    }
+
+    return buttons.map((button, index) => ({
+        key: textOf(button, 'key', `cta-${index}`),
+        label: textOf(button, 'label'),
+        url: textOf(button, 'url') || (
+            textOf(button, 'key') === 'contact'
+                ? routeFor('#footer')
+                : (textOf(button, 'key') === 'volunteer' ? routeFor('#community') : routeFor('#areas'))
+        ),
+    }))
+})
+
+const copy = computed(() => {
+    const visionCard = aboutCards.value.find((card) => card.key === 'vision')
+    const missionCard = aboutCards.value.find((card) => card.key === 'mission')
+
     return {
-        ...base,
+        skip: t('ui.skip_to_content', 'تخطَّ إلى المحتوى'),
+        hero: {
+            eyebrow: sectionText('hero', 'eyebrow', site.value?.region || ''),
+            title: sectionText('hero', 'title', site.value?.slogan || ''),
+            lead: sectionText('hero', 'body', site.value?.slogan || ''),
+            buttons: heroButtons.value,
+        },
         about: {
-            ...base.about,
-            eyebrow: introSection?.eyebrow || base.about.eyebrow,
-            title: introSection?.title || base.about.title,
-            vision: filled(props.vision) ? props.vision : base.about.vision,
+            eyebrow: sectionText('intro', 'eyebrow'),
+            title: sectionText('intro', 'title'),
+            visionTitle: visionCard?.title || '',
+            vision: visionCard?.body || props.vision || '',
+            missionTitle: missionCard?.title || '',
+            mission: missionCard?.body || props.mission || '',
         },
         areas: {
-            ...base.areas,
-            eyebrow: areasSection?.eyebrow || base.areas.eyebrow,
-            title: areasSection?.title || base.areas.title,
-            pillars: publishedPillars.value.length > 0 ? publishedPillars.value : base.areas.pillars,
+            eyebrow: sectionText('areas', 'eyebrow'),
+            title: sectionText('areas', 'title'),
+            pillars: publishedPillars.value,
         },
         approach: {
-            ...base.approach,
-            eyebrow: frameworkSection?.eyebrow || base.approach.eyebrow,
-            title: frameworkSection?.title || base.approach.title,
-            steps: frameworkSteps.length > 0 ? frameworkSteps : base.approach.steps,
+            eyebrow: sectionText('framework', 'eyebrow'),
+            title: sectionText('framework', 'title'),
+            steps: frameworkSteps.value,
         },
         programs: {
-            ...base.programs,
-            eyebrow: areasSection?.eyebrow || base.programs.eyebrow,
-            tiles: publishedPrograms.value.length > 0
-                ? publishedPrograms.value
-                : base.programs.tiles.map((title) => ({ title, url: routeFor('#programs') })),
+            eyebrow: sectionText('programs', 'eyebrow'),
+            title: sectionText('programs', 'title'),
+            note: sectionText('programs', 'body', t('strategic_programs_intro')),
+            tiles: programTiles.value,
+        },
+        targets: {
+            badge: sectionText('targets', 'eyebrow'),
+            title: sectionText('targets', 'title'),
+            note: sectionText('targets', 'body', t('strategic_targets_intro')),
+            stats: targetStats.value,
+        },
+        community: {
+            eyebrow: sectionText('community', 'eyebrow'),
+            title: sectionText('community', 'title'),
+            body: sectionText('community', 'body'),
+            roles: communityRoles.value,
+        },
+        partners: {
+            eyebrow: sectionText('partners', 'eyebrow'),
+            title: sectionText('partners', 'title'),
+            lead: sectionText('partners', 'body', t('strategic_partnerships_intro')),
+            categories: partnerCategories.value,
         },
         knowledge: {
-            ...base.knowledge,
+            eyebrow: sectionText('knowledge', 'eyebrow'),
+            title: sectionText('knowledge', 'title'),
+            note: sectionText('knowledge', 'body'),
+            empty: sectionText('knowledge', 'ctaLabel', locale.value === 'ar' ? 'لا توجد مواد منشورة بعد.' : 'No published items yet.'),
             articles: knowledgeItems.value,
         },
         cta: {
-            ...base.cta,
-            eyebrow: ctaSection?.eyebrow || base.cta.eyebrow || '',
-            title: ctaSection?.title || base.cta.title,
-            lead: ctaSection?.body || base.cta.lead,
+            eyebrow: sectionText('cta', 'eyebrow'),
+            title: sectionText('cta', 'title'),
+            lead: sectionText('cta', 'body'),
+            buttons: ctaButtons.value,
         },
     }
 })
-const otherLocale = computed(() => (locale.value === 'ar' ? 'en' : 'ar'))
-const title = computed(() => (
-    locale.value === 'ar'
-        ? 'PCDR | جمعية العمل التشاركي في الأزمات والكوارث'
-        : 'PCDR | Participatory Action in Crises and Disasters'
-))
-const description = computed(() => props.meta?.description
-    || 'من الاستجابة الإنسانية إلى التعافي والتنمية المستدامة — PCDR، قطاع غزة.')
 
-const logoSmall = '/assets/pcdr-homepage/logo/pcdr-logo.png'
+const otherLocale = computed(() => (locale.value === 'ar' ? 'en' : 'ar'))
+const title = computed(() => filled(props.meta?.title)
+    ? String(props.meta.title)
+    : (locale.value === 'ar'
+        ? 'PCDR | جمعية العمل التشاركي في الأزمات والكوارث'
+        : 'PCDR | Participatory Action in Crises and Disasters'))
+const description = computed(() => props.meta?.description || site.value?.slogan || '')
+const logoSmall = computed(() => site.value?.logo || '/assets/pcdr-homepage/logo/pcdr-logo.png')
 const logoAnimated = '/assets/pcdr-homepage/logo/pcdr-logo-animated.svg'
 
 const observers = []
@@ -487,15 +389,6 @@ function setupMotion() {
         timers.push(setTimeout(() => introElement?.remove(), 1000))
     }, 1250))
 
-    const onKeydown = (event) => {
-        if (event.key === 'Escape') {
-            navOpen.value = false
-            document.getElementById('burger')?.focus()
-        }
-    }
-    window.addEventListener('keydown', onKeydown)
-    listenerRemovers.push(() => window.removeEventListener('keydown', onKeydown))
-
     if (! window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
         return
     }
@@ -564,14 +457,21 @@ onBeforeUnmount(() => {
             <title>{{ title }}</title>
             <meta name="description" :content="description">
             <link v-if="props.meta?.canonical" rel="canonical" :href="props.meta.canonical">
-            <link rel="alternate" hreflang="ar" :href="alternateUrl('ar')">
-            <link rel="alternate" hreflang="en" :href="alternateUrl('en')">
+            <link rel="alternate" hreflang="ar" :href="props.meta?.alternates?.ar || alternateUrl('ar')">
+            <link rel="alternate" hreflang="en" :href="props.meta?.alternates?.en || alternateUrl('en')">
+            <link v-if="props.meta?.alternates?.['x-default']" rel="alternate" hreflang="x-default" :href="props.meta.alternates['x-default']">
             <meta name="robots" :content="props.meta?.robots || 'index,follow'">
-            <meta property="og:type" content="website">
-            <meta property="og:title" :content="title">
-            <meta property="og:description" :content="description">
-            <meta property="og:locale" :content="locale">
-            <meta property="og:site_name" content="PCDR">
+            <meta property="og:type" :content="props.meta?.og?.type || 'website'">
+            <meta property="og:title" :content="props.meta?.og?.title || title">
+            <meta property="og:description" :content="props.meta?.og?.description || description">
+            <meta property="og:url" :content="props.meta?.og?.url || props.meta?.canonical">
+            <meta property="og:locale" :content="props.meta?.og?.locale || locale">
+            <meta property="og:site_name" :content="props.meta?.og?.site_name || site?.shortName || 'PCDR'">
+            <meta v-if="props.meta?.og?.image" property="og:image" :content="props.meta.og.image">
+            <meta v-if="props.meta?.twitter?.card" name="twitter:card" :content="props.meta.twitter.card">
+            <meta v-if="props.meta?.twitter?.title" name="twitter:title" :content="props.meta.twitter.title">
+            <meta v-if="props.meta?.twitter?.description" name="twitter:description" :content="props.meta.twitter.description">
+            <meta v-if="props.meta?.twitter?.image" name="twitter:image" :content="props.meta.twitter.image">
         </Head>
 
         <div id="intro" ref="intro" aria-hidden="true">
@@ -590,8 +490,13 @@ onBeforeUnmount(() => {
                         <h1 data-split><SplitText :text="copy.hero.title" /></h1>
                         <p class="lead fx">{{ copy.hero.lead }}</p>
                         <div class="cta-row fx">
-                            <a class="btn btn-primary" :href="routeFor('#about')">{{ copy.hero.discover }}</a>
-                            <a class="btn btn-ghost" :href="routeFor('#partners')">{{ copy.hero.partner }}</a>
+                            <a
+                                v-for="(button, index) in copy.hero.buttons"
+                                :key="button.key"
+                                class="btn"
+                                :class="index === 0 ? 'btn-primary' : 'btn-ghost'"
+                                :href="button.url"
+                            >{{ button.label }}</a>
                         </div>
                     </div>
 
@@ -632,7 +537,7 @@ onBeforeUnmount(() => {
                     <p class="eyebrow rv">{{ copy.areas.eyebrow }}</p>
                     <h2 data-split class="rv"><SplitText :text="copy.areas.title" /></h2>
                     <ol class="pillars" data-stagger>
-                        <li v-for="(pillar, index) in copy.areas.pillars" :key="pillar.title" class="rv">
+                        <li v-for="(pillar, index) in copy.areas.pillars" :key="pillar.key || pillar.title" class="rv">
                             <span class="n">{{ String(index + 1).padStart(2, '0') }}</span>
                             <h3>
                                 <a v-if="pillar.url && pillar.url !== routeFor('#areas')" :href="pillar.url">{{ pillar.title }}</a>
@@ -649,7 +554,7 @@ onBeforeUnmount(() => {
                     <p class="eyebrow rv">{{ copy.approach.eyebrow }}</p>
                     <h2 data-split class="rv"><SplitText :text="copy.approach.title" /></h2>
                     <ol class="steps" data-stagger>
-                        <li v-for="(step, index) in copy.approach.steps" :key="step.title">
+                        <li v-for="(step, index) in copy.approach.steps" :key="step.key || step.title">
                             <span class="dot">{{ index + 1 }}</span>
                             <h3>{{ step.title }}</h3>
                             <p>{{ step.body }}</p>
@@ -666,13 +571,13 @@ onBeforeUnmount(() => {
                     <div class="bento" data-stagger>
                         <a
                             v-for="(tile, index) in copy.programs.tiles"
-                            :key="tile.url || tile.title"
+                            :key="tile.key || tile.url || tile.title"
                             class="tile rv"
                             :class="`t${index + 1}`"
                             :href="tile.url || routeFor('#programs')"
                         >
                             <small>{{ String(index + 1).padStart(2, '0') }}</small>
-                            <h3>{{ tile.title || tile }}</h3>
+                            <h3>{{ tile.title }}</h3>
                         </a>
                     </div>
                 </div>
@@ -684,7 +589,7 @@ onBeforeUnmount(() => {
                     <h2 data-split class="rv"><SplitText :text="copy.targets.title" /></h2>
                     <p class="note rv">{{ copy.targets.note }}</p>
                     <dl class="stats" data-stagger>
-                        <div v-for="stat in copy.targets.stats" :key="stat.value" class="rv">
+                        <div v-for="stat in copy.targets.stats" :key="stat.key || stat.label" class="rv">
                             <dt class="num" :data-count="stat.value">{{ stat.display }}</dt>
                             <dd>{{ stat.label }}</dd>
                         </div>
@@ -700,7 +605,7 @@ onBeforeUnmount(() => {
                         <p class="rv">{{ copy.community.body }}</p>
                     </div>
                     <ul class="roles" data-stagger>
-                        <li v-for="role in copy.community.roles" :key="role.title" class="rv">
+                        <li v-for="role in copy.community.roles" :key="role.key || role.title" class="rv">
                             <b>{{ role.title }}</b>
                             <span>{{ role.body }}</span>
                         </li>
@@ -714,8 +619,8 @@ onBeforeUnmount(() => {
                     <h2 data-split class="rv"><SplitText :text="copy.partners.title" /></h2>
                     <p class="rv lead">{{ copy.partners.lead }}</p>
                     <ul class="cats" data-stagger>
-                        <li v-for="category in copy.partners.categories" :key="category" class="rv">
-                            {{ category }}
+                        <li v-for="category in copy.partners.categories" :key="category.key || category.label" class="rv">
+                            {{ category.label }}
                         </li>
                     </ul>
                 </div>
@@ -728,7 +633,7 @@ onBeforeUnmount(() => {
                     <p class="note rv">{{ copy.knowledge.note }}</p>
                     <p v-if="!copy.knowledge.articles.length" class="note rv">{{ copy.knowledge.empty }}</p>
                     <div v-else class="news" data-stagger>
-                        <article v-for="article in copy.knowledge.articles" :key="article.url || article.title" class="rv">
+                        <article v-for="article in copy.knowledge.articles" :key="article.key || article.url" class="rv">
                             <span v-if="article.tag" class="tag">{{ article.tag }}</span>
                             <h3>
                                 <a v-if="article.url" :href="article.url">{{ article.title }}</a>
@@ -744,9 +649,13 @@ onBeforeUnmount(() => {
                     <h2 data-split class="rv"><SplitText :text="copy.cta.title" /></h2>
                     <p class="rv lead">{{ copy.cta.lead }}</p>
                     <div class="cta-row rv">
-                        <a class="btn btn-primary" :href="routeFor('#footer')">{{ copy.cta.contact }}</a>
-                        <a class="btn btn-ghost" :href="routeFor('#community')">{{ copy.cta.volunteer }}</a>
-                        <a class="btn btn-ghost" :href="routeFor('#areas')">{{ copy.cta.explore }}</a>
+                        <a
+                            v-for="(button, index) in copy.cta.buttons"
+                            :key="button.key"
+                            class="btn"
+                            :class="index === 0 ? 'btn-primary' : 'btn-ghost'"
+                            :href="button.url"
+                        >{{ button.label }}</a>
                     </div>
                 </div>
             </section>

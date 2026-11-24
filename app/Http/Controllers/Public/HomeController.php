@@ -15,6 +15,7 @@ final class HomeController extends PublicController
     {
         return Inertia::render('Public/Home', [
             'vision' => config("website.vision.{$locale}"),
+            'mission' => config("website.mission.{$locale}"),
             'pillars' => $content->publishedPillars()->map(fn ($pillar) => [
                 'code' => $pillar->code,
                 'title' => $pillar->t('title', $locale),
@@ -53,7 +54,7 @@ final class HomeController extends PublicController
                     ? $publication->document->url() : null,
                 'restricted' => $publication->is_restricted,
             ])->all(),
-            'sections' => $homepage->sections($locale),
+            'sections' => $homepage->sections($locale, false),
             'meta' => $this->seo($locale, (string) config("website.slogan.{$locale}"), path: "{$locale}"),
         ]);
     }

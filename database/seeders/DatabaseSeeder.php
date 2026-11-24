@@ -22,7 +22,9 @@ class DatabaseSeeder extends Seeder
     {
         Artisan::call('pcdr:permissions:sync');
 
+        $this->call(SiteSettingsSeeder::class);
         $this->call(WebsiteSeeder::class);
+        $this->call(HomepageContentSeeder::class);
         $this->call(CmsRolesSeeder::class);
         $this->call(EmailTemplatesSeeder::class);
 

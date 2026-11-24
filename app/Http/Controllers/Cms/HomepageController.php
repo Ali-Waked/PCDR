@@ -11,6 +11,7 @@ use App\Services\HomepageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,7 +26,7 @@ final class HomepageController extends Controller
     {
         $this->authorize('homepage.view');
 
-        $sections = HomepageSection::query()->with('translations', 'items')->orderBy('display_order')->get();
+        $sections = HomepageSection::query()->with('translations', 'items.translations')->orderBy('display_order')->get();
 
         if ($sections->isEmpty()) {
             foreach (['intro', 'areas', 'framework', 'programs', 'news', 'publications',
@@ -37,7 +38,7 @@ final class HomepageController extends Controller
                     'display_order' => $index,
                 ]);
             }
-            $sections = HomepageSection::query()->with('translations', 'items')->orderBy('display_order')->get();
+            $sections = HomepageSection::query()->with('translations', 'items.translations')->orderBy('display_order')->get();
         }
 
         return Inertia::render('Cms/Homepage/Index', [
@@ -58,7 +59,17 @@ final class HomepageController extends Controller
                     'id' => $item->id,
                     'itemType' => $item->item_type,
                     'itemId' => $item->item_id,
+                    'itemKey' => $item->item_key,
+                    'isPublished' => $item->is_published,
+                    'numericValue' => $item->numeric_value,
                     'sortOrder' => $item->sort_order,
+                    'translations' => $item->translations->mapWithKeys(fn ($t) => [$t->locale => [
+                        'label' => $t->label,
+                        'title' => $t->title,
+                        'body' => $t->body,
+                        'display_value' => $t->display_value,
+                        'url' => $t->url,
+                    ]])->all(),
                 ])->all(),
             ])->all(),
             'preview' => app(HomepageService::class)->sections($locale),
@@ -80,10 +91,22 @@ final class HomepageController extends Controller
             'sections.*.translations.*.body' => ['nullable', 'string', 'max:5000'],
             'sections.*.translations.*.cta_label' => ['nullable', 'string', 'max:120'],
             'sections.*.translations.*.cta_link' => ['nullable', 'string', 'max:255'],
-            'sections.*.items' => ['nullable', 'array', 'max:12'],
-            'sections.*.items.*.item_type' => ['required', 'in:pillar,article,publication,page,project'],
-            'sections.*.items.*.item_id' => ['required', 'integer'],
+            'sections.*.items' => ['nullable', 'array', 'max:24'],
+            'sections.*.items.*.id' => ['nullable', 'integer'],
+            'sections.*.items.*.item_type' => ['required', 'in:pillar,article,publication,page,project,inline'],
+            'sections.*.items.*.item_id' => ['nullable', 'integer'],
+            'sections.*.items.*.item_key' => ['nullable', 'string', 'max:64'],
+            'sections.*.items.*.is_published' => ['boolean'],
+            'sections.*.items.*.numeric_value' => ['nullable', 'numeric'],
+            'sections.*.items.*.translations' => ['nullable', 'array'],
+            'sections.*.items.*.translations.*.label' => ['nullable', 'string', 'max:120'],
+            'sections.*.items.*.translations.*.title' => ['nullable', 'string', 'max:255'],
+            'sections.*.items.*.translations.*.body' => ['nullable', 'string', 'max:5000'],
+            'sections.*.items.*.translations.*.display_value' => ['nullable', 'string', 'max:64'],
+            'sections.*.items.*.translations.*.url' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $this->validateItems($validated);
 
         DB::transaction(function () use ($validated): void {
             foreach ($validated['sections'] as $sectionData) {
@@ -100,22 +123,74 @@ final class HomepageController extends Controller
                     $section->translations()->updateOrCreate(['locale' => $code], $values);
                 }
 
-                if (array_key_exists('items', $sectionData)) {
-                    $items = collect($sectionData['items'])
-                        ->map(fn ($item, $index) => [
-                            'item_type' => $item['item_type'],
-                            'item_id' => $item['item_id'],
-                            'sort_order' => $index,
-                        ])->all();
+                if (! array_key_exists('items', $sectionData)) {
+                    continue;
+                }
 
-                    $section->items()->delete();
-                    foreach ($items as $item) {
-                        $section->items()->create($item);
+                $incoming = collect($sectionData['items']);
+                $keepIds = $incoming->pluck('id')->filter()->all();
+                $section->items()->whereNotIn('id', $keepIds)->delete();
+
+                foreach ($incoming as $index => $itemData) {
+                    $attributes = [
+                        'item_type' => $itemData['item_type'],
+                        'item_id' => $itemData['item_id'] ?? null,
+                        'item_key' => $itemData['item_key'] ?? null,
+                        'is_published' => $itemData['is_published'] ?? true,
+                        'numeric_value' => $itemData['numeric_value'] ?? null,
+                        'sort_order' => $index,
+                    ];
+
+                    $item = ! empty($itemData['id'])
+                        ? $section->items()->find($itemData['id'])
+                        : null;
+
+                    if ($item) {
+                        $item->update($attributes);
+                    } else {
+                        $item = $section->items()->create($attributes);
+                    }
+
+                    foreach ($itemData['translations'] ?? [] as $code => $values) {
+                        if (! in_array($code, config('website.locales', ['ar', 'en']), true)) {
+                            continue;
+                        }
+                        $item->translations()->updateOrCreate(['locale' => $code], $values);
                     }
                 }
             }
         });
 
         return back()->with('flash', ['success' => __('website.cms.saved')]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function validateItems(array $validated): void
+    {
+        foreach ($validated['sections'] as $sectionIndex => $sectionData) {
+            $items = $sectionData['items'] ?? [];
+            $keys = [];
+
+            foreach ($items as $itemIndex => $item) {
+                $path = "sections.{$sectionIndex}.items.{$itemIndex}";
+
+                if ($item['item_type'] !== 'inline' && empty($item['item_id'])) {
+                    throw ValidationException::withMessages([
+                        $path.'.item_id' => 'An item ID is required for this item type.',
+                    ]);
+                }
+
+                if (! empty($item['item_key'])) {
+                    if (in_array($item['item_key'], $keys, true)) {
+                        throw ValidationException::withMessages([
+                            $path.'.item_key' => 'Item keys must be unique within a section.',
+                        ]);
+                    }
+                    $keys[] = $item['item_key'];
+                }
+            }
+        }
     }
 }

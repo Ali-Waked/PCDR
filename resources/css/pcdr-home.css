@@ -50,7 +50,7 @@
 .pcdr-home .bar{height:100%;display:flex;align-items:center;gap:1rem}
 .pcdr-home .brand{display:flex;align-items:center;gap:.7rem;font:700 1.35rem var(--font-en);color:var(--navy-900);white-space:nowrap;flex-shrink:0}
 .pcdr-home .brand img{width:48px;height:48px}
-.pcdr-home nav{margin-inline-start:auto;min-width:0}
+.pcdr-home .site-header nav{margin-inline-start:auto;min-width:0}
 .pcdr-home nav .nav-links{display:flex;align-items:center;gap:clamp(.9rem,1.6vw,1.6rem)}
 .pcdr-home nav .nav-links a{position:relative;font-weight:500;font-size:.98rem;padding-block:.5rem;white-space:nowrap}
 .pcdr-home nav .nav-links a::after{content:"";position:absolute;inset-inline:0;bottom:0;height:2px;background:var(--teal);transform:scaleX(0);transition:transform var(--m-fast) var(--ease-em)}
@@ -196,8 +196,8 @@ body.pcdr-menu-open{overflow:hidden}
 .pcdr-home .actions .actions-lang{display:none}
 .pcdr-home .nav-more{display:none}
 .pcdr-home .nav-item-mobile-only{display:block;inline-size:100%}
-.pcdr-home nav{position:fixed;inset-inline:0;inset-block-start:var(--hh);background:#fff;padding-block:1rem 1.5rem;padding-inline:max(var(--pad), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));border-bottom:1px solid var(--navy-100);max-height:calc(100dvh - var(--hh));overflow-y:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(-12px);transition:opacity var(--m-fast),transform var(--m-fast) var(--ease),visibility var(--m-fast);z-index:49}
-.pcdr-home nav.open{opacity:1;visibility:visible;transform:none}
+.pcdr-home .site-header nav{position:fixed;inset-inline:0;inset-block-start:var(--hh);background:#fff;padding-block:1rem 1.5rem;padding-inline:max(var(--pad), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));border-bottom:1px solid var(--navy-100);max-height:calc(100dvh - var(--hh));overflow-y:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(-12px);transition:opacity var(--m-fast),transform var(--m-fast) var(--ease),visibility var(--m-fast);z-index:49}
+.pcdr-home .site-header nav.open{opacity:1;visibility:visible;transform:none}
 .pcdr-home nav .nav-links{display:flex;flex-direction:column;gap:0;align-items:stretch}
 .pcdr-home nav .nav-links li{display:block;inline-size:100%}
 .pcdr-home nav .nav-links a{display:block;inline-size:100%;padding:.9rem 0;font-size:1.1rem;border-bottom:1px solid var(--navy-100);white-space:normal;text-align:start}
