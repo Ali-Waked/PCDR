@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import PublicLayout from '../../../Layouts/PublicLayout.vue'
 import PublicPageHero from '../../../Components/Public/PublicPageHero.vue'
@@ -8,6 +8,7 @@ import SectionHeading from '../../../Components/SectionHeading.vue'
 import ArticleCard from '../../../Components/ArticleCard.vue'
 import Pagination from '../../../Components/Pagination.vue'
 import EmptyState from '../../../Components/EmptyState.vue'
+import SelectionControl from '../../../Components/Selection/SelectionControl.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -21,6 +22,10 @@ const props = defineProps({
 
 const { t, localPath } = useI18n()
 const category = ref(props.filters.category || '')
+const categoryOptions = computed(() => props.categories.map((item) => ({
+    value: item.slug,
+    label: item.name,
+})))
 const search = ref(props.filters.search || '')
 
 function submit() {
@@ -53,13 +58,17 @@ function submit() {
         <section class="ps-section">
             <div class="ps-container">
                 <form class="ps-toolbar" @submit.prevent="submit">
-                    <label class="field">
-                        <span>{{ t('ui.category') }}</span>
-                        <select v-model="category" class="select">
-                            <option value="">{{ t('ui.all') }}</option>
-                            <option v-for="item in categories" :key="item.slug" :value="item.slug">{{ item.name }}</option>
-                        </select>
-                    </label>
+                    <div class="field">
+                        <SelectionControl
+                            v-model="category"
+                            :label="t('ui.category')"
+                            :options="categoryOptions"
+                            :placeholder="t('ui.all')"
+                            clearable
+                            :searchable="categoryOptions.length > 6"
+                            variant="public"
+                        />
+                    </div>
                     <label class="field">
                         <span>{{ t('ui.search') }}</span>
                         <input v-model="search" class="input" type="search" :placeholder="t('ui.search')">

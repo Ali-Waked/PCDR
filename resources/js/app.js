@@ -2,6 +2,7 @@ import { createApp, h } from 'vue'
 import { createInertiaApp, router } from '@inertiajs/vue3'
 import '../css/app.css'
 import '../css/dashboard.css'
+import '../css/selection.css'
 import '../css/phase5.css'
 
 const reducedMotion = typeof window !== 'undefined'

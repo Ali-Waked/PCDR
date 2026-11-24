@@ -6,6 +6,8 @@ import CmsStatusBadge from '../../../Components/Dashboard/CmsStatusBadge.vue'
 import DataTable from '../../../Components/Dashboard/DataTable.vue'
 import EmptyState from '../../../Components/Dashboard/EmptyState.vue'
 import UiIcon from '../../../Components/Dashboard/UiIcon.vue'
+import SelectionControl from '../../../Components/Selection/SelectionControl.vue'
+import StatusSelect from '../../../Components/Selection/StatusSelect.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const props = defineProps({
@@ -45,6 +47,26 @@ function statusLabel(status) {
     return statusLabels[status] ? t(statusLabels[status], status) : status
 }
 
+const statusOptions = computed(() => props.statuses.map((status) => ({
+    value: status,
+    label: statusLabel(status),
+})))
+
+const assignOptions = computed(() => (props.inquiry.users || []).map((user) => ({
+    value: user.id,
+    label: user.name,
+})))
+
+const templateOptions = computed(() => props.templates.map((template) => ({
+    value: template.id,
+    label: template.name,
+})))
+
+const localeOptions = [
+    { value: 'ar', label: 'ar' },
+    { value: 'en', label: 'en' },
+]
+
 const fieldRows = computed(() => Object.entries(props.inquiry)
     .filter(([key, value]) => !['id', 'type', 'reference', 'status', 'locale', 'assignedTo', 'assignedToName', 'createdAt', 'users'].includes(key)
         && value !== null && value !== '')
@@ -57,8 +79,9 @@ const logColumns = computed(() => [
     { key: 'sent', label: t('cms_sent_at') },
 ])
 
-function chooseTemplate(event) {
-    const template = props.templates.find((item) => String(item.id) === String(event.target.value))
+function chooseTemplate(value) {
+    replyForm.template_id = value ?? ''
+    const template = props.templates.find((item) => String(item.id) === String(value))
     if (!template) {
         return
     }
@@ -102,12 +125,14 @@ function sendReply() {
                         <h2 class="pc-card__title">{{ t('ui.status') }}</h2>
                     </div>
                     <div class="pc-card__body pc-form-grid">
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('cms_status') }}</span>
-                            <select v-model="statusForm.status" class="pc-select">
-                                <option v-for="status in statuses" :key="status" :value="status">{{ statusLabel(status) }}</option>
-                            </select>
-                        </label>
+                        <div class="pc-field">
+                            <StatusSelect
+                                v-model="statusForm.status"
+                                :label="t('cms_status')"
+                                :options="statusOptions"
+                                :loading="statusForm.processing"
+                            />
+                        </div>
                         <div class="pc-field pc-field--action">
                             <button class="pc-btn pc-btn--primary" type="submit" :disabled="statusForm.processing">
                                 <UiIcon name="check" :size="16" />
@@ -122,13 +147,17 @@ function sendReply() {
                         <h2 class="pc-card__title">{{ t('cms_assignment') }}</h2>
                     </div>
                     <div class="pc-card__body pc-form-grid">
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('cms_assigned_to') }}</span>
-                            <select v-model="assignForm.assigned_to" class="pc-select">
-                                <option value="">{{ t('cms_unassigned') }}</option>
-                                <option v-for="user in inquiry.users || []" :key="user.id" :value="user.id">{{ user.name }}</option>
-                            </select>
-                        </label>
+                        <div class="pc-field">
+                            <SelectionControl
+                                v-model="assignForm.assigned_to"
+                                :label="t('cms_assigned_to')"
+                                :options="assignOptions"
+                                :placeholder="t('cms_unassigned')"
+                                clearable
+                                :loading="assignForm.processing"
+                                :searchable="assignOptions.length > 6"
+                            />
+                        </div>
                         <div class="pc-field pc-field--action">
                             <button class="pc-btn pc-btn--primary" type="submit" :disabled="assignForm.processing">
                                 <UiIcon name="check" :size="16" />
@@ -192,19 +221,25 @@ function sendReply() {
                 </div>
                 <div class="pc-card__body pc-stack">
                     <form v-if="can.reply" class="pc-form-grid" @submit.prevent="sendReply">
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('cms_email_template') }}</span>
-                            <select class="pc-select" :value="replyForm.template_id" @change="chooseTemplate">
-                                <option value="">{{ t('cms_default_template') }}</option>
-                                <option v-for="template in templates" :key="template.id" :value="template.id">{{ template.name }}</option>
-                            </select>
-                        </label>
-                        <label class="pc-field">
-                            <span class="pc-label">{{ t('ui.language') }}</span>
-                            <select v-model="replyForm.locale" class="pc-select">
-                                <option v-for="locale in ['ar', 'en']" :key="locale" :value="locale">{{ locale }}</option>
-                            </select>
-                        </label>
+                        <div class="pc-field">
+                            <SelectionControl
+                                :model-value="replyForm.template_id"
+                                :label="t('cms_email_template')"
+                                :options="templateOptions"
+                                :placeholder="t('cms_default_template')"
+                                clearable
+                                :searchable="templateOptions.length > 6"
+                                @update:model-value="chooseTemplate"
+                            />
+                        </div>
+                        <div class="pc-field">
+                            <SelectionControl
+                                v-model="replyForm.locale"
+                                :label="t('ui.language')"
+                                :options="localeOptions"
+                                :searchable="false"
+                            />
+                        </div>
                         <label class="pc-field pc-field--full">
                             <span class="pc-label">{{ t('subject') }}</span>
                             <input v-model="replyForm.subject" class="pc-input" type="text" maxlength="255" required>

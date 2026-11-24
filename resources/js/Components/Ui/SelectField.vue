@@ -1,33 +1,41 @@
 <script setup>
-import { computed, useId } from 'vue'
+import { computed } from 'vue'
+import SelectionControl from '../Selection/SelectionControl.vue'
 
 const props = defineProps({
-    modelValue: { type: [String, Number], default: '' },
+    modelValue: { type: [String, Number, Boolean], default: '' },
     label: { type: String, required: true },
     name: { type: String, required: true },
     options: { type: Array, required: true },
     error: { type: String, default: '' },
+    placeholder: { type: String, default: '' },
+    required: { type: Boolean, default: false },
+    disabled: { type: Boolean, default: false },
+    searchable: { type: Boolean, default: null },
+    variant: { type: String, default: 'dashboard' },
+    size: { type: String, default: 'md' },
 })
 
-defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue'])
 
-const generatedId = useId()
-const selectId = computed(() => `field-${props.name}-${generatedId}`)
+const shouldSearch = computed(() => (
+    props.searchable === null ? props.options.length > 6 : props.searchable
+))
 </script>
 
 <template>
-    <div>
-        <label class="pcdr-label" :for="selectId">{{ label }}</label>
-        <select
-            :id="selectId"
-            :name="name"
-            :value="modelValue"
-            class="pcdr-input"
-            :aria-invalid="error ? 'true' : 'false'"
-            @change="$emit('update:modelValue', $event.target.value)"
-        >
-            <option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option>
-        </select>
-        <p v-if="error" class="mt-1.5 text-sm text-danger" role="alert">{{ error }}</p>
-    </div>
+    <SelectionControl
+        :model-value="modelValue"
+        :label="label"
+        :name="name"
+        :options="options"
+        :error="error"
+        :placeholder="placeholder"
+        :required="required"
+        :disabled="disabled"
+        :searchable="shouldSearch"
+        :variant="variant"
+        :size="size"
+        @update:model-value="emit('update:modelValue', $event)"
+    />
 </template>
