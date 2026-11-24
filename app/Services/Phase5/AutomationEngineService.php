@@ -163,7 +163,8 @@ final class AutomationEngineService
 
         return $query
             ->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
+            ->paginate($perPage, ['*'], 'definitionPage', max(1, (int) ($filters['definitionPage'] ?? 1)))
+            ->withQueryString();
     }
 
     /** @param array<string, mixed> $filters @return LengthAwarePaginator<int, mixed> */
@@ -184,7 +185,8 @@ final class AutomationEngineService
         return $query
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
+            ->paginate($perPage, ['*'], 'executionPage', max(1, (int) ($filters['executionPage'] ?? 1)))
+            ->withQueryString();
     }
 
     /** Create unique executions for enabled definitions matching a safe event. */

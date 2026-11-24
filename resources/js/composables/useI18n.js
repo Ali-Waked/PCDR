@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { usePage } from '@inertiajs/vue3'
+import { localizedUrl } from '../Support/languageSwitcher'
 
 export function useI18n() {
     const page = usePage()
@@ -53,12 +54,7 @@ export function useI18n() {
 
     function alternateUrl(code) {
         const raw = page.url || '/'
-        const [beforeHash, hash = ''] = raw.split('#')
-        const [pathPart, query = ''] = beforeHash.split('?')
-        const suffix = pathPart.replace(/^\/(ar|en)/, '') || ''
-        const q = query ? `?${query}` : ''
-        const h = hash ? `#${hash}` : ''
-        return `/${code}${suffix}${q}${h}`
+        return localizedUrl(raw, locale.value, code, '/') ?? raw
     }
 
     function richText(value) {

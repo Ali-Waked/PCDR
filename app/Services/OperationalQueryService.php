@@ -96,6 +96,8 @@ final class OperationalQueryService
             'lastPage' => $paginator->lastPage(),
             'perPage' => $paginator->perPage(),
             'total' => $paginator->total(),
+            'from' => $paginator->firstItem(),
+            'to' => $paginator->lastItem(),
         ];
     }
 }

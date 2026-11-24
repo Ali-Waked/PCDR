@@ -192,7 +192,8 @@ final class NotificationCenterService
         $paginator = $query
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
+            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)))
+            ->withQueryString();
 
         $paginator->setCollection($paginator->getCollection()->map(
             fn (object $row): array => $this->presentNotification($row),
@@ -248,7 +249,8 @@ final class NotificationCenterService
         $paginator = $query
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
+            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)))
+            ->withQueryString();
 
         $paginator->setCollection($paginator->getCollection()->map(
             fn (NotificationDelivery $delivery): array => [

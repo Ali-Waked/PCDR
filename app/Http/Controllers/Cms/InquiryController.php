@@ -10,7 +10,6 @@ use App\Models\EmailDeliveryLog;
 use App\Models\EmailTemplate;
 use App\Models\InquiryNote;
 use App\Models\InquiryReply;
-use App\Models\PartnershipInquiry;
 use App\Models\User;
 use App\Models\VolunteerInquiry;
 use App\Services\AuditService;
@@ -18,6 +17,7 @@ use App\Services\CmsAccess;
 use App\Services\InquiryMailService;
 use App\Services\TemplateRenderer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +26,7 @@ use Inertia\Response;
 
 final class InquiryController extends Controller
 {
-    private const TYPES = ['contact', 'volunteer', 'partnership'];
+    private const TYPES = ['contact', 'volunteer'];
 
     public function __construct(
         private AuditService $audit,
@@ -54,18 +54,24 @@ final class InquiryController extends Controller
         $search = mb_strcut(trim($request->string('search')->toString()), 0, 120);
         $assigned = $request->string('assigned')->toString();
         $restrictToAssigned = ! $this->has('inquiries.view_all') && $this->has('inquiries.view_assigned');
+
+        /** @var array<string, int> $counts */
+        $counts = array_fill_keys(array_merge(['total', 'unassigned'], $this->statuses()), 0);
         $lists = [];
         $pagination = [];
 
         foreach (self::TYPES as $type) {
-            $query = $this->modelClass($type)::query();
+            $baseQuery = $this->modelClass($type)::query();
 
             if ($restrictToAssigned) {
-                $query->where('assigned_to', auth()->id());
+                $baseQuery->where('assigned_to', auth()->id());
             }
 
+            $counts = $this->accumulateCounts($counts, $baseQuery);
+            $query = clone $baseQuery;
+
             if ($status !== '') {
-                $query->where('status', $status);
+                $query->whereIn('status', $this->statusValuesFor($status));
             }
 
             if ($search !== '') {
@@ -99,8 +105,11 @@ final class InquiryController extends Controller
                 'assigned' => $assigned,
             ],
             'statuses' => $this->statuses(),
+            'canonicalStatuses' => (array) config('cms.inquiry_statuses', ['new', 'in_progress', 'resolved', 'closed']),
+            'counts' => $counts,
             'can' => [
                 'viewAll' => $this->has('inquiries.view_all'),
+                'update' => $this->has('inquiries.update'),
                 'assign' => $this->has('inquiries.assign'),
                 'reply' => $this->has('inquiries.reply'),
                 'note' => $this->has('inquiries.add_internal_note'),
@@ -257,6 +266,28 @@ final class InquiryController extends Controller
         return back()->with('flash', $flash);
     }
 
+    /**
+     * @param  array<string, int>  $counts
+     * @return array<string, int>
+     */
+    private function accumulateCounts(array $counts, Builder $query): array
+    {
+        $counts['total'] += (int) (clone $query)->count();
+        $counts['unassigned'] += (int) (clone $query)->whereNull('assigned_to')->count();
+
+        $grouped = (clone $query)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        foreach ($grouped as $status => $count) {
+            $canonical = $this->normalizeStatus((string) $status);
+            $counts[$canonical] = ($counts[$canonical] ?? 0) + (int) $count;
+        }
+
+        return $counts;
+    }
+
     /** @return list<string> */
     private function statuses(): array
     {
@@ -273,12 +304,25 @@ final class InquiryController extends Controller
         return $aliases[$status] ?? $status;
     }
 
+    /** @return list<string> */
+    private function statusValuesFor(string $status): array
+    {
+        $values = [$status];
+
+        foreach ((array) config('cms.inquiry_status_aliases', []) as $alias => $canonical) {
+            if ($canonical === $status) {
+                $values[] = (string) $alias;
+            }
+        }
+
+        return array_values(array_unique($values));
+    }
+
     private function modelClass(string $type): string
     {
         return match ($type) {
             'contact' => ContactMessage::class,
             'volunteer' => VolunteerInquiry::class,
-            'partnership' => PartnershipInquiry::class,
             default => abort(404),
         };
     }
@@ -306,7 +350,6 @@ final class InquiryController extends Controller
         return match ($type) {
             'contact' => ['name', 'email', 'subject', 'category'],
             'volunteer' => ['name', 'email', 'area_of_interest'],
-            'partnership' => ['organization', 'contact_name', 'email', 'interest'],
             default => [],
         };
     }
@@ -314,14 +357,24 @@ final class InquiryController extends Controller
     /** @return array<string, mixed> */
     private function summary(string $type, Model $record): array
     {
+        $subject = $record->getAttribute('subject')
+            ?: $record->getAttribute('area_of_interest')
+            ?: $record->getAttribute('interest')
+            ?: $record->getAttribute('organization')
+            ?: $record->getAttribute('name');
+
         return [
             'id' => $record->getAttribute('id'),
             'type' => $type,
             'reference' => $record->getAttribute('reference'),
-            'label' => $record->getAttribute('subject')
-                ?: $record->getAttribute('area_of_interest')
-                ?: $record->getAttribute('organization')
-                ?: $record->getAttribute('name'),
+            'label' => $subject,
+            'subject' => $subject,
+            'senderName' => $record->getAttribute('contact_name')
+                ?: $record->getAttribute('name')
+                ?: $record->getAttribute('organization'),
+            'context' => $record->getAttribute('category')
+                ?: $record->getAttribute('availability')
+                ?: $record->getAttribute('organization'),
             'email' => $record->getAttribute('email'),
             'status' => $record->getAttribute('status'),
             'assignedTo' => $record->relationLoaded('assignee') ? $record->getRelation('assignee')?->name : null,
@@ -348,14 +401,6 @@ final class InquiryController extends Controller
                 'availability' => $record->getAttribute('availability'),
                 'message' => $record->getAttribute('message'),
             ],
-            'partnership' => [
-                'organization' => $record->getAttribute('organization'),
-                'contactName' => $record->getAttribute('contact_name'),
-                'email' => $record->getAttribute('email'),
-                'website' => $record->getAttribute('website'),
-                'interest' => $record->getAttribute('interest'),
-                'message' => $record->getAttribute('message'),
-            ],
             default => [],
         };
 
@@ -373,13 +418,17 @@ final class InquiryController extends Controller
         ]);
     }
 
-    /** @return array{currentPage: int, lastPage: int, total: int} */
+    /** @return array{currentPage: int, lastPage: int, perPage: int, total: int, from: int|null, to: int|null, pageName: string} */
     private function pagination(LengthAwarePaginator $paginator): array
     {
         return [
             'currentPage' => $paginator->currentPage(),
             'lastPage' => $paginator->lastPage(),
+            'perPage' => $paginator->perPage(),
             'total' => $paginator->total(),
+            'from' => $paginator->firstItem(),
+            'to' => $paginator->lastItem(),
+            'pageName' => $paginator->getPageName(),
         ];
     }
 }

@@ -36,10 +36,16 @@ final class WebhookController extends Controller
         return Inertia::render('Phase5/Webhooks/Index', [
             'endpoints' => $this->webhooks->endpoints([
                 'integration_id' => $request->query('integration_id'),
-                'page' => $request->query('page'),
+                'endpointPage' => $request->query('endpointPage'),
                 'per_page' => $request->query('per_page'),
             ]),
-            'deliveries' => $this->webhooks->deliveries(),
+            'deliveries' => $this->webhooks->deliveries([
+                'status' => $request->query('status'),
+                'event' => $request->query('event'),
+                'endpoint_id' => $request->query('endpoint_id'),
+                'deliveryPage' => $request->query('deliveryPage'),
+                'per_page' => $request->query('per_page'),
+            ]),
             'events' => array_values((array) config('phase5.integrations.webhook_events', [])),
             'gates' => $this->authorization->gates(),
         ]);

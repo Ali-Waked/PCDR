@@ -22,7 +22,7 @@ final class WebhookDeliveryIndexRequest extends Phase5Request
             ])],
             'event' => ['sometimes', Rule::in((array) config('phase5.integrations.webhook_events', []))],
             'endpoint_id' => ['sometimes', 'integer', 'min:1'],
-            'page' => ['sometimes', 'integer', 'min:1'],
+            'deliveryPage' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ];
     }
@@ -31,7 +31,7 @@ final class WebhookDeliveryIndexRequest extends Phase5Request
     public function filters(): array
     {
         /** @var array<string, mixed> $filters */
-        $filters = $this->safe()->only(['status', 'event', 'endpoint_id', 'page', 'per_page']);
+        $filters = $this->safe()->only(['status', 'event', 'endpoint_id', 'deliveryPage', 'per_page']);
 
         return $filters;
     }

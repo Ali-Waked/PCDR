@@ -111,7 +111,7 @@ final class DocumentReviewService
             });
         }
 
-        $paginator = $query->paginate(self::PER_PAGE);
+        $paginator = $query->paginate(self::PER_PAGE)->withQueryString();
         $visible = $paginator->getCollection()
             ->map(fn (DocumentReview $review): ?array => $this->canView($user, $review)
                 ? $this->serializeReview($review, $this->downloadUrl($review, app()->getLocale()))

@@ -29,6 +29,8 @@ final class WorkflowIndexRequest extends Phase5Request
             'sort' => ['sometimes', Rule::in(['created_at', 'id', 'key', 'status', 'reference', 'due_at'])],
             'direction' => ['sometimes', Rule::in(['asc', 'desc'])],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'definitionPage' => ['sometimes', 'integer', 'min:1'],
+            'instancePage' => ['sometimes', 'integer', 'min:1'],
         ];
     }
 
@@ -60,7 +62,7 @@ final class WorkflowIndexRequest extends Phase5Request
     {
         return $this->safe()->only([
             'status', 'category', 'definition_id', 'subject_type', 'subject_id',
-            'sort', 'direction', 'per_page',
+            'sort', 'direction', 'per_page', 'definitionPage', 'instancePage',
         ]);
     }
 }

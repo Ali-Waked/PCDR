@@ -48,7 +48,8 @@ final class WebhookService
 
         $paginator = $query
             ->orderBy('key')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
+            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)))
+            ->withQueryString();
 
         $paginator->setCollection($paginator->getCollection()->map(
             fn (IntegrationRegistry $integration): array => $this->presentIntegration($integration),
@@ -139,7 +140,8 @@ final class WebhookService
         $paginator = $query
             ->with('integration:id,key,name,enabled')
             ->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
+            ->paginate($perPage, ['*'], 'endpointPage', max(1, (int) ($filters['endpointPage'] ?? 1)))
+            ->withQueryString();
 
         $paginator->setCollection($paginator->getCollection()->map(
             fn (WebhookEndpoint $endpoint): array => $this->presentEndpoint($endpoint),
@@ -213,7 +215,8 @@ final class WebhookService
         $paginator = $query
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
+            ->paginate($perPage, ['*'], 'deliveryPage', max(1, (int) ($filters['deliveryPage'] ?? 1)))
+            ->withQueryString();
 
         $paginator->setCollection($paginator->getCollection()->map(
             fn (WebhookDelivery $delivery): array => $this->presentDelivery($delivery),

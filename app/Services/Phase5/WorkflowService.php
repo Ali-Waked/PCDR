@@ -593,7 +593,8 @@ final class WorkflowService
         $direction = ($filters['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
         return $query->orderBy($sort, $direction)->orderBy('id', $direction)
-            ->paginate($this->perPage($filters))->withQueryString();
+            ->paginate($this->perPage($filters), ['*'], 'definitionPage', max(1, (int) ($filters['definitionPage'] ?? 1)))
+            ->withQueryString();
     }
 
     /** @param array<string, mixed> $filters */
@@ -620,7 +621,8 @@ final class WorkflowService
         $direction = ($filters['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
         return $query->orderBy($sort, $direction)->orderBy('id', $direction)
-            ->paginate($this->perPage($filters))->withQueryString();
+            ->paginate($this->perPage($filters), ['*'], 'instancePage', max(1, (int) ($filters['instancePage'] ?? 1)))
+            ->withQueryString();
     }
 
     /** @param iterable<WorkflowDefinition> $definitions @return list<array<string, mixed>> */

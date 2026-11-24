@@ -100,7 +100,7 @@ final class ReferralService
             });
         }
 
-        $paginator = $query->paginate(self::PER_PAGE);
+        $paginator = $query->paginate(self::PER_PAGE)->withQueryString();
         $visible = $paginator->getCollection()
             ->map(fn (Referral $referral): ?array => $this->canView($user, $referral)
                 ? $this->serializeReferral($referral)

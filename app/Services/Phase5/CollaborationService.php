@@ -250,7 +250,8 @@ final class CollaborationService
             ])
             ->orderBy('created_at')
             ->orderBy('id')
-            ->paginate(50);
+            ->paginate(50)
+            ->withQueryString();
     }
 
     /** @return list<array<string, mixed>> */

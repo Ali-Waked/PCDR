@@ -97,7 +97,7 @@ final class AccountabilityService
             $query->where('is_sensitive', false);
         }
 
-        return $query->paginate(self::PER_PAGE)->through(
+        return $query->paginate(self::PER_PAGE)->withQueryString()->through(
             fn (AccountabilityCase $case): array => $this->serializeCase($case, false),
         );
     }
