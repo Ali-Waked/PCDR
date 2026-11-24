@@ -7,7 +7,9 @@ namespace App\Http\Controllers\Public;
 use App\Models\Publication;
 use App\Services\CmsAccess;
 use App\Services\ContentQuery;
+use App\Support\RichText;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -38,6 +40,7 @@ final class PublicationController extends PublicController
                 'version' => $publication->version,
                 'restricted' => $publication->is_restricted,
                 'hasFile' => $publication->document !== null,
+                'downloadUrl' => $this->downloadUrl($publication, $locale),
                 'url' => $publication->route($locale),
             ])->items(),
             'pagination' => [
@@ -64,15 +67,14 @@ final class PublicationController extends PublicController
         return Inertia::render('Public/Publications/Show', [
             'publication' => [
                 'title' => $publication->t('title', $locale),
-                'description' => $publication->t('description', $locale),
+                'descriptionHtml' => RichText::render($publication->t('description', $locale)),
+                'descriptionText' => RichText::plainText($publication->t('description', $locale)),
                 'category' => $publication->categoryLabel($locale),
                 'date' => $publication->publication_date?->toDateString(),
                 'version' => $publication->version,
                 'restricted' => $publication->is_restricted,
                 'hasFile' => $publication->document !== null,
-                'downloadUrl' => $publication->is_restricted
-                    ? null
-                    : $publication->document?->url(),
+                'downloadUrl' => $this->downloadUrl($publication, $locale),
                 'pillar' => $publication->pillar?->t('title', $locale),
             ],
             'meta' => $this->seo($locale, (string) $publication->t('title', $locale), $publication->t('description', $locale), "{$locale}/publications/{$slug}", $publication->cover),
@@ -84,19 +86,33 @@ final class PublicationController extends PublicController
         $record = Publication::query()->published()->findOrFail($publication);
 
         /** @var Publication $record */
-        if ($record->is_restricted) {
-            abort_unless(request()->hasValidSignature(), 403);
+        abort_unless(request()->hasValidSignature(), 403);
+
+        if ($record->is_restricted || $record->document?->is_restricted) {
             abort_unless(auth()->check(), 403);
             abort_unless(app(CmsAccess::class)->allows(auth()->user(), 'publications.view'), 403);
         }
 
         $document = $record->document;
-        abort_if($document === null || $document->is_restricted, 404);
+        abort_if($document === null, 404);
 
         return Storage::disk($document->disk)->response(
             $document->path,
             $this->safeFileName($document->original_name, $document->extension),
             ['Content-Type' => $document->mime_type, 'Cache-Control' => 'private, max-age=300'],
+        );
+    }
+
+    private function downloadUrl(Publication $publication, string $locale): ?string
+    {
+        if ($publication->document === null) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute(
+            'public.publications.download',
+            now()->addMinutes(30),
+            ['locale' => $locale, 'publication' => $publication->getKey()],
         );
     }
 

@@ -2,21 +2,22 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import { useI18n } from '../../composables/useI18n'
-import { useLocale } from '../../Composables/useLocale'
-import { usePermission } from '../../Composables/usePermission'
+import LanguageSwitcher from '../LanguageSwitcher.vue'
+import AdminHintBox from './AdminHintBox.vue'
 import PageHeader from './PageHeader.vue'
 import UiIcon from './UiIcon.vue'
+import AdminToastProvider from './AdminToastProvider.vue'
 
 const props = defineProps({
     mode: { type: String, default: 'admin' },
     title: { type: String, default: '' },
     subtitle: { type: String, default: '' },
     eyebrow: { type: String, default: '' },
+    hint: { type: String, default: '' },
+    breadcrumb: { type: Array, default: () => [] },
 })
 
 const { page, t, localPath, direction, locale } = useI18n()
-const { pathForLocale } = useLocale()
-const { isPlatformOwner } = usePermission()
 
 const mobileOpen = ref(false)
 const collapsed = ref(false)
@@ -31,7 +32,6 @@ let onMql = null
 
 const isCms = computed(() => props.mode === 'cms')
 const user = computed(() => page.props.auth?.user ?? {})
-const flash = computed(() => page.props.flash ?? {})
 const currentPath = computed(() => (page.url || '').split('?')[0])
 const initials = computed(() => {
     const name = String(user.value.name || '').trim()
@@ -40,6 +40,7 @@ const initials = computed(() => {
 const workspaceLabel = computed(() => t(isCms.value ? 'ui.dashboard_content_studio' : 'ui.dashboard_workspace'))
 const pageSubtitle = computed(() => props.subtitle || t('ui.dashboard_technical_note'))
 const pageTitle = computed(() => props.title || t('ui.dashboard'))
+const pageEyebrow = computed(() => props.eyebrow || (props.hint ? '' : workspaceLabel.value))
 const homePath = computed(() => isCms.value ? localPath('cms') : localPath('dashboard'))
 
 const iconFor = {
@@ -48,10 +49,10 @@ const iconFor = {
     roles: 'shield',
     permissions: 'shield',
     audit_logs: 'history',
+    audit_archives: 'history',
     settings: 'settings',
     platform_settings: 'settings',
     cms_dashboard: 'layout',
-    pages: 'file',
     pillars: 'layers',
     programs: 'folder',
     news: 'newspaper',
@@ -196,6 +197,7 @@ onBeforeUnmount(() => {
         <Head :title="pageTitle" />
         <a href="#pc-main" class="skip-link">{{ t('ui.skip_to_content') }}</a>
 
+        <AdminToastProvider>
         <div class="pc-shell">
             <button v-if="mobileOpen" class="pc-scrim" type="button" :aria-label="t('ui.dashboard_close_navigation')" @click="closeNav" />
 
@@ -246,7 +248,7 @@ onBeforeUnmount(() => {
                 <div class="pc-sidebar__foot">
                     <div class="pc-sidebar__note">
                         <UiIcon name="info" :size="15" />
-                        <span>{{ isPlatformOwner ? t('ui.dashboard_owner_note') : t('ui.dashboard_technical_note') }}</span>
+                        <span>{{ t('ui.dashboard_technical_note') }}</span>
                     </div>
                 </div>
             </aside>
@@ -283,10 +285,7 @@ onBeforeUnmount(() => {
                     <div class="pc-topbar__spacer" />
 
                     <div class="pc-topbar__actions">
-                        <div class="pc-locale-switch" role="group" :aria-label="t('ui.language')">
-                            <Link :href="pathForLocale('ar')" :class="{ 'is-active': locale === 'ar' }" :aria-current="locale === 'ar' ? 'page' : undefined">ع</Link>
-                            <Link :href="pathForLocale('en')" :class="{ 'is-active': locale === 'en' }" :aria-current="locale === 'en' ? 'page' : undefined">EN</Link>
-                        </div>
+                        <LanguageSwitcher />
 
                         <div ref="userMenuRef" class="pc-user">
                             <button
@@ -315,7 +314,6 @@ onBeforeUnmount(() => {
                                 <Link v-if="isCms" :href="hrefFor('')" class="pc-menu__item" role="menuitem">
                                     <UiIcon name="eye" :size="16" /> {{ t('ui.cms_preview') }}
                                 </Link>
-                                <p class="pc-menu__note">{{ t('ui.dashboard_no_approval') }}</p>
                                 <button type="button" class="pc-menu__item pc-menu__item--danger" role="menuitem" @click="logout">
                                     <UiIcon name="logout" :size="16" /> {{ t('ui.logout') }}
                                 </button>
@@ -325,29 +323,22 @@ onBeforeUnmount(() => {
                 </header>
 
                 <main id="pc-main" class="pc-content" tabindex="-1" :inert="mobileOpen && !isDesktop">
+                    <AdminHintBox v-if="hint" :text="hint" class="pc-page-hint mb-4" />
                     <PageHeader
-                        :eyebrow="props.eyebrow || workspaceLabel"
+                        :eyebrow="pageEyebrow"
                         :title="pageTitle"
                         :subtitle="pageSubtitle"
+                        :breadcrumb="props.breadcrumb"
                     >
                         <template v-if="$slots.actions" #actions>
                             <slot name="actions" />
                         </template>
                     </PageHeader>
 
-                    <div v-if="flash.success || flash.error" class="pc-stack" style="margin-block-end: 20px">
-                        <div v-if="flash.success" class="pc-callout" role="status">
-                            <UiIcon name="check" :size="17" />
-                            <span>{{ flash.success }}</span>
-                        </div>
-                        <div v-if="flash.error" class="pc-callout pc-callout--warning" role="alert">
-                            <UiIcon name="alert" :size="17" />
-                            <span>{{ flash.error }}</span>
-                        </div>
-                    </div>
                     <slot />
                 </main>
             </div>
         </div>
+        </AdminToastProvider>
     </div>
 </template>

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Models\Article;
 use App\Services\ContentQuery;
+use App\Support\RichText;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -78,7 +79,7 @@ final class NewsController extends PublicController
             'article' => [
                 'title' => $article->t('title', $locale),
                 'excerpt' => $article->t('excerpt', $locale),
-                'body' => $article->t('body', $locale),
+                'bodyHtml' => RichText::render($article->t('body', $locale)),
                 'publishedAt' => $article->published_at?->toDateString(),
                 'category' => $article->category?->t('name', $locale),
                 'author' => $article->author?->name,

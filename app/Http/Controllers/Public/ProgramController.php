@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Public;
 use App\Models\Program;
 use App\Models\Project;
 use App\Services\ContentQuery;
+use App\Support\RichText;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,7 +47,7 @@ final class ProgramController extends PublicController
             'program' => [
                 'title' => $program->t('title', $locale),
                 'summary' => $program->t('summary', $locale),
-                'description' => $program->t('description', $locale),
+                'descriptionHtml' => RichText::render($program->t('description', $locale)),
                 'objectives' => $this->lines($program->t('objectives', $locale)),
                 'targetGroups' => $this->lines($program->t('target_groups', $locale)),
                 'coverage' => $program->t('geographic_coverage', $locale),
@@ -76,7 +77,7 @@ final class ProgramController extends PublicController
             'project' => [
                 'title' => $project->t('title', $locale),
                 'summary' => $project->t('summary', $locale),
-                'description' => $project->t('description', $locale),
+                'descriptionHtml' => RichText::render($project->t('description', $locale)),
                 'objectives' => $this->lines($project->t('objectives', $locale)),
                 'targetGroups' => $this->lines($project->t('target_groups', $locale)),
                 'coverage' => $project->t('geographic_coverage', $locale),

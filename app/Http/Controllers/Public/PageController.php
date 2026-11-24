@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Public;
 
 use App\Services\ContentQuery;
+use App\Support\RichText;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,7 +20,7 @@ final class PageController extends PublicController
             'page' => [
                 'title' => $page->t('title', $locale),
                 'summary' => $page->t('summary', $locale),
-                'body' => $page->t('body', $locale),
+                'bodyHtml' => RichText::render($page->t('body', $locale)),
             ],
             'meta' => $this->seo(
                 $locale,

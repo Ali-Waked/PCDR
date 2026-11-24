@@ -1575,6 +1575,95 @@
     font-size: 1.5rem;
 }
 
+.public-shell .ps-article h3,
+.public-shell .ps-article h4 {
+    margin-block-start: 1.8rem;
+    font-size: 1.15rem;
+}
+
+.public-shell .ps-article ul,
+.public-shell .ps-article ol {
+    padding-inline-start: 1.5rem;
+}
+
+.public-shell .ps-article li + li {
+    margin-block-start: 0.35rem;
+}
+
+.public-shell .ps-article a {
+    color: var(--ps-teal-700, #0f766e);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.public-shell .ps-article figure {
+    margin: 1.5rem 0;
+}
+
+.public-shell .ps-article img {
+    max-inline-size: 100%;
+    block-size: auto;
+    border-radius: var(--ps-r, 12px);
+}
+
+.public-shell .ps-article figcaption {
+    margin-block-start: 0.5rem;
+    color: var(--ps-muted, #64748b);
+    font-size: 0.85rem;
+}
+
+.public-shell .ps-article blockquote {
+    margin-inline-start: 0;
+    padding-inline-start: 1.25rem;
+    border-inline-start: 3px solid var(--ps-teal-500, #14b8a6);
+    color: var(--ps-muted, #64748b);
+}
+
+.public-shell .ps-article mark {
+    background: #fef3c7;
+    color: inherit;
+    padding: 0 0.15em;
+}
+
+.public-shell .ps-article code {
+    padding: 0.1em 0.3em;
+    border-radius: 4px;
+    background: var(--ps-navy-100, #e2e8f0);
+    font-size: 0.9em;
+}
+
+.public-shell .ps-article pre {
+    overflow-x: auto;
+    padding: 1rem;
+    border-radius: var(--ps-r, 12px);
+    background: var(--ps-navy-900, #0f172a);
+    color: #f8fafc;
+}
+
+.public-shell .ps-article hr {
+    margin-block: 2rem;
+    border: 0;
+    border-block-start: 1px solid var(--ps-border, #e2e8f0);
+}
+
+.public-shell .ps-article table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.public-shell .ps-article th,
+.public-shell .ps-article td {
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--ps-border, #e2e8f0);
+    text-align: start;
+}
+
+.public-shell .ps-article th {
+    background: var(--ps-navy-100, #e2e8f0);
+    font-weight: 700;
+}
+
 .public-shell .ps-cover {
     overflow: hidden;
     margin-block-end: 2rem;
@@ -2077,6 +2166,263 @@
 
 .js-motion .public-shell [data-stagger] > .reveal {
     transition-delay: calc(var(--i, 0) * var(--ps-stagger));
+}
+
+/* Partners directory ------------------------------------------------------- */
+
+.public-shell .partners-page .pd-intro {
+    background: var(--ps-sand-100);
+    border-block: 1px solid var(--ps-line);
+}
+
+.public-shell .partners-page .pd-intro .ps-eyebrow {
+    margin-block-end: 0;
+}
+
+.public-shell .partners-page .pd-intro__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-block-start: clamp(1.5rem, 3vw, 2.5rem);
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--ps-line);
+}
+
+.public-shell .partners-page .pd-count {
+    color: var(--ps-teal-700);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.public-shell .partners-page .pd-categories {
+    display: flex;
+    gap: 0.6rem;
+    margin-block-start: 1.25rem;
+    overflow-x: auto;
+    padding-block-end: 0.35rem;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+}
+
+.public-shell .partners-page .pd-category {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding-inline: 1rem;
+    border: 1px solid var(--ps-line);
+    border-radius: 999px;
+    background: var(--ps-white);
+    color: var(--ps-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    scroll-snap-align: start;
+    transition: background var(--ps-fast) var(--ps-ease), border-color var(--ps-fast) var(--ps-ease), color var(--ps-fast) var(--ps-ease);
+}
+
+.public-shell .partners-page .pd-category:hover {
+    border-color: var(--ps-teal);
+    color: var(--ps-navy-900);
+}
+
+.public-shell .partners-page .pd-category.is-active {
+    border-color: var(--ps-navy-900);
+    background: var(--ps-navy-900);
+    color: var(--ps-on-dark);
+}
+
+.public-shell .partners-page .pd-category__count {
+    display: inline-grid;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--ps-teal-100);
+    color: var(--ps-teal-700);
+    font-size: 0.78rem;
+}
+
+.public-shell .partners-page .pd-category.is-active .pd-category__count {
+    background: var(--ps-on-dark);
+    color: var(--ps-navy-900);
+}
+
+.public-shell .partners-page .pd-directory {
+    padding-block-start: clamp(3rem, 6vw, 5rem);
+}
+
+.public-shell .partners-page .pd-groups {
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.public-shell .partners-page .pd-group__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-block-end: 1.5rem;
+    padding-block-end: 1rem;
+    border-block-end: 2px solid var(--ps-teal);
+}
+
+.public-shell .partners-page .pd-group h2 {
+    max-width: none;
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.public-shell .partners-page .pd-group__head .ps-note {
+    margin-block-start: 0.35rem;
+}
+
+.public-shell .partners-page .pd-group__count {
+    display: inline-grid;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--ps-navy-100);
+    color: var(--ps-navy-900);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.public-shell .partners-page .pd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+    gap: 1.25rem;
+}
+
+.public-shell .partners-page .pd-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--ps-line);
+    border-radius: var(--ps-r);
+    background: var(--ps-white);
+    box-shadow: 0 12px 34px rgba(37, 51, 75, 0.06);
+    transition: transform var(--ps-fast) var(--ps-ease), box-shadow var(--ps-fast) var(--ps-ease), border-color var(--ps-fast) var(--ps-ease);
+}
+
+.public-shell .partners-page .pd-card:hover {
+    border-color: var(--ps-teal);
+    box-shadow: 0 18px 42px rgba(37, 51, 75, 0.1);
+    transform: translateY(-3px);
+}
+
+.public-shell .partners-page .pd-card__logo {
+    display: grid;
+    min-height: 8.5rem;
+    place-items: center;
+    padding: 1.25rem;
+    border-block-end: 1px solid var(--ps-line);
+    background: var(--ps-white);
+}
+
+.public-shell .partners-page .pd-card__logo img {
+    width: 100%;
+    max-width: 13rem;
+    height: 6rem;
+    object-fit: contain;
+    object-position: center;
+}
+
+.public-shell .partners-page .pd-card__monogram {
+    display: grid;
+    width: 4.5rem;
+    height: 4.5rem;
+    place-items: center;
+    border: 1px solid var(--ps-teal);
+    border-radius: 50%;
+    background: var(--ps-teal-100);
+    color: var(--ps-teal-700);
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.public-shell .partners-page .pd-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1.25rem;
+}
+
+.public-shell .partners-page .pd-card h3 {
+    font-size: 1.1rem;
+}
+
+.public-shell .partners-page .pd-card__year {
+    color: var(--ps-teal-700);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.public-shell .partners-page .pd-card__description {
+    color: var(--ps-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.public-shell .partners-page .pd-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-block-start: auto;
+    padding-block-start: 0.75rem;
+    color: var(--ps-navy-900);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.public-shell .partners-page .pd-card__link:hover {
+    color: var(--ps-teal-700);
+}
+
+.public-shell .partners-page .pd-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    margin-block-start: clamp(2.5rem, 5vw, 4rem);
+    padding: 1.25rem 1.4rem;
+    border-inline-start: 3px solid var(--ps-teal);
+    border-radius: var(--ps-r);
+    background: var(--ps-teal-100);
+}
+
+.public-shell .partners-page .pd-note p {
+    color: var(--ps-navy-900);
+    font-size: 0.95rem;
+    line-height: 1.8;
+}
+
+.public-shell .partners-page .pd-note__mark {
+    display: grid;
+    flex: 0 0 auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ps-teal-700);
+    color: var(--ps-white);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.public-shell .partners-page .pd-empty,
+.public-shell .partners-page .pd-directory .ps-empty {
+    display: grid;
+    place-items: center;
+    min-height: 16rem;
+    border: 1px dashed var(--ps-line);
+    border-radius: var(--ps-r);
+    background: var(--ps-sand-100);
+    text-align: center;
 }
 
 /* Responsive -------------------------------------------------------------- */

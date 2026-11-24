@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
+import { Head, Link, useForm } from '@inertiajs/vue3'
 import AuthLayout from '../../Layouts/AuthLayout.vue'
 import { useI18n } from '../../composables/useI18n'
 
@@ -10,7 +10,6 @@ defineProps({
 })
 
 const { t, localPath } = useI18n()
-const page = usePage()
 
 const form = useForm({
     email: '',
@@ -30,10 +29,6 @@ function submit() {
         <div class="pc-auth__heading">
             <h1>{{ t('cms_login') }}</h1>
             <p>{{ t('cms_auth_note') }}</p>
-        </div>
-
-        <div v-if="page.props.flash?.error" class="pc-callout pc-callout--warning" role="alert">
-            <span>{{ page.props.flash.error }}</span>
         </div>
 
         <form class="pc-stack" @submit.prevent="submit">

@@ -1,17 +1,15 @@
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3'
 import { useI18n } from '../composables/useI18n'
-import { useLocale } from '../Composables/useLocale'
-import UiIcon from '../Components/Dashboard/UiIcon.vue'
+import AdminToastProvider from '../Components/Dashboard/AdminToastProvider.vue'
+import LanguageSwitcher from '../Components/LanguageSwitcher.vue'
 
 const { t, direction } = useI18n()
-const { pathForLocale } = useLocale()
-const page = usePage()
 </script>
 
 <template>
     <div class="pc-auth" :dir="direction">
         <a href="#pc-auth-main" class="skip-link">{{ t('ui.skip_to_content') }}</a>
+        <AdminToastProvider>
 
         <section class="pc-auth__brand" aria-labelledby="pc-auth-intro">
             <div class="pc-auth__logo">
@@ -37,24 +35,14 @@ const page = usePage()
 
         <section class="pc-auth__panel">
             <div class="pc-auth__panel-top">
-                <div class="pc-locale-switch" role="group" :aria-label="t('ui.language')">
-                    <Link :href="pathForLocale('ar')" :class="{ 'is-active': page.props.locale === 'ar' }" :aria-current="page.props.locale === 'ar' ? 'page' : undefined">ع</Link>
-                    <Link :href="pathForLocale('en')" :class="{ 'is-active': page.props.locale === 'en' }" :aria-current="page.props.locale === 'en' ? 'page' : undefined">EN</Link>
-                </div>
+                <LanguageSwitcher />
             </div>
             <div class="pc-auth__form-wrap">
                 <main id="pc-auth-main" class="pc-auth__form" tabindex="-1">
-                    <div v-if="page.props.flash?.success" class="pc-callout" role="status">
-                        <UiIcon name="check" :size="17" />
-                        <span>{{ page.props.flash.success }}</span>
-                    </div>
-                    <div v-if="page.props.flash?.error" class="pc-callout pc-callout--warning" role="alert">
-                        <UiIcon name="alert" :size="17" />
-                        <span>{{ page.props.flash.error }}</span>
-                    </div>
                     <slot />
                 </main>
             </div>
         </section>
+        </AdminToastProvider>
     </div>
 </template>
