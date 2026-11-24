@@ -21,19 +21,36 @@ final class SettingController extends Controller
     {
         Gate::authorize('viewAny', Setting::class);
 
+        $locale = app()->getLocale();
+
         $definitions = collect($this->settings->definitions())
             ->map(fn (array $definition, string $key) => [
                 'key' => $key,
                 'group' => $definition['group'],
+                'groupLabel' => $this->settings->groupLabel((string) $definition['group'], $locale),
                 'type' => $definition['type'],
+                'default' => $definition['default'] ?? null,
                 'public' => (bool) ($definition['public'] ?? false),
-                'label' => $definition['label'] ?? $key,
+                'label' => $locale === 'ar'
+                    ? ($definition['label_ar'] ?? $definition['label'] ?? $key)
+                    : ($definition['label'] ?? $key),
+            ])
+            ->values()
+            ->all();
+
+        $groups = collect($definitions)
+            ->groupBy('group')
+            ->map(fn ($items, string $group) => [
+                'key' => $group,
+                'label' => $items->first()['groupLabel'],
+                'definitions' => $items->values()->all(),
             ])
             ->values()
             ->all();
 
         return Inertia::render('Admin/Settings/Index', [
             'definitions' => $definitions,
+            'groups' => $groups,
             'values' => $this->settings->publicSettings() +
                 collect($this->settings->definitions())
                     ->reject(fn (array $definition) => (bool) ($definition['public'] ?? false))
@@ -41,6 +58,8 @@ final class SettingController extends Controller
                         $key => $this->settings->get($key),
                     ])
                     ->all(),
+            'canUpdate' => Gate::allows('settings.update'),
+            'secretReferences' => $this->settings->secretReferences(),
         ]);
     }
 

@@ -50,6 +50,11 @@ final class SiteSettings
         ];
     }
 
+    public function complaintsEmail(?string $locale = null): ?string
+    {
+        return $this->value('contact.complaints_email', null, $locale);
+    }
+
     /** @return list<array{label: string, url: string}> */
     public function socialLinks(?string $locale = null): array
     {

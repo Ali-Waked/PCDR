@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Support\AuditRedactor;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -24,6 +26,20 @@ final class SettingsService
     public function definition(string $key): ?array
     {
         return $this->definitions()[$key] ?? null;
+    }
+
+    public function groupLabel(string $group, ?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+        $labels = config('settings.group_labels', []);
+
+        return (string) ($labels[$group][$locale] ?? $labels[$group]['en'] ?? $group);
+    }
+
+    /** @return list<string> */
+    public function secretReferences(): array
+    {
+        return array_values(config('settings.secret_references', []));
     }
 
     public function get(string $key, ?string $locale = null): mixed
@@ -86,38 +102,42 @@ final class SettingsService
 
         Validator::make($values, $rules)->validate();
 
-        $updated = [];
+        $updated = DB::transaction(function () use ($values): array {
+            $updated = [];
 
-        foreach ($values as $key => $value) {
-            $definition = $this->definition($key);
+            foreach ($values as $key => $value) {
+                $definition = $this->definition($key);
 
-            if ($definition === null) {
-                continue;
+                if ($definition === null) {
+                    continue;
+                }
+
+                $before = $this->get($key);
+
+                $setting = Setting::updateOrCreate(
+                    ['group' => $definition['group'], 'key' => Str::after($key, '.')],
+                    [
+                        'type' => $definition['type'],
+                        'value' => is_array($value) ? json_encode($value, JSON_THROW_ON_ERROR) : ($value === null ? null : (string) $value),
+                        'is_public' => (bool) ($definition['public'] ?? false),
+                        'is_localized' => false,
+                        'is_secret_reference' => false,
+                    ],
+                );
+
+                $this->audit->record(
+                    'settings.update',
+                    'settings.'.$definition['group'],
+                    $key,
+                    ['value' => $this->auditValue($definition, $before)],
+                    ['value' => $this->auditValue($definition, $value)],
+                );
+
+                $updated[$key] = $setting->id;
             }
 
-            $before = $this->get($key);
-
-            $setting = Setting::updateOrCreate(
-                ['group' => $definition['group'], 'key' => Str::after($key, '.')],
-                [
-                    'type' => $definition['type'],
-                    'value' => is_array($value) ? json_encode($value, JSON_THROW_ON_ERROR) : ($value === null ? null : (string) $value),
-                    'is_public' => (bool) ($definition['public'] ?? false),
-                    'is_localized' => false,
-                    'is_secret_reference' => false,
-                ],
-            );
-
-            $this->audit->record(
-                'settings.update',
-                'settings.'.$definition['group'],
-                $key,
-                ['value' => $before],
-                ['value' => $value],
-            );
-
-            $updated[$key] = $setting->id;
-        }
+            return $updated;
+        });
 
         $this->flushCache();
 
@@ -129,6 +149,14 @@ final class SettingsService
         foreach (['ar', 'en'] as $locale) {
             Cache::forget(self::CACHE_PREFIX.$locale);
         }
+    }
+
+    /** @param array<string, mixed> $definition @param mixed $value @return mixed */
+    private function auditValue(array $definition, $value): mixed
+    {
+        return ($definition['public'] ?? false) === true
+            ? $value
+            : AuditRedactor::REDACTED;
     }
 
     /** @param mixed $value */

@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Cms;
+
+use App\Services\CmsAccess;
+use App\Support\SiteSettingsCatalog;
+use Closure;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+final class UpdateSiteSettingsRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        $user = $this->user();
+
+        return $user !== null && app(CmsAccess::class)->allows($user, 'settings.update');
+    }
+
+    /** @return array<string, mixed> */
+    public function rules(): array
+    {
+        $locales = (array) config('website.locales', ['ar', 'en']);
+
+        $rules = [
+            'settings' => ['required', 'array', 'max:'.count(SiteSettingsCatalog::all())],
+            'settings.*.key' => ['required', 'string', 'distinct', Rule::in(SiteSettingsCatalog::keys())],
+            'settings.*.value' => ['nullable', 'string', 'max:2000'],
+            'settings.*.translations' => ['nullable', 'array'],
+            'settings.*.translations.*' => ['nullable', 'string', 'max:2000'],
+        ];
+
+        $submitted = $this->input('settings');
+
+        if (! is_array($submitted)) {
+            return $rules;
+        }
+
+        foreach ($submitted as $index => $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $key = $entry['key'] ?? null;
+            $meta = SiteSettingsCatalog::find(is_string($key) ? $key : null);
+
+            if ($meta === null) {
+                continue;
+            }
+
+            $prefix = 'settings.'.$index;
+
+            if ($meta['localized']) {
+                $translations = $entry['translations'] ?? [];
+
+                foreach ($locales as $locale) {
+                    if (is_array($translations) && array_key_exists($locale, $translations)) {
+                        $rules["{$prefix}.translations.{$locale}"] = $this->typeRules($meta['type']);
+                    }
+                }
+
+                continue;
+            }
+
+            $rules["{$prefix}.value"] = $this->typeRules($meta['type']);
+        }
+
+        return $rules;
+    }
+
+    /** @return list<mixed> */
+    private function typeRules(string $type): array
+    {
+        return match ($type) {
+            'email' => ['nullable', 'string', 'max:2000', 'email:rfc'],
+            'url' => ['nullable', 'string', 'max:2000', $this->publicUrlRule()],
+            'locale' => ['nullable', Rule::in((array) config('website.locales', ['ar', 'en']))],
+            default => ['nullable', 'string', 'max:2000'],
+        };
+    }
+
+    private function publicUrlRule(): Closure
+    {
+        return static function (string $attribute, mixed $value, Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail(__('website.cms.setting_url_invalid'));
+
+                return;
+            }
+
+            if (str_starts_with($value, '/') && ! str_starts_with($value, '//') && ! str_contains($value, '\\')) {
+                return;
+            }
+
+            $parts = parse_url($value);
+            $scheme = is_array($parts) && isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : '';
+            $host = is_array($parts) && isset($parts['host']) ? (string) $parts['host'] : '';
+
+            if (in_array($scheme, ['http', 'https'], true) && $host !== '') {
+                return;
+            }
+
+            $fail(__('website.cms.setting_url_invalid'));
+        };
+    }
+}

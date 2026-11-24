@@ -4,42 +4,24 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Cms;
 
+use App\Actions\UploadMedia;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cms\UpdateSiteSettingsRequest;
+use App\Http\Requests\Cms\UploadSiteSettingImageRequest;
 use App\Models\WebsiteSetting;
 use App\Services\AuditService;
 use App\Services\CmsAccess;
 use App\Services\SiteSettings;
+use App\Support\SiteSettingsCatalog;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class SettingController extends Controller
 {
-    /** @var array<string, array{group: string, localized: bool, type: string}> */
-    private const PUBLIC_SETTINGS = [
-        'organization.name' => ['group' => 'organization', 'localized' => true, 'type' => 'text'],
-        'organization.short_name' => ['group' => 'organization', 'localized' => true, 'type' => 'text'],
-        'organization.logo' => ['group' => 'organization', 'localized' => false, 'type' => 'url'],
-        'website.default_language' => ['group' => 'website', 'localized' => false, 'type' => 'locale'],
-        'seo.site_title' => ['group' => 'seo', 'localized' => true, 'type' => 'text'],
-        'seo.default_description' => ['group' => 'seo', 'localized' => true, 'type' => 'textarea'],
-        'seo.og_image' => ['group' => 'seo', 'localized' => false, 'type' => 'url'],
-        'footer.copyright' => ['group' => 'footer', 'localized' => true, 'type' => 'text'],
-        'footer.legal_note' => ['group' => 'footer', 'localized' => true, 'type' => 'textarea'],
-        'contact.email' => ['group' => 'contact', 'localized' => false, 'type' => 'email'],
-        'contact.phone' => ['group' => 'contact', 'localized' => false, 'type' => 'text'],
-        'contact.address' => ['group' => 'contact', 'localized' => false, 'type' => 'text'],
-        'contact.hours' => ['group' => 'contact', 'localized' => false, 'type' => 'text'],
-        'social.facebook' => ['group' => 'social', 'localized' => false, 'type' => 'url'],
-        'social.x' => ['group' => 'social', 'localized' => false, 'type' => 'url'],
-        'social.instagram' => ['group' => 'social', 'localized' => false, 'type' => 'url'],
-        'social.linkedin' => ['group' => 'social', 'localized' => false, 'type' => 'url'],
-        'social.youtube' => ['group' => 'social', 'localized' => false, 'type' => 'url'],
-    ];
-
     public function __construct(private AuditService $audit) {}
 
     private function authorize(string $permission): void
@@ -51,11 +33,15 @@ final class SettingController extends Controller
     {
         $this->authorize('settings.view');
 
-        $settings = WebsiteSetting::query()->with('translations')->get()->keyBy('key');
+        $settings = WebsiteSetting::query()
+            ->public()
+            ->with('translations')
+            ->get()
+            ->keyBy('key');
         $locales = (array) config('website.locales', ['ar', 'en']);
 
-        return Inertia::render('Cms/Settings/Index', [
-            'settings' => collect(self::PUBLIC_SETTINGS)->map(function (array $meta, string $key) use ($settings, $locales): array {
+        $rows = collect(SiteSettingsCatalog::all())
+            ->map(function (array $meta, string $key) use ($settings, $locales, $locale): array {
                 $setting = $settings->get($key);
                 $values = [];
 
@@ -65,39 +51,57 @@ final class SettingController extends Controller
                     }
                 }
 
+                $translationKey = Str::replace(['.'], '_', $key);
+                $descriptionKey = 'website.cms.setting_descriptions.'.$translationKey;
+
                 return [
                     'key' => $key,
                     'group' => $meta['group'],
                     'type' => $meta['type'],
                     'localized' => $meta['localized'],
-                    'label' => __('website.cms.setting_labels'.'.'.Str::replace(['.'], '_', $key)),
+                    'label' => __('website.cms.setting_labels'.'.'.$translationKey, [], $locale),
+                    'description' => Lang::has($descriptionKey, $locale) ? __($descriptionKey, [], $locale) : '',
                     'value' => $setting?->value,
                     'translations' => $values,
                 ];
-            })->values()->all(),
+            })->values()->all();
+
+        $groups = collect(SiteSettingsCatalog::groupOrder())
+            ->map(function (string $key) use ($locale): array {
+                $labelKey = 'website.cms.setting_groups.'.$key;
+                $descriptionKey = 'website.cms.setting_group_descriptions.'.$key;
+
+                return [
+                    'key' => $key,
+                    'label' => Lang::has($labelKey, $locale) ? __($labelKey, [], $locale) : Str::headline($key),
+                    'description' => Lang::has($descriptionKey, $locale) ? __($descriptionKey, [], $locale) : '',
+                ];
+            })->values()->all();
+
+        return Inertia::render('Cms/Settings/Index', [
+            'settings' => $rows,
+            'groups' => $groups,
             'locales' => $locales,
+            'canUpdate' => app(CmsAccess::class)->allows(auth()->user(), 'settings.update'),
+            'uploadKeys' => SiteSettingsCatalog::imageKeys(),
         ]);
     }
 
-    public function update(string $locale, Request $request): RedirectResponse
+    public function update(string $locale, UpdateSiteSettingsRequest $request): RedirectResponse
     {
         $this->authorize('settings.update');
 
-        $validated = $request->validate([
-            'settings' => ['required', 'array', 'max:'.count(self::PUBLIC_SETTINGS)],
-            'settings.*.key' => ['required', 'string', 'in:'.implode(',', array_keys(self::PUBLIC_SETTINGS))],
-            'settings.*.value' => ['nullable', 'string', 'max:1000'],
-            'settings.*.translations' => ['nullable', 'array'],
-            'settings.*.translations.*' => ['nullable', 'string', 'max:1000'],
-        ]);
-
+        /** @var array{settings: list<array{key: string, value?: ?string, translations?: array<string, ?string>}>} $validated */
+        $validated = $request->validated();
         $before = [];
         $after = [];
 
         DB::transaction(function () use ($validated, &$before, &$after): void {
             foreach ($validated['settings'] as $entry) {
                 $key = $entry['key'];
-                $meta = self::PUBLIC_SETTINGS[$key];
+                $meta = SiteSettingsCatalog::find($key);
+                abort_unless($meta !== null, 422);
+
                 $setting = WebsiteSetting::query()->firstOrNew(['key' => $key]);
                 $before[$key] = $setting->exists ? $setting->resolvedValue() : null;
 
@@ -117,16 +121,13 @@ final class SettingController extends Controller
                             continue;
                         }
 
-                        $this->validateValue($meta['type'], $value);
                         $setting->translations()->updateOrCreate(
                             ['locale' => $code],
-                            ['value' => $value === '' ? null : $value],
+                            ['value' => $this->normalize($value)],
                         );
                     }
                 } else {
-                    $value = $entry['value'] ?? null;
-                    $this->validateValue($meta['type'], $value);
-                    $attributes['value'] = $value === '' ? null : $value;
+                    $attributes['value'] = $this->normalize($entry['value'] ?? null);
                     $setting->fill($attributes)->save();
                 }
 
@@ -142,21 +143,50 @@ final class SettingController extends Controller
         return back()->with('flash', ['success' => __('website.cms.saved')]);
     }
 
-    private function validateValue(string $type, ?string $value): void
+    public function uploadImage(
+        string $locale,
+        UploadSiteSettingImageRequest $request,
+        UploadMedia $upload,
+    ): RedirectResponse {
+        $this->authorize('settings.update');
+
+        /** @var array{key: string} $validated */
+        $validated = $request->validated();
+        $key = $validated['key'];
+        $meta = SiteSettingsCatalog::find($key);
+        abort_unless($meta !== null && in_array($key, SiteSettingsCatalog::imageKeys(), true), 422);
+
+        try {
+            $media = $upload->handle($request->file('file'), false, $request->user());
+        } catch (\InvalidArgumentException $exception) {
+            return back()->withErrors(['file' => $exception->getMessage()]);
+        }
+
+        $setting = WebsiteSetting::query()->firstOrNew(['key' => $key]);
+        $before = $setting->exists ? $setting->resolvedValue() : null;
+
+        $setting->fill([
+            'group' => $meta['group'],
+            'key' => $key,
+            'type' => $meta['type'],
+            'is_public' => true,
+            'is_localized' => false,
+            'value' => $media->url(),
+        ])->save();
+
+        app(SiteSettings::class)->flush();
+        $this->audit->record('cms.settings.image_uploaded', 'website_setting', $key, $before, $media->url(), [
+            'media_id' => $media->id,
+            'key' => $key,
+        ]);
+
+        return back()->with('flash', ['success' => __('website.cms.setting_image_uploaded')]);
+    }
+
+    private function normalize(?string $value): ?string
     {
-        if ($value === null || $value === '') {
-            return;
-        }
+        $value = $value === null ? null : trim($value);
 
-        $rules = match ($type) {
-            'email' => ['email:rfc'],
-            'url' => ['url'],
-            'locale' => ['in:'.implode(',', (array) config('website.locales', ['ar', 'en']))],
-            default => [],
-        };
-
-        if ($rules !== []) {
-            validator(['value' => $value], ['value' => $rules])->validate();
-        }
+        return $value === '' ? null : $value;
     }
 }
