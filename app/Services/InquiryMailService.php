@@ -16,7 +16,10 @@ use Throwable;
 
 class InquiryMailService
 {
-    public function __construct(private TemplateRenderer $renderer) {}
+    public function __construct(
+        private TemplateRenderer $renderer,
+        private EmailTemplateContentResolver $content,
+    ) {}
 
     public function composeReply(
         object $inquiry,
@@ -78,7 +81,12 @@ class InquiryMailService
         ]);
 
         try {
-            Mail::to($inquiry->email)->send(new InquiryReplyMail($reply->subject, $reply->body));
+            Mail::to($inquiry->email)->send(new InquiryReplyMail(
+                $reply->subject,
+                $reply->body,
+                $locale,
+                (string) ($reply->reference ?? ''),
+            ));
             $reply->forceFill(['status' => 'sent', 'sent_at' => now(), 'error' => null])->save();
             $this->markSent($log);
         } catch (Throwable $exception) {
@@ -129,7 +137,12 @@ class InquiryMailService
         ]);
 
         try {
-            Mail::to($recipient)->send(new InquiryReplyMail($subject, $body));
+            Mail::to($recipient)->send(new InquiryReplyMail(
+                $subject,
+                $body,
+                $locale,
+                (string) ($inquiry->reference ?? ''),
+            ));
             $this->markSent($log);
         } catch (Throwable $exception) {
             $this->markFailed($log, $exception->getMessage());
@@ -152,14 +165,7 @@ class InquiryMailService
     /** @param array<string, string> $variables */
     private function render(?EmailTemplate $template, string $key, string $field, string $locale, array $variables): string
     {
-        $value = $template?->translationFor($locale)?->{$field} ?? '';
-        $defaults = (array) config('email.default_templates.'.$key, []);
-
-        if ($value === '') {
-            $value = $defaults[$locale][$field] ?? $defaults['en'][$field] ?? '';
-        }
-
-        return $this->renderer->render($value, $variables, false);
+        return $this->content->field($template, $key, $field, $locale, $variables);
     }
 
     /** @return array<string, string> */
