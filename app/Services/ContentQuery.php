@@ -145,8 +145,15 @@ final class ContentQuery
         return $modelClass::query()
             ->published()
             ->with('translations')
-            ->whereHas('translations', function (Builder $q) use ($slug): void {
-                $q->where('slug', $slug)->where('locale', app()->getLocale());
+            ->where(function (Builder $query) use ($slug): void {
+                $query->whereHas('translations', function (Builder $q) use ($slug): void {
+                    $q->where('slug', $slug)
+                        ->whereIn('locale', [app()->getLocale(), config('website.fallback_locale', 'en')]);
+                });
+
+                if (ctype_digit($slug)) {
+                    $query->orWhereKey((int) $slug);
+                }
             })
             ->first();
     }
