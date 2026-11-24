@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AdminLanguageSwitcher from '../Components/AdminLanguageSwitcher.vue'
 import FlashMessages from '../Components/FlashMessages.vue'
+import UiIcon from '../Components/Dashboard/UiIcon.vue'
 import { useI18n } from '../composables/useI18n'
 import { useLocale } from '../Composables/useLocale'
 import { usePermission } from '../Composables/usePermission'
@@ -32,6 +33,27 @@ const userInitials = computed(() => {
     return name.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || '').join('')
 })
 
+const iconFor = {
+    dashboard: 'layout',
+    users: 'users',
+    roles: 'shield',
+    audit_logs: 'history',
+    audit_archives: 'history',
+    platform_settings: 'settings',
+    cms_dashboard: 'layout',
+    pillars: 'layers',
+    programs: 'folder',
+    projects: 'folder',
+    news: 'newspaper',
+    publications: 'folder',
+    media: 'image',
+    navigation: 'link',
+    homepage: 'home',
+    inquiries: 'mail',
+    email_templates: 'template',
+    cms_settings: 'settings',
+}
+
 const navigationGroups = computed(() => (page.props.adminNavigation ?? []).map((group) => ({
     ...group,
     items: group.items.map((item) => {
@@ -40,6 +62,7 @@ const navigationGroups = computed(() => (page.props.adminNavigation ?? []).map((
         return {
             ...item,
             href,
+            icon: iconFor[item.key] ?? 'file',
             active: currentPath.value === href || (href !== localPath('cms') && currentPath.value.startsWith(`${href}/`)),
         }
     }),
@@ -226,7 +249,8 @@ onBeforeUnmount(() => {
                                         :aria-current="item.active ? 'page' : undefined"
                                         @click="closeNav"
                                     >
-                                        <span>{{ item.label }}</span>
+                                        <span class="admin-nav-link__icon"><UiIcon :name="item.icon" :size="17" /></span>
+                                        <span class="admin-nav-link__label">{{ item.label }}</span>
                                         <span v-if="item.active" class="admin-nav-link__marker" aria-hidden="true" />
                                     </Link>
                                 </li>

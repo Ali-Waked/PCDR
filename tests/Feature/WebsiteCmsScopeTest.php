@@ -47,7 +47,7 @@ final class WebsiteCmsScopeTest extends TestCase
         $active = array_column((array) config('admin_navigation.groups', []), 'key');
         $preserved = array_column((array) config('admin_navigation_hidden.groups', []), 'key');
 
-        $this->assertSame(['overview', 'access', 'content'], $active);
+        $this->assertSame(['overview', 'content', 'communications', 'identity', 'system'], $active);
         $this->assertContains('operations', $preserved);
         $this->assertContains('phase5', $preserved);
 
@@ -70,8 +70,8 @@ final class WebsiteCmsScopeTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard')
-                ->where('adminNavigation', fn ($groups): bool => $groups->count() === 3
-                    && $groups->pluck('key')->all() === ['overview', 'access', 'content']
+                ->where('adminNavigation', fn ($groups): bool => $groups->count() === 5
+                    && $groups->pluck('key')->all() === ['overview', 'content', 'communications', 'identity', 'system']
                     && ! $groups->contains(fn (array $group): bool => in_array($group['key'], ['operations', 'phase5'], true)))
                 ->where('authority.is_platform_owner', true)
                 ->where('authority.institutional_approval.granted', false));
@@ -79,7 +79,7 @@ final class WebsiteCmsScopeTest extends TestCase
 
     public function test_ordinary_cms_user_cannot_open_hidden_modules_by_direct_url(): void
     {
-        $editor = $this->userWith(['pages.view']);
+        $editor = $this->userWith(['pillars.view']);
 
         $this->actingAs($editor)->get('/'.self::LOCALE.'/cms')->assertOk();
         $this->actingAs($editor)->get('/'.self::LOCALE.'/operations/dashboard')->assertForbidden();
@@ -113,8 +113,8 @@ final class WebsiteCmsScopeTest extends TestCase
         $reviewer = Role::query()->where('key', 'publisher_reviewer')->firstOrFail();
         $reviewerPermissions = $reviewer->permissions()->pluck('key')->all();
 
-        $this->assertContains('pages.view', $reviewerPermissions);
-        $this->assertNotContains('pages.publish', $reviewerPermissions);
+        $this->assertContains('pillars.view', $reviewerPermissions);
+        $this->assertNotContains('pillars.publish', $reviewerPermissions);
         $this->assertNotContains('inquiries.reply', $reviewerPermissions);
         $this->assertEmpty(array_filter(
             $reviewerPermissions,
@@ -143,7 +143,10 @@ final class WebsiteCmsScopeTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Cms/Settings/Index')
-                ->where('settings', fn ($settings): bool => $settings->count() === 18
+                ->where('settings', fn ($settings): bool => $settings->count() === 19
+                    && $settings->contains(fn (array $setting): bool => $setting['key'] === 'contact.complaints_email'
+                        && $setting['group'] === 'contact'
+                        && $setting['type'] === 'email')
                     && $settings->every(fn (array $setting): bool => ! str_starts_with($setting['key'], 'app.')
                         && ! str_starts_with($setting['key'], 'mail.')))
                 ->where('locales', ['ar', 'en']));

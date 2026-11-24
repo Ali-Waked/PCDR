@@ -21,12 +21,13 @@ final class AdminNavigationService
     {
         $groups = [];
 
-        /** @var list<array{key: string, label: string, items: list<array{key: string, label: string, path: string, permission: ?string}>}> $configured */
+        /** @var list<array{key: string, label: string, feature?: string, items: list<array{key: string, label: string, path: string, permission: ?string}>}> $configured */
         $configured = config('admin_navigation.groups', []);
 
         foreach ($configured as $group) {
             $groupKey = (string) ($group['key'] ?? '');
-            $featureState = config("dashboard_features.features.{$groupKey}.state");
+            $featureKey = (string) ($group['feature'] ?? $groupKey);
+            $featureState = config("dashboard_features.features.{$featureKey}.state");
 
             if ($featureState !== null && $featureState !== 'enabled') {
                 continue;
