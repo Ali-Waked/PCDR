@@ -10,35 +10,69 @@ use App\Exceptions\MediaInUseException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadMediaRequest;
 use App\Models\Media;
+use App\Services\AuditService;
 use App\Services\CmsAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class MediaController extends Controller
 {
+    public function __construct(private readonly AuditService $audit) {}
+
     private function authorize(string $permission): void
     {
         abort_unless(auth()->check() && app(CmsAccess::class)->allows(auth()->user(), $permission), 403);
+    }
+
+    private function allowed(string $permission): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null && app(CmsAccess::class)->allows($user, $permission);
     }
 
     public function index(string $locale, Request $request): Response
     {
         $this->authorize('media.view');
 
-        $type = $request->string('type')->toString();
-        $search = $request->string('q')->toString();
+        $type = in_array($request->string('type')->toString(), ['image', 'document'], true)
+            ? $request->string('type')->toString()
+            : '';
+        $visibility = in_array($request->string('visibility')->toString(), ['public', 'restricted'], true)
+            ? $request->string('visibility')->toString()
+            : '';
+        $search = Str::limit(trim($request->string('q')->toString()), 120, '');
+        $sort = in_array($request->string('sort')->toString(), ['newest', 'oldest', 'name_asc', 'name_desc', 'size_desc'], true)
+            ? $request->string('sort')->toString()
+            : 'newest';
 
         $media = Media::query()
             ->with('translations')
             ->when($type === 'image', fn ($q) => $q->images())
             ->when($type === 'document', fn ($q) => $q->documents())
+            ->when($visibility === 'public', fn ($q) => $q->where('is_restricted', false))
+            ->when($visibility === 'restricted', fn ($q) => $q->where('is_restricted', true))
             ->when($search !== '', fn ($q) => $q->where('original_name', 'like', "%{$search}%"))
-            ->latest()
-            ->paginate(24);
+            ->when($sort === 'oldest', fn ($q) => $q->oldest())
+            ->when($sort === 'name_asc', fn ($q) => $q->orderBy('original_name')->orderByDesc('id'))
+            ->when($sort === 'name_desc', fn ($q) => $q->orderByDesc('original_name')->orderByDesc('id'))
+            ->when($sort === 'size_desc', fn ($q) => $q->orderByDesc('size_bytes')->orderByDesc('id'))
+            ->when($sort === 'newest', fn ($q) => $q->latest())
+            ->paginate(24)
+            ->withQueryString();
+
+        $base = Media::query();
+        $stats = [
+            'all' => (clone $base)->count(),
+            'images' => (clone $base)->images()->count(),
+            'documents' => (clone $base)->documents()->count(),
+            'restricted' => (clone $base)->where('is_restricted', true)->count(),
+        ];
 
         return Inertia::render('Cms/Media/Index', [
             'items' => $media->through(fn (Media $item) => [
@@ -64,9 +98,24 @@ final class MediaController extends Controller
             'pagination' => [
                 'currentPage' => $media->currentPage(),
                 'lastPage' => $media->lastPage(),
+                'perPage' => $media->perPage(),
                 'total' => $media->total(),
+                'from' => $media->firstItem(),
+                'to' => $media->lastItem(),
             ],
-            'filters' => ['type' => $type, 'q' => $search],
+            'filters' => ['type' => $type, 'visibility' => $visibility, 'q' => $search, 'sort' => $sort],
+            'stats' => $stats,
+            'sortOptions' => collect(['newest', 'oldest', 'name_asc', 'name_desc', 'size_desc'])
+                ->map(fn (string $key) => [
+                    'value' => $key,
+                    'label' => __("website.ui.cms_media_sort_{$key}", [], $locale),
+                ])->all(),
+            'can' => [
+                'view' => true,
+                'upload' => $this->allowed('media.upload'),
+                'update' => $this->allowed('media.update'),
+                'delete' => $this->allowed('media.delete'),
+            ],
         ]);
     }
 
@@ -82,6 +131,12 @@ final class MediaController extends Controller
         } catch (\InvalidArgumentException $exception) {
             return back()->with('flash', ['error' => $exception->getMessage()]);
         }
+
+        $this->audit->record('media.uploaded', 'media', (string) $media->id, null, [
+            'name' => $media->original_name,
+            'type' => $media->type->value,
+            'restricted' => $media->is_restricted,
+        ]);
 
         return back()->with('flash', [
             'success' => __('website.cms.media_uploaded', ['name' => $media->original_name]),
@@ -107,6 +162,9 @@ final class MediaController extends Controller
             $record->translations()->updateOrCreate(['locale' => $code], $values);
         }
         $record->unsetRelation('translations');
+        $this->audit->record('media.updated', 'media', (string) $record->id, null, [
+            'locales' => array_keys($validated['translations']),
+        ]);
 
         return back()->with('flash', ['success' => __('website.cms.saved')]);
     }
@@ -118,11 +176,15 @@ final class MediaController extends Controller
         /** @var Media $record */
         $record = Media::query()->findOrFail($media);
 
+        $before = ['name' => $record->original_name, 'type' => $record->type->value];
+
         try {
             app(DeleteMedia::class)->handle($record);
         } catch (MediaInUseException) {
             return back()->with('flash', ['error' => __('website.cms.media_in_use')]);
         }
+
+        $this->audit->record('media.deleted', 'media', (string) $record->id, $before);
 
         return back()->with('flash', ['success' => __('website.cms.deleted')]);
     }
@@ -134,13 +196,18 @@ final class MediaController extends Controller
         /** @var Media $record */
         $record = Media::query()->findOrFail($media);
 
-        return response()->json([
-            'url' => URL::temporarySignedRoute(
-                'public.media.download', now()->addMinutes(30), [
-                    'locale' => $locale,
-                    'uuid' => $record->uuid,
-                ],
-            ),
+        $url = URL::temporarySignedRoute(
+            'public.media.download', now()->addMinutes(30), [
+                'locale' => $locale,
+                'uuid' => $record->uuid,
+            ],
+        );
+
+        $this->audit->record('media.signed_link_issued', 'media', (string) $record->id, null, [
+            'restricted' => $record->is_restricted,
+            'expires_in_minutes' => 30,
         ]);
+
+        return response()->json(['url' => $url]);
     }
 }

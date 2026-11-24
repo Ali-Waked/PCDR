@@ -28,25 +28,38 @@ final class DeleteMedia
     private function isReferenced(Media $media): bool
     {
         foreach (['page_media', 'pillar_media', 'project_media', 'article_media', 'publication_media'] as $pivot) {
-            if (DB::table($pivot)->where('media_id', $media->id)->exists()) {
+            if (Schema::hasTable($pivot) && DB::table($pivot)->where('media_id', $media->id)->exists()) {
                 return true;
             }
         }
 
         $columns = [
-            'strategic_pillars' => 'featured_image_id',
-            'programs' => 'featured_image_id',
-            'projects' => 'featured_image_id',
-            'articles' => 'cover_media_id',
+            'strategic_pillars' => ['featured_image_id'],
+            'programs' => ['featured_image_id'],
+            'projects' => ['featured_image_id'],
+            'articles' => ['cover_media_id'],
             'publications' => ['document_media_id', 'cover_media_id'],
+            'domain_transitions' => ['evidence_media_id'],
+            'document_links' => ['media_id'],
+            'distribution_records' => ['evidence_media_id'],
+            'volunteer_trainings' => ['evidence_media_id'],
+            'committee_meetings' => ['evidence_media_id'],
+            'partner_agreements' => ['document_media_id'],
+            'grant_proposals' => ['submission_evidence_media_id'],
+            'grant_awards' => ['agreement_media_id', 'evidence_media_id'],
+            'indicator_measurements' => ['evidence_media_id'],
+            'evaluations' => ['evidence_media_id'],
+            'assessments' => ['evidence_media_id'],
+            'document_reviews' => ['media_id'],
+            'directory_partners' => ['logo_media_id'],
         ];
 
         foreach ($columns as $table => $fields) {
             if (! Schema::hasTable($table)) {
                 continue;
             }
-            foreach ((array) $fields as $field) {
-                if (DB::table($table)->where($field, $media->id)->exists()) {
+            foreach ($fields as $field) {
+                if (Schema::hasColumn($table, $field) && DB::table($table)->where($field, $media->id)->exists()) {
                     return true;
                 }
             }

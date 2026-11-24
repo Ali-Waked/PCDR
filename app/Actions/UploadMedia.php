@@ -25,10 +25,20 @@ final class UploadMedia
             throw new \InvalidArgumentException('The file type is not allowed.');
         }
 
-        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'bin');
+        $extensions = config('website.uploads.mime_extensions', []);
+        $extension = (string) ($extensions[$detected] ?? '');
         if (! preg_match('/^[a-z0-9]{1,8}$/', $extension)) {
+            throw new \InvalidArgumentException('The file type is not allowed.');
+        }
+
+        $originalExtension = strtolower((string) $file->getClientOriginalExtension());
+        if (! preg_match('/^[a-z0-9]{1,8}$/', $originalExtension)) {
             throw new \InvalidArgumentException('The file extension is not allowed.');
         }
+
+        $type = in_array($detected, config('website.uploads.allowed_image_mimes', []), true)
+            ? MediaType::Image
+            : MediaType::Document;
 
         $maxKb = (int) config('website.uploads.max_file_size_kb', 10240);
         if ($file->getSize() > $maxKb * 1024) {
@@ -45,12 +55,12 @@ final class UploadMedia
 
         Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path), $restricted ? 'private' : 'public');
 
-        $media = DB::transaction(function () use ($uuid, $disk, $path, $detected, $extension, $file, $restricted, $uploader, $dimensions, $translations): Media {
+        $media = DB::transaction(function () use ($uuid, $disk, $path, $detected, $extension, $file, $restricted, $uploader, $dimensions, $translations, $type): Media {
             $media = Media::create([
                 'uuid' => $uuid,
                 'disk' => $disk,
                 'path' => $path,
-                'type' => $restricted ? MediaType::Document : MediaType::Image,
+                'type' => $type,
                 'mime_type' => $detected,
                 'extension' => $extension,
                 'size_bytes' => (int) $file->getSize(),

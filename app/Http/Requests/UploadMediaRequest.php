@@ -18,9 +18,12 @@ final class UploadMediaRequest extends FormRequest
     public function rules(): array
     {
         $max = (int) config('website.uploads.max_file_size_kb', 10240);
+        $allowed = $this->boolean('is_restricted')
+            ? config('website.uploads.allowed_document_mimes', [])
+            : config('website.uploads.allowed_image_mimes', []);
 
         return [
-            'file' => ['required', 'file', "max:{$max}"],
+            'file' => ['required', 'file', "max:{$max}", 'mimetypes:'.implode(',', $allowed)],
             'is_restricted' => ['boolean'],
             'translations' => ['nullable', 'array'],
             'translations.*.alt_text' => ['nullable', 'string', 'max:255'],
