@@ -20,19 +20,22 @@ final class CmsRolesSeeder extends Seeder
     private function definitions(): array
     {
         $view = [
-            'pages.view', 'news.view', 'programs.view', 'projects.view',
+            'news.view', 'programs.view', 'projects.view',
             'pillars.view', 'publications.view', 'media.view',
+            'directory_partners.view',
         ];
         $editContent = [
-            'pages.create', 'pages.update', 'news.create', 'news.update',
+            'news.create', 'news.update',
             'programs.create', 'programs.update', 'projects.create', 'projects.update',
             'pillars.create', 'pillars.update', 'publications.create', 'publications.update',
             'media.upload', 'media.update',
+            'directory_partners.create', 'directory_partners.update',
         ];
         $publish = [
-            'pages.publish', 'pages.unpublish', 'news.publish', 'news.unpublish',
+            'news.publish', 'news.unpublish',
             'programs.publish', 'programs.unpublish', 'projects.publish', 'projects.unpublish',
             'publications.publish', 'publications.unpublish', 'pillars.publish',
+            'directory_partners.publish', 'directory_partners.unpublish',
         ];
         $inquiries = [
             'inquiries.view', 'inquiries.view_all', 'inquiries.assign',
@@ -54,7 +57,7 @@ final class CmsRolesSeeder extends Seeder
                 'description' => 'Manages the public website CMS, its content, inquiries and authorized users.',
                 'permissions' => array_values(array_unique(array_merge(
                     $view, $editContent, $publish, $inquiries, $templates, $access,
-                    ['navigation.view', 'navigation.update', 'homepage.view', 'homepage.update',
+                    ['homepage.view', 'homepage.update', 'directory_partners.delete',
                         'media.delete', 'settings.view', 'settings.update'],
                 ))),
             ],

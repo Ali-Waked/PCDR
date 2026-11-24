@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\PermissionCatalog;
+use App\Support\RolePermissionInput;
 use Illuminate\Support\Facades\DB;
 
 final class RbacManagementService
@@ -18,7 +20,21 @@ final class RbacManagementService
     /** @param array<int, int> $permissionIds */
     public function syncRolePermissions(Role $role, array $permissionIds): void
     {
-        $permissions = Permission::whereIn('id', $permissionIds)->get();
+        $allowedIds = RolePermissionInput::supportedIds();
+        $submitted = RolePermissionInput::normalize($permissionIds);
+        $selected = array_values(array_intersect($submitted, $allowedIds));
+
+        // Historical or hidden assignments are never silently removed by the
+        // dashboard. They remain attached but are not exposed for assignment.
+        /** @var list<int> $preserved */
+        $preserved = $role->permissions()
+            ->whereNotIn('permissions.key', PermissionCatalog::supportedKeys())
+            ->pluck('permissions.id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+
+        $ids = array_values(array_unique(array_merge($selected, $preserved)));
+        $permissions = Permission::whereIn('id', $ids)->get();
         $before = ['permissions' => $role->permissions()->pluck('permissions.key')->all()];
 
         DB::transaction(function () use ($role, $permissions, $before): void {

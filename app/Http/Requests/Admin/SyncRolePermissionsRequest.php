@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\Permission;
 use App\Models\Role;
+use App\Support\RolePermissionInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 
@@ -20,21 +20,28 @@ final class SyncRolePermissionsRequest extends FormRequest
             return false;
         }
 
-        $requested = array_map('intval', $this->input('permissions', []));
-        $current = $role->permissions()->pluck('permissions.id')->all();
-        $changed = array_values(array_unique(array_merge($requested, $current)));
+        /** @var list<int> $current */
+        $current = $role->permissions()->pluck('permissions.id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
 
-        $touchesProtected = Permission::whereIn('id', $changed)->where('is_protected', true)->exists();
+        return RolePermissionInput::canAssign(
+            $this->user(),
+            RolePermissionInput::normalize($this->input('permissions', [])),
+            $current,
+        );
+    }
 
-        return ! $touchesProtected || $this->user()?->isPlatformOwner() === true;
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'permissions' => RolePermissionInput::normalize($this->input('permissions', [])),
+        ]);
     }
 
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        return [
-            'permissions' => ['required', 'array'],
-            'permissions.*' => ['integer', 'exists:permissions,id'],
-        ];
+        return RolePermissionInput::rules(required: true);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Models\Role;
+use App\Support\RolePermissionInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 
@@ -15,7 +16,33 @@ final class UpdateRoleRequest extends FormRequest
         /** @var Role $role */
         $role = $this->route('role');
 
-        return Gate::allows('update', $role);
+        if (! Gate::allows('update', $role)) {
+            return false;
+        }
+
+        if (! $this->has('permissions')) {
+            return true;
+        }
+
+        /** @var list<int> $current */
+        $current = $role->permissions()->pluck('permissions.id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+
+        return RolePermissionInput::canAssign(
+            $this->user(),
+            RolePermissionInput::normalize($this->input('permissions', [])),
+            $current,
+        );
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('permissions')) {
+            $this->merge([
+                'permissions' => RolePermissionInput::normalize($this->input('permissions', [])),
+            ]);
+        }
     }
 
     /** @return array<string, mixed> */
@@ -28,6 +55,7 @@ final class UpdateRoleRequest extends FormRequest
             'key' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9_.-]+$/', 'unique:roles,key,'.$role->id],
             'name' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:2000'],
+            ...RolePermissionInput::rules(),
         ];
     }
 }

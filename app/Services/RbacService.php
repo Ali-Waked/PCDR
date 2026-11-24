@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Role;
 use App\Models\RoleScope;
 use App\Models\User;
+use App\Support\PermissionCatalog;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -39,6 +40,30 @@ final class RbacService
                 ->unique()
                 ->values();
         });
+    }
+
+    /**
+     * Permissions exposed to the browser. This is a presentation-safe subset of
+     * the authorization list: unsupported, hidden, reserved, and historical
+     * keys are never sent to the dashboard, while the technical wildcard is
+     * retained for Platform Owner UI decisions.
+     *
+     * @return Collection<int, string>
+     */
+    public function dashboardPermissionsFor(User $user): Collection
+    {
+        if ($user->isPlatformOwner()) {
+            return collect(PermissionCatalog::supportedKeys())
+                ->reject(fn (string $permission): bool => $this->isAuthorityPermission($permission))
+                ->push(self::TECHNICAL_WILDCARD)
+                ->unique()
+                ->values();
+        }
+
+        return $this->permissionsFor($user)
+            ->filter(fn (string $permission): bool => $permission === self::TECHNICAL_WILDCARD
+                || PermissionCatalog::isSupported($permission))
+            ->values();
     }
 
     /** @return Collection<int, string> */

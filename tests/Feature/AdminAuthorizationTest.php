@@ -120,7 +120,7 @@ class AdminAuthorizationTest extends TestCase
         );
     }
 
-    public function test_protected_permission_cannot_be_renamed_or_deleted_by_owner(): void
+    public function test_permission_crud_endpoints_are_unavailable_even_for_owner(): void
     {
         $owner = User::factory()->platformOwner()->create();
         $permission = Permission::create([
@@ -130,12 +130,12 @@ class AdminAuthorizationTest extends TestCase
             'is_protected' => true,
         ]);
 
-        $this->actingAs($owner)->delete("/ar/admin/permissions/{$permission->id}")->assertStatus(422);
+        $this->actingAs($owner)->delete("/ar/admin/permissions/{$permission->id}")->assertNotFound();
         $this->actingAs($owner)->put("/ar/admin/permissions/{$permission->id}", [
             'key' => 'users.view.changed',
             'name' => 'Changed',
             'module' => 'iam',
-        ])->assertStatus(422);
+        ])->assertNotFound();
 
         $this->assertDatabaseHas('permissions', [
             'id' => $permission->id,

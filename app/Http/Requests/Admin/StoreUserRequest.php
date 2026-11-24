@@ -13,7 +13,15 @@ final class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('create', User::class);
+        if (! Gate::allows('create', User::class)) {
+            return false;
+        }
+
+        if (! empty($this->input('roles')) && ! Gate::allows('users.assign_roles')) {
+            return false;
+        }
+
+        return true;
     }
 
     /** @return array<string, mixed> */

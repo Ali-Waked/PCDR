@@ -8,252 +8,452 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 |
 | This catalog is the code-owned source of truth for known permissions. The
-| `pcdr:permissions:sync` command inserts missing keys into the database and
-| marks keys removed from code as retired. Custom permissions created by the
-| Platform Owner remain fully dynamic and are managed in the database.
+| `pcdr:permissions:sync` command creates or refreshes only the permissions
+| marked `dashboard_supported`. Unsupported, reserved, hidden, and historical
+| rows are deliberately left untouched so existing assignments are preserved.
 |
-| "protected" permissions may not be renamed or deleted. They remain
-| assignable by the Platform Owner, who is the technical authority for the
-| platform. Institutional approval permissions are never seeded or assigned.
+| The dashboard permission list is an explicit allowlist. A capability is not
+| assignable merely because it appears somewhere in the codebase. Permission
+| definitions are never created or modified from the dashboard.
 |
 */
 
-return [
-    // Identity and access management.
-    'users.view' => ['module' => 'iam', 'label' => 'View users', 'protected' => true],
-    'users.create' => ['module' => 'iam', 'label' => 'Create users', 'protected' => true],
-    'users.update' => ['module' => 'iam', 'label' => 'Update users', 'protected' => true],
-    'users.delete' => ['module' => 'iam', 'label' => 'Delete users', 'protected' => true],
-    'users.assign_roles' => ['module' => 'iam', 'label' => 'Assign user roles', 'protected' => true],
-    'users.reset_password' => ['module' => 'iam', 'label' => 'Reset user passwords', 'protected' => true],
-
-    'roles.view' => ['module' => 'iam', 'label' => 'View roles', 'protected' => true],
-    'roles.create' => ['module' => 'iam', 'label' => 'Create roles', 'protected' => true],
-    'roles.update' => ['module' => 'iam', 'label' => 'Update roles', 'protected' => true],
-    'roles.delete' => ['module' => 'iam', 'label' => 'Delete roles', 'protected' => true],
-    'roles.grant_protected' => ['module' => 'iam', 'label' => 'Grant protected permissions', 'protected' => true],
-
-    'permissions.view' => ['module' => 'iam', 'label' => 'View permissions', 'protected' => true],
-    'permissions.create' => ['module' => 'iam', 'label' => 'Create permissions', 'protected' => true],
-    'permissions.update' => ['module' => 'iam', 'label' => 'Update permissions', 'protected' => true],
-    'permissions.delete' => ['module' => 'iam', 'label' => 'Delete permissions', 'protected' => true],
-
-    // Platform infrastructure.
-    'settings.view' => ['module' => 'platform', 'label' => 'View settings', 'protected' => true],
-    'settings.update' => ['module' => 'platform', 'label' => 'Update settings', 'protected' => true],
-    'audit_logs.view' => ['module' => 'platform', 'label' => 'View audit logs', 'protected' => true],
-    'audit_logs.export' => ['module' => 'platform', 'label' => 'Export audit logs', 'protected' => true],
-
-    // Reserved workflow permissions. They are intentionally not seeded into
-    // any role and require the Platform Owner's explicit technical decision.
-    'content.view' => ['module' => 'content', 'label' => 'View content', 'protected' => false],
-    'content.create' => ['module' => 'content', 'label' => 'Create content', 'protected' => false],
-    'content.update' => ['module' => 'content', 'label' => 'Update content', 'protected' => false],
-    'content.review' => ['module' => 'content', 'label' => 'Review content', 'protected' => false],
-    'content.publish' => ['module' => 'content', 'label' => 'Publish content', 'protected' => false],
-    'content.archive' => ['module' => 'content', 'label' => 'Archive content', 'protected' => false],
-    'inquiries.update' => ['module' => 'content', 'label' => 'Update inquiry status', 'protected' => false],
-
-    /*
-     * Website CMS permissions. These are the only operational capabilities
-     * exposed by the delivered dashboard. They map to config/cms.php and are
-     * enforced on the backend, never only in the Vue interface.
-     */
-    'pages.view' => ['module' => 'website', 'label' => 'View pages', 'protected' => false],
-    'pages.create' => ['module' => 'website', 'label' => 'Create pages', 'protected' => false],
-    'pages.update' => ['module' => 'website', 'label' => 'Edit pages', 'protected' => false],
-    'pages.delete' => ['module' => 'website', 'label' => 'Delete pages', 'protected' => false],
-    'pages.publish' => ['module' => 'website', 'label' => 'Publish pages', 'protected' => false],
-    'pages.unpublish' => ['module' => 'website', 'label' => 'Unpublish pages', 'protected' => false],
-
-    'news.view' => ['module' => 'website', 'label' => 'View news', 'protected' => false],
-    'news.create' => ['module' => 'website', 'label' => 'Create news', 'protected' => false],
-    'news.update' => ['module' => 'website', 'label' => 'Edit news', 'protected' => false],
-    'news.delete' => ['module' => 'website', 'label' => 'Delete news', 'protected' => false],
-    'news.publish' => ['module' => 'website', 'label' => 'Publish news', 'protected' => false],
-    'news.unpublish' => ['module' => 'website', 'label' => 'Unpublish news', 'protected' => false],
-
-    'programs.view' => ['module' => 'website', 'label' => 'View programs', 'protected' => false],
-    'programs.create' => ['module' => 'website', 'label' => 'Create programs', 'protected' => false],
-    'programs.update' => ['module' => 'website', 'label' => 'Edit programs', 'protected' => false],
-    'programs.delete' => ['module' => 'website', 'label' => 'Delete programs', 'protected' => false],
-    'programs.publish' => ['module' => 'website', 'label' => 'Publish programs', 'protected' => false],
-    'programs.unpublish' => ['module' => 'website', 'label' => 'Unpublish programs', 'protected' => false],
-
-    'projects.view' => ['module' => 'website', 'label' => 'View projects', 'protected' => false],
-    'projects.create' => ['module' => 'website', 'label' => 'Create projects', 'protected' => false],
-    'projects.update' => ['module' => 'website', 'label' => 'Edit projects', 'protected' => false],
-    'projects.delete' => ['module' => 'website', 'label' => 'Delete projects', 'protected' => false],
-    'projects.publish' => ['module' => 'website', 'label' => 'Publish projects', 'protected' => false],
-    'projects.unpublish' => ['module' => 'website', 'label' => 'Unpublish projects', 'protected' => false],
-
-    'publications.view' => ['module' => 'website', 'label' => 'View publications', 'protected' => false],
-    'publications.create' => ['module' => 'website', 'label' => 'Create publications', 'protected' => false],
-    'publications.update' => ['module' => 'website', 'label' => 'Edit publications', 'protected' => false],
-    'publications.delete' => ['module' => 'website', 'label' => 'Delete publications', 'protected' => false],
-    'publications.publish' => ['module' => 'website', 'label' => 'Publish publications', 'protected' => false],
-    'publications.unpublish' => ['module' => 'website', 'label' => 'Unpublish publications', 'protected' => false],
-
-    'pillars.view' => ['module' => 'website', 'label' => 'View strategic pillars', 'protected' => false],
-    'pillars.create' => ['module' => 'website', 'label' => 'Create strategic pillars', 'protected' => false],
-    'pillars.update' => ['module' => 'website', 'label' => 'Edit strategic pillars', 'protected' => false],
-    'pillars.delete' => ['module' => 'website', 'label' => 'Delete strategic pillars', 'protected' => false],
-    'pillars.publish' => ['module' => 'website', 'label' => 'Publish strategic pillars', 'protected' => false],
-
-    'media.view' => ['module' => 'website', 'label' => 'View media library', 'protected' => false],
-    'media.upload' => ['module' => 'website', 'label' => 'Upload media', 'protected' => false],
-    'media.update' => ['module' => 'website', 'label' => 'Edit media', 'protected' => false],
-    'media.delete' => ['module' => 'website', 'label' => 'Delete media', 'protected' => false],
-    'navigation.view' => ['module' => 'website', 'label' => 'View navigation menus', 'protected' => false],
-    'navigation.update' => ['module' => 'website', 'label' => 'Edit navigation menus', 'protected' => false],
-    'homepage.view' => ['module' => 'website', 'label' => 'View homepage content', 'protected' => false],
-    'homepage.update' => ['module' => 'website', 'label' => 'Edit homepage content', 'protected' => false],
-
-    'inquiries.view' => ['module' => 'website', 'label' => 'View contact inquiries', 'protected' => false],
-    'inquiries.view_all' => ['module' => 'website', 'label' => 'View all inquiries', 'protected' => false],
-    'inquiries.view_assigned' => ['module' => 'website', 'label' => 'View assigned inquiries', 'protected' => false],
-    'inquiries.assign' => ['module' => 'website', 'label' => 'Assign inquiries', 'protected' => false],
-    'inquiries.add_internal_note' => ['module' => 'website', 'label' => 'Add internal inquiry notes', 'protected' => false],
-    'inquiries.reply' => ['module' => 'website', 'label' => 'Reply to inquiries by email', 'protected' => false],
-
-    'email_templates.view' => ['module' => 'website', 'label' => 'View email templates', 'protected' => false],
-    'email_templates.create' => ['module' => 'website', 'label' => 'Create email templates', 'protected' => false],
-    'email_templates.update' => ['module' => 'website', 'label' => 'Edit email templates', 'protected' => false],
-    'email_templates.delete' => ['module' => 'website', 'label' => 'Delete email templates', 'protected' => false],
-
-    /*
-     * Phase 4 operational permissions. These are technical/operational
-     * capabilities only. No `*.approve` or institutional delegation keys are
-     * defined, seeded, or assignable by this phase.
-     */
-    'locations.view' => ['module' => 'operations', 'label' => 'View geographic locations', 'protected' => false],
-    'locations.create' => ['module' => 'operations', 'label' => 'Create geographic locations', 'protected' => false],
-    'locations.update' => ['module' => 'operations', 'label' => 'Update geographic locations', 'protected' => false],
-    'locations.transition' => ['module' => 'operations', 'label' => 'Change geographic location status', 'protected' => false],
-
-    'interventions.view' => ['module' => 'operations', 'label' => 'View interventions', 'protected' => false],
-    'interventions.create' => ['module' => 'operations', 'label' => 'Create interventions', 'protected' => false],
-    'interventions.update' => ['module' => 'operations', 'label' => 'Update interventions', 'protected' => false],
-    'interventions.transition' => ['module' => 'operations', 'label' => 'Change intervention status', 'protected' => false],
-
-    'activities.view' => ['module' => 'operations', 'label' => 'View activities', 'protected' => false],
-    'activities.create' => ['module' => 'operations', 'label' => 'Create activities', 'protected' => false],
-    'activities.update' => ['module' => 'operations', 'label' => 'Update activities', 'protected' => false],
-    'activities.transition' => ['module' => 'operations', 'label' => 'Change activity status', 'protected' => false],
-
-    'distributions.view' => ['module' => 'operations', 'label' => 'View distributions', 'protected' => false],
-    'distributions.create' => ['module' => 'operations', 'label' => 'Create distributions', 'protected' => false],
-    'distributions.update' => ['module' => 'operations', 'label' => 'Update distributions', 'protected' => false],
-    'distributions.transition' => ['module' => 'operations', 'label' => 'Change distribution status', 'protected' => false],
-    'distributions.reconcile' => ['module' => 'operations', 'label' => 'Reconcile distributions', 'protected' => false],
-
-    'inventory.view' => ['module' => 'operations', 'label' => 'View inventory', 'protected' => false],
-    'inventory.create' => ['module' => 'operations', 'label' => 'Create inventory master data', 'protected' => false],
-    'inventory.update' => ['module' => 'operations', 'label' => 'Update inventory master data', 'protected' => false],
-    'inventory.transition' => ['module' => 'operations', 'label' => 'Change inventory status', 'protected' => false],
-    'inventory.receive' => ['module' => 'operations', 'label' => 'Receive stock', 'protected' => false],
-    'inventory.issue' => ['module' => 'operations', 'label' => 'Issue stock', 'protected' => false],
-    'inventory.transfer' => ['module' => 'operations', 'label' => 'Transfer stock', 'protected' => false],
-    'inventory.adjust' => ['module' => 'operations', 'label' => 'Adjust stock', 'protected' => false],
-    'inventory.reverse' => ['module' => 'operations', 'label' => 'Reverse stock movements', 'protected' => false],
-
-    'volunteers.view' => ['module' => 'operations', 'label' => 'View volunteer program records', 'protected' => false],
-    'volunteers.create' => ['module' => 'operations', 'label' => 'Create volunteer program records', 'protected' => false],
-    'volunteers.update' => ['module' => 'operations', 'label' => 'Update volunteer program records', 'protected' => false],
-    'volunteers.transition' => ['module' => 'operations', 'label' => 'Change volunteer record status', 'protected' => false],
-
-    'committees.view' => ['module' => 'operations', 'label' => 'View community participation records', 'protected' => false],
-    'committees.create' => ['module' => 'operations', 'label' => 'Create community participation records', 'protected' => false],
-    'committees.update' => ['module' => 'operations', 'label' => 'Update community participation records', 'protected' => false],
-    'committees.transition' => ['module' => 'operations', 'label' => 'Change community record status', 'protected' => false],
-
-    'partners.view' => ['module' => 'operations', 'label' => 'View partner and donor relationships', 'protected' => false],
-    'partners.create' => ['module' => 'operations', 'label' => 'Create partner and donor records', 'protected' => false],
-    'partners.update' => ['module' => 'operations', 'label' => 'Update partner and donor records', 'protected' => false],
-    'partners.transition' => ['module' => 'operations', 'label' => 'Change relationship status', 'protected' => false],
-
-    'partner_contacts.view' => ['module' => 'operations', 'label' => 'View restricted partner contacts', 'protected' => false],
-    'partner_contacts.create' => ['module' => 'operations', 'label' => 'Create restricted partner contacts', 'protected' => false],
-    'partner_contacts.update' => ['module' => 'operations', 'label' => 'Update restricted partner contacts', 'protected' => false],
-    'partner_contacts.transition' => ['module' => 'operations', 'label' => 'Change partner contact status', 'protected' => false],
-
-    'grants.view' => ['module' => 'operations', 'label' => 'View grants and proposals', 'protected' => false],
-    'grants.create' => ['module' => 'operations', 'label' => 'Create grants and proposals', 'protected' => false],
-    'grants.update' => ['module' => 'operations', 'label' => 'Update grants and proposals', 'protected' => false],
-    'grants.transition' => ['module' => 'operations', 'label' => 'Change grant and proposal status', 'protected' => false],
-    'grants.submit' => ['module' => 'operations', 'label' => 'Record proposal submission evidence', 'protected' => false],
-
-    'meal.view' => ['module' => 'operations', 'label' => 'View MEAL records', 'protected' => false],
-    'meal.create' => ['module' => 'operations', 'label' => 'Create MEAL records', 'protected' => false],
-    'meal.update' => ['module' => 'operations', 'label' => 'Update MEAL records', 'protected' => false],
-    'meal.transition' => ['module' => 'operations', 'label' => 'Change MEAL status', 'protected' => false],
-    'meal.verify' => ['module' => 'operations', 'label' => 'Verify MEAL measurements', 'protected' => false],
-
-    'assessments.view' => ['module' => 'operations', 'label' => 'View assessments and research', 'protected' => false],
-    'assessments.create' => ['module' => 'operations', 'label' => 'Create assessments and research', 'protected' => false],
-    'assessments.update' => ['module' => 'operations', 'label' => 'Update assessments and research', 'protected' => false],
-    'assessments.transition' => ['module' => 'operations', 'label' => 'Change assessment status', 'protected' => false],
-
-    'reports.view' => ['module' => 'operations', 'label' => 'View operational reports and dashboards', 'protected' => false],
-    'reports.create' => ['module' => 'operations', 'label' => 'Generate operational reports', 'protected' => false],
-    'reports.update' => ['module' => 'operations', 'label' => 'Update operational report records', 'protected' => false],
-    'reports.export' => ['module' => 'operations', 'label' => 'Export operational reports', 'protected' => false],
-
-    'documents.view' => ['module' => 'operations', 'label' => 'View operational document links', 'protected' => false],
-    'documents.upload' => ['module' => 'operations', 'label' => 'Attach operational documents', 'protected' => false],
-    'documents.download' => ['module' => 'operations', 'label' => 'Download operational documents', 'protected' => false],
-
-    /*
-     * Phase 5 institutional operating layer. These are technical capabilities
-     * only. No `*.approve` key is defined or seeded: OQ-49 remains pending
-     * formal authority and delegation. Sensitive accountability capabilities
-     * are separately gated and are not assigned to any default role.
-     */
-    'workflows.view' => ['module' => 'phase5', 'label' => 'View workflows', 'protected' => false],
-    'workflows.create' => ['module' => 'phase5', 'label' => 'Configure workflows', 'protected' => false],
-    'workflows.update' => ['module' => 'phase5', 'label' => 'Update workflow definitions', 'protected' => false],
-    'workflows.transition' => ['module' => 'phase5', 'label' => 'Advance workflow instances', 'protected' => false],
-
-    'tasks.view' => ['module' => 'phase5', 'label' => 'View tasks', 'protected' => false],
-    'tasks.create' => ['module' => 'phase5', 'label' => 'Create tasks', 'protected' => false],
-    'tasks.update' => ['module' => 'phase5', 'label' => 'Update tasks', 'protected' => false],
-    'tasks.delete' => ['module' => 'phase5', 'label' => 'Archive tasks', 'protected' => false],
-    'tasks.assign' => ['module' => 'phase5', 'label' => 'Assign tasks', 'protected' => false],
-    'tasks.transition' => ['module' => 'phase5', 'label' => 'Change task status', 'protected' => false],
-
-    'collaboration.view' => ['module' => 'phase5', 'label' => 'View internal discussions', 'protected' => false],
-    'collaboration.comment' => ['module' => 'phase5', 'label' => 'Add internal comments', 'protected' => false],
-    'collaboration.mention' => ['module' => 'phase5', 'label' => 'Mention colleagues', 'protected' => false],
-    'collaboration.moderate' => ['module' => 'phase5', 'label' => 'Moderate internal discussions', 'protected' => false],
-
-    'accountability.create' => ['module' => 'phase5', 'label' => 'Submit feedback through authorized channels', 'protected' => false],
-    'accountability.view' => ['module' => 'phase5', 'label' => 'View accountability cases', 'protected' => false],
-    'accountability.update' => ['module' => 'phase5', 'label' => 'Update accountability cases', 'protected' => false],
-    'accountability.assign' => ['module' => 'phase5', 'label' => 'Assign accountability cases', 'protected' => false],
-    'accountability.view_sensitive' => ['module' => 'phase5', 'label' => 'View sensitive accountability notes', 'protected' => false],
-
-    'referrals.view' => ['module' => 'phase5', 'label' => 'View referrals', 'protected' => false],
-    'referrals.create' => ['module' => 'phase5', 'label' => 'Create non-identifying referrals', 'protected' => false],
-    'referrals.update' => ['module' => 'phase5', 'label' => 'Update referrals', 'protected' => false],
-    'referrals.transition' => ['module' => 'phase5', 'label' => 'Change referral status', 'protected' => false],
-
-    'notifications.view' => ['module' => 'phase5', 'label' => 'View notification inbox', 'protected' => false],
-    'notifications.preferences' => ['module' => 'phase5', 'label' => 'Manage notification preferences', 'protected' => false],
-
-    'automations.view' => ['module' => 'phase5', 'label' => 'View automation rules', 'protected' => false],
-    'automations.create' => ['module' => 'phase5', 'label' => 'Configure automation rules', 'protected' => false],
-    'automations.update' => ['module' => 'phase5', 'label' => 'Update automation rules', 'protected' => false],
-    'automations.execute' => ['module' => 'phase5', 'label' => 'Run or retry automation executions', 'protected' => false],
-
-    'calendar.view' => ['module' => 'phase5', 'label' => 'View institutional calendar', 'protected' => false],
-
-    'documents.review' => ['module' => 'phase5', 'label' => 'Review routed documents', 'protected' => false],
-    'documents.submit_review' => ['module' => 'phase5', 'label' => 'Submit documents for technical review', 'protected' => false],
-
-    'integrations.view' => ['module' => 'phase5', 'label' => 'View integration registry', 'protected' => false],
-    'integrations.create' => ['module' => 'phase5', 'label' => 'Register integrations', 'protected' => false],
-    'integrations.update' => ['module' => 'phase5', 'label' => 'Update integration configuration', 'protected' => false],
-    'integrations.retry' => ['module' => 'phase5', 'label' => 'Retry webhook deliveries', 'protected' => false],
-
-    'dashboards.view' => ['module' => 'phase5', 'label' => 'View institutional operations dashboard', 'protected' => false],
+$supported = [
+    'users.view', 'users.create', 'users.update', 'users.delete',
+    'users.assign_roles', 'users.reset_password',
+    'roles.view', 'roles.create', 'roles.update', 'roles.delete',
+    'permissions.view',
+    'settings.view', 'settings.update', 'audit_logs.view', 'audit_logs.export',
+    'news.view', 'news.create', 'news.update', 'news.delete', 'news.publish', 'news.unpublish',
+    'programs.view', 'programs.create', 'programs.update', 'programs.delete', 'programs.publish', 'programs.unpublish',
+    'projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.publish', 'projects.unpublish',
+    'publications.view', 'publications.create', 'publications.update', 'publications.delete',
+    'publications.publish', 'publications.unpublish',
+    'pillars.view', 'pillars.create', 'pillars.update', 'pillars.delete', 'pillars.publish',
+    'media.view', 'media.upload', 'media.update', 'media.delete',
+    'homepage.view', 'homepage.update',
+    'directory_partners.view', 'directory_partners.create', 'directory_partners.update',
+    'directory_partners.delete', 'directory_partners.publish', 'directory_partners.unpublish',
+    'inquiries.view', 'inquiries.view_all', 'inquiries.view_assigned',
+    'inquiries.assign', 'inquiries.add_internal_note', 'inquiries.reply',
+    'email_templates.view', 'email_templates.create', 'email_templates.update', 'email_templates.delete',
+    'inquiries.update',
 ];
+
+$moduleFor = static function (string $key): string {
+    if (str_starts_with($key, 'documents.review') || str_starts_with($key, 'documents.submit_review')) {
+        return 'phase5';
+    }
+
+    // Preserve the original workflow-reserved module for this historical key.
+    if ($key === 'inquiries.update') {
+        return 'content';
+    }
+
+    $prefix = strstr($key, '.', true) ?: $key;
+
+    return match ($prefix) {
+        'users', 'roles', 'permissions' => 'iam',
+        'settings', 'audit_logs', 'audit_archives' => 'platform',
+        'news', 'programs', 'projects', 'publications', 'pillars', 'media',
+        'homepage', 'directory_partners', 'inquiries', 'email_templates' => 'website',
+        'content' => 'content',
+        'locations', 'interventions', 'activities', 'distributions', 'inventory',
+        'volunteers', 'committees', 'partners', 'partner_contacts', 'grants',
+        'meal', 'assessments', 'reports', 'documents' => 'operations',
+        'workflows', 'tasks', 'collaboration', 'accountability', 'referrals',
+        'notifications', 'automations', 'calendar', 'integrations', 'dashboards' => 'phase5',
+        default => 'general',
+    };
+};
+
+$categoryFor = static function (string $key, string $module): string {
+    if ($key === 'inquiries.update') {
+        return 'website';
+    }
+
+    if (in_array($key, [
+        'roles.grant_protected',
+        'permissions.create',
+        'permissions.update',
+        'permissions.delete',
+        'audit_archives.manage',
+        'audit_archives.cleanup',
+    ], true)) {
+        return 'internal';
+    }
+
+    return match ($module) {
+        'iam' => 'identity_access',
+        'platform' => 'platform_administration',
+        'website' => 'website',
+        'content' => 'workflow_reserved',
+        'operations' => 'operations',
+        'phase5' => 'phase5',
+        default => 'general',
+    };
+};
+
+$arabicActions = [
+    'view' => 'عرض',
+    'view_all' => 'عرض الكل',
+    'view_assigned' => 'عرض المُخصص',
+    'view_sensitive' => 'عرض الملاحظات الحساسة',
+    'create' => 'إنشاء',
+    'update' => 'تعديل',
+    'delete' => 'حذف',
+    'publish' => 'نشر',
+    'unpublish' => 'إلغاء نشر',
+    'archive' => 'أرشفة',
+    'upload' => 'رفع',
+    'download' => 'تنزيل',
+    'assign' => 'تعيين',
+    'assign_roles' => 'تعيين أدوار',
+    'reset_password' => 'إعادة تعيين كلمة مرور',
+    'transition' => 'تغيير حالة',
+    'reconcile' => 'تسوية',
+    'receive' => 'استلام',
+    'issue' => 'صرف',
+    'transfer' => 'نقل',
+    'adjust' => 'تعديل',
+    'reverse' => 'عكس',
+    'verify' => 'تحقق',
+    'review' => 'مراجعة',
+    'submit_review' => 'إرسال للمراجعة',
+    'submit' => 'تسجيل',
+    'moderate' => 'إشراف',
+    'comment' => 'إضافة تعليق',
+    'mention' => 'إشارة إلى',
+    'reply' => 'رد على',
+    'add_internal_note' => 'إضافة ملاحظة داخلية',
+    'export' => 'تصدير',
+    'manage' => 'إدارة',
+    'cleanup' => 'تنظيف',
+    'grant_protected' => 'منح صلاحيات محمية',
+    'preferences' => 'إعدادات',
+    'execute' => 'تشغيل',
+    'retry' => 'إعادة محاولة',
+];
+
+$arabicResources = [
+    'users' => 'المستخدمين',
+    'roles' => 'الأدوار',
+    'permissions' => 'الصلاحيات',
+    'settings' => 'الإعدادات',
+    'audit_logs' => 'سجلات التدقيق',
+    'audit_archives' => 'أرشيف سجلات التدقيق',
+    'content' => 'المحتوى',
+    'news' => 'الأخبار',
+    'programs' => 'البرامج',
+    'projects' => 'المشاريع',
+    'publications' => 'الإصدارات',
+    'pillars' => 'المحاور الاستراتيجية',
+    'media' => 'الوسائط',
+    'homepage' => 'الصفحة الرئيسية',
+    'directory_partners' => 'دليل الشركاء',
+    'inquiries' => 'الاستفسارات',
+    'email_templates' => 'قوالب البريد الإلكتروني',
+    'locations' => 'المواقع الجغرافية',
+    'interventions' => 'التدخلات',
+    'activities' => 'الأنشطة',
+    'distributions' => 'التوزيعات',
+    'inventory' => 'المخزون',
+    'volunteers' => 'سجلات المتطوعين',
+    'committees' => 'سجلات المشاركة المجتمعية',
+    'partners' => 'علاقات الشركاء والجهات المانحة',
+    'partner_contacts' => 'جهات اتصال الشركاء',
+    'grants' => 'المنح والمقترحات',
+    'meal' => 'سجلات التقييم والمراقبة',
+    'assessments' => 'التقييمات والبحوث',
+    'reports' => 'التقارير التشغيلية',
+    'documents' => 'المستندات',
+    'workflows' => 'سير العمل',
+    'tasks' => 'المهام',
+    'collaboration' => 'المناقشات الداخلية',
+    'accountability' => 'حالات المساءلة',
+    'referrals' => 'الإحالات',
+    'notifications' => 'الإشعارات',
+    'automations' => 'قواعد الأتمتة',
+    'calendar' => 'التقويم المؤسسي',
+    'integrations' => 'سجل التكاملات',
+    'dashboards' => 'لوحات العمليات المؤسسية',
+];
+
+$arabicLabelFor = static function (string $key) use ($arabicActions, $arabicResources): string {
+    [$resource, $action] = array_pad(explode('.', $key, 2), 2, 'view');
+    $actionLabel = $arabicActions[$action] ?? 'إدارة';
+    $resourceLabel = $arabicResources[$resource] ?? $resource;
+
+    return trim("{$actionLabel} {$resourceLabel}");
+};
+
+$definition = static function (
+    string $key,
+    string $label,
+    bool $protected,
+    array $supported,
+    callable $moduleFor,
+    callable $categoryFor,
+    callable $arabicLabelFor,
+): array {
+    $module = $moduleFor($key);
+    $category = $categoryFor($key, $module);
+    $isSupported = in_array($key, $supported, true);
+    $labelAr = $arabicLabelFor($key);
+    $status = match (true) {
+        $isSupported => 'supported',
+        $category === 'internal' => 'internal',
+        $category === 'workflow_reserved' => 'reserved',
+        $category === 'operations', $category === 'phase5' => 'hidden',
+        default => 'unsupported',
+    };
+
+    return [
+        'module' => $module,
+        'label' => $label,
+        'label_ar' => $labelAr,
+        'description' => 'Allows the user to '.lcfirst($label).'.',
+        'description_ar' => "تتيح هذه الصلاحية للمستخدم: {$labelAr}.",
+        'category' => $category,
+        'status' => $status,
+        'dashboard_supported' => $isSupported,
+        'protected' => $protected,
+    ];
+};
+
+/**
+ * Existing key and protection flags are preserved. Metadata is derived once
+ * so the code catalog has stable identifiers, bilingual labels, descriptions,
+ * categories, and explicit support status.
+ *
+ * @var array<string, array{0: string, 1: bool}> $definitions
+ */
+$definitions = [
+    'users.view' => ['View users', true],
+    'users.create' => ['Create users', true],
+    'users.update' => ['Update users', true],
+    'users.delete' => ['Delete users', true],
+    'users.assign_roles' => ['Assign user roles', true],
+    'users.reset_password' => ['Reset user passwords', true],
+
+    'roles.view' => ['View roles', true],
+    'roles.create' => ['Create roles', true],
+    'roles.update' => ['Update roles', true],
+    'roles.delete' => ['Delete roles', true],
+    'roles.grant_protected' => ['Grant protected permissions', true],
+
+    'permissions.view' => ['View permissions', true],
+    'permissions.create' => ['Create permissions', true],
+    'permissions.update' => ['Update permissions', true],
+    'permissions.delete' => ['Delete permissions', true],
+
+    'settings.view' => ['View settings', true],
+    'settings.update' => ['Update settings', true],
+    'audit_logs.view' => ['View audit logs', true],
+    'audit_logs.export' => ['Export audit logs', true],
+    'audit_archives.view' => ['View audit archives', true],
+    'audit_archives.download' => ['Download audit archives', true],
+    'audit_archives.manage' => ['Manage audit archives', true],
+    'audit_archives.cleanup' => ['Clean up archived audit logs', true],
+
+    'content.view' => ['View content', false],
+    'content.create' => ['Create content', false],
+    'content.update' => ['Update content', false],
+    'content.review' => ['Review content', false],
+    'content.publish' => ['Publish content', false],
+    'content.archive' => ['Archive content', false],
+    'inquiries.update' => ['Update inquiry status', false],
+
+    'news.view' => ['View news', false],
+    'news.create' => ['Create news', false],
+    'news.update' => ['Edit news', false],
+    'news.delete' => ['Delete news', false],
+    'news.publish' => ['Publish news', false],
+    'news.unpublish' => ['Unpublish news', false],
+
+    'programs.view' => ['View programs', false],
+    'programs.create' => ['Create programs', false],
+    'programs.update' => ['Edit programs', false],
+    'programs.delete' => ['Delete programs', false],
+    'programs.publish' => ['Publish programs', false],
+    'programs.unpublish' => ['Unpublish programs', false],
+
+    'projects.view' => ['View projects', false],
+    'projects.create' => ['Create projects', false],
+    'projects.update' => ['Edit projects', false],
+    'projects.delete' => ['Delete projects', false],
+    'projects.publish' => ['Publish projects', false],
+    'projects.unpublish' => ['Unpublish projects', false],
+
+    'publications.view' => ['View publications', false],
+    'publications.create' => ['Create publications', false],
+    'publications.update' => ['Edit publications', false],
+    'publications.delete' => ['Delete publications', false],
+    'publications.publish' => ['Publish publications', false],
+    'publications.unpublish' => ['Unpublish publications', false],
+
+    'pillars.view' => ['View strategic pillars', false],
+    'pillars.create' => ['Create strategic pillars', false],
+    'pillars.update' => ['Edit strategic pillars', false],
+    'pillars.delete' => ['Delete strategic pillars', false],
+    'pillars.publish' => ['Publish strategic pillars', false],
+
+    'media.view' => ['View media library', false],
+    'media.upload' => ['Upload media', false],
+    'media.update' => ['Edit media', false],
+    'media.delete' => ['Delete media', false],
+    'homepage.view' => ['View homepage content', false],
+    'homepage.update' => ['Edit homepage content', false],
+
+    'directory_partners.view' => ['View partners directory', false],
+    'directory_partners.create' => ['Create partners directory entries', false],
+    'directory_partners.update' => ['Edit partners directory entries', false],
+    'directory_partners.delete' => ['Delete partners directory entries', false],
+    'directory_partners.publish' => ['Publish partners directory entries', false],
+    'directory_partners.unpublish' => ['Unpublish partners directory entries', false],
+
+    'inquiries.view' => ['View contact inquiries', false],
+    'inquiries.view_all' => ['View all inquiries', false],
+    'inquiries.view_assigned' => ['View assigned inquiries', false],
+    'inquiries.assign' => ['Assign inquiries', false],
+    'inquiries.add_internal_note' => ['Add internal inquiry notes', false],
+    'inquiries.reply' => ['Reply to inquiries by email', false],
+
+    'email_templates.view' => ['View email templates', false],
+    'email_templates.create' => ['Create email templates', false],
+    'email_templates.update' => ['Edit email templates', false],
+    'email_templates.delete' => ['Delete email templates', false],
+
+    'locations.view' => ['View geographic locations', false],
+    'locations.create' => ['Create geographic locations', false],
+    'locations.update' => ['Update geographic locations', false],
+    'locations.transition' => ['Change geographic location status', false],
+
+    'interventions.view' => ['View interventions', false],
+    'interventions.create' => ['Create interventions', false],
+    'interventions.update' => ['Update interventions', false],
+    'interventions.transition' => ['Change intervention status', false],
+
+    'activities.view' => ['View activities', false],
+    'activities.create' => ['Create activities', false],
+    'activities.update' => ['Update activities', false],
+    'activities.transition' => ['Change activity status', false],
+
+    'distributions.view' => ['View distributions', false],
+    'distributions.create' => ['Create distributions', false],
+    'distributions.update' => ['Update distributions', false],
+    'distributions.transition' => ['Change distribution status', false],
+    'distributions.reconcile' => ['Reconcile distributions', false],
+
+    'inventory.view' => ['View inventory', false],
+    'inventory.create' => ['Create inventory master data', false],
+    'inventory.update' => ['Update inventory master data', false],
+    'inventory.transition' => ['Change inventory status', false],
+    'inventory.receive' => ['Receive stock', false],
+    'inventory.issue' => ['Issue stock', false],
+    'inventory.transfer' => ['Transfer stock', false],
+    'inventory.adjust' => ['Adjust stock', false],
+    'inventory.reverse' => ['Reverse stock movements', false],
+
+    'volunteers.view' => ['View volunteer program records', false],
+    'volunteers.create' => ['Create volunteer program records', false],
+    'volunteers.update' => ['Update volunteer program records', false],
+    'volunteers.transition' => ['Change volunteer record status', false],
+
+    'committees.view' => ['View community participation records', false],
+    'committees.create' => ['Create community participation records', false],
+    'committees.update' => ['Update community participation records', false],
+    'committees.transition' => ['Change community record status', false],
+
+    'partners.view' => ['View partner and donor relationships', false],
+    'partners.create' => ['Create partner and donor records', false],
+    'partners.update' => ['Update partner and donor records', false],
+    'partners.transition' => ['Change relationship status', false],
+
+    'partner_contacts.view' => ['View restricted partner contacts', false],
+    'partner_contacts.create' => ['Create restricted partner contacts', false],
+    'partner_contacts.update' => ['Update restricted partner contacts', false],
+    'partner_contacts.transition' => ['Change partner contact status', false],
+
+    'grants.view' => ['View grants and proposals', false],
+    'grants.create' => ['Create grants and proposals', false],
+    'grants.update' => ['Update grants and proposals', false],
+    'grants.transition' => ['Change grant and proposal status', false],
+    'grants.submit' => ['Record proposal submission evidence', false],
+
+    'meal.view' => ['View MEAL records', false],
+    'meal.create' => ['Create MEAL records', false],
+    'meal.update' => ['Update MEAL records', false],
+    'meal.transition' => ['Change MEAL status', false],
+    'meal.verify' => ['Verify MEAL measurements', false],
+
+    'assessments.view' => ['View assessments and research', false],
+    'assessments.create' => ['Create assessments and research', false],
+    'assessments.update' => ['Update assessments and research', false],
+    'assessments.transition' => ['Change assessment status', false],
+
+    'reports.view' => ['View operational reports and dashboards', false],
+    'reports.create' => ['Generate operational reports', false],
+    'reports.update' => ['Update operational report records', false],
+    'reports.export' => ['Export operational reports', false],
+
+    'documents.view' => ['View operational document links', false],
+    'documents.upload' => ['Attach operational documents', false],
+    'documents.download' => ['Download operational documents', false],
+
+    'workflows.view' => ['View workflows', false],
+    'workflows.create' => ['Configure workflows', false],
+    'workflows.update' => ['Update workflow definitions', false],
+    'workflows.transition' => ['Advance workflow instances', false],
+
+    'tasks.view' => ['View tasks', false],
+    'tasks.create' => ['Create tasks', false],
+    'tasks.update' => ['Update tasks', false],
+    'tasks.delete' => ['Archive tasks', false],
+    'tasks.assign' => ['Assign tasks', false],
+    'tasks.transition' => ['Change task status', false],
+
+    'collaboration.view' => ['View internal discussions', false],
+    'collaboration.comment' => ['Add internal comments', false],
+    'collaboration.mention' => ['Mention colleagues', false],
+    'collaboration.moderate' => ['Moderate internal discussions', false],
+
+    'accountability.create' => ['Submit feedback through authorized channels', false],
+    'accountability.view' => ['View accountability cases', false],
+    'accountability.update' => ['Update accountability cases', false],
+    'accountability.assign' => ['Assign accountability cases', false],
+    'accountability.view_sensitive' => ['View sensitive accountability notes', false],
+
+    'referrals.view' => ['View referrals', false],
+    'referrals.create' => ['Create non-identifying referrals', false],
+    'referrals.update' => ['Update referrals', false],
+    'referrals.transition' => ['Change referral status', false],
+
+    'notifications.view' => ['View notification inbox', false],
+    'notifications.preferences' => ['Manage notification preferences', false],
+
+    'automations.view' => ['View automation rules', false],
+    'automations.create' => ['Configure automation rules', false],
+    'automations.update' => ['Update automation rules', false],
+    'automations.execute' => ['Run or retry automation executions', false],
+
+    'calendar.view' => ['View institutional calendar', false],
+
+    'documents.review' => ['Review routed documents', false],
+    'documents.submit_review' => ['Submit documents for technical review', false],
+
+    'integrations.view' => ['View integration registry', false],
+    'integrations.create' => ['Register integrations', false],
+    'integrations.update' => ['Update integration configuration', false],
+    'integrations.retry' => ['Retry webhook deliveries', false],
+
+    'dashboards.view' => ['View institutional operations dashboard', false],
+];
+
+$catalog = [];
+
+foreach ($definitions as $key => [$label, $protected]) {
+    $catalog[$key] = $definition($key, $label, $protected, $supported, $moduleFor, $categoryFor, $arabicLabelFor);
+}
+
+return $catalog;

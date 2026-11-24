@@ -6,6 +6,7 @@ import Card from '../../../Components/Ui/Card.vue'
 import TextField from '../../../Components/Ui/TextField.vue'
 import Button from '../../../Components/Ui/Button.vue'
 import Badge from '../../../Components/Ui/Badge.vue'
+import MultiSelect from '../../../Components/Selection/MultiSelect.vue'
 import FormSection from '../../../Components/Dashboard/FormSection.vue'
 import { useLocale } from '../../../Composables/useLocale'
 
@@ -21,11 +22,12 @@ const details = useForm({ key: props.role.key, name: props.role.name, descriptio
 const permissions = useForm({ permissions: props.role.permissionIds ?? [] })
 const protectedCount = computed(() => props.permissionGroups.flatMap((group) => group.items).filter((item) => item.is_protected).length)
 
-function togglePermission(id) {
-    permissions.permissions = permissions.permissions.includes(id)
-        ? permissions.permissions.filter((item) => item !== id)
-        : [...permissions.permissions, id]
-}
+const permissionOptions = computed(() => props.permissionGroups.flatMap((group) => group.items.map((item) => ({
+    value: item.id,
+    label: item.key,
+    group: group.module,
+    badge: item.is_protected ? t('permissions_page.protected') : '',
+}))))
 </script>
 
 <template>
@@ -51,16 +53,15 @@ function togglePermission(id) {
             <form @submit.prevent="permissions.put(localePath(`/admin/roles/${role.id}/permissions`))">
                 <FormSection :title="t('roles_page.permissions')" :hint="`${protectedCount} ${t('permissions_page.protected')}`">
                     <div class="pc-stack">
-                        <fieldset v-for="group in permissionGroups" :key="group.module" class="pc-form-section">
-                            <legend class="pc-nav-label pc-directional">{{ group.module }}</legend>
-                            <div class="pc-form-grid">
-                                <label v-for="item in group.items" :key="item.id" class="pc-checkbox">
-                                    <input type="checkbox" :checked="permissions.permissions.includes(item.id)" @change="togglePermission(item.id)">
-                                    <span class="pc-directional">{{ item.key }}</span>
-                                    <Badge v-if="item.is_protected" tone="warning">{{ t('permissions_page.protected') }}</Badge>
-                                </label>
-                            </div>
-                        </fieldset>
+                        <MultiSelect
+                            v-model="permissions.permissions"
+                            :label="t('roles_page.permissions')"
+                            :options="permissionOptions"
+                            :error="permissions.errors.permissions || ''"
+                            :empty-text="t('no_results')"
+                            :chip-limit="5"
+                            clearable
+                        />
                     </div>
                 </FormSection>
                 <div class="pc-form-actions">

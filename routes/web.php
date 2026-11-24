@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\AccessController;
+use App\Http\Controllers\Admin\AuditArchiveController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -14,12 +16,12 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Cms\ArticleController;
 use App\Http\Controllers\Cms\AuthController;
 use App\Http\Controllers\Cms\DashboardController;
+use App\Http\Controllers\Cms\DirectoryPartnerCategoryController;
+use App\Http\Controllers\Cms\DirectoryPartnerController;
 use App\Http\Controllers\Cms\EmailTemplateController;
 use App\Http\Controllers\Cms\HomepageController;
 use App\Http\Controllers\Cms\InquiryController;
 use App\Http\Controllers\Cms\MediaController as CmsMediaController;
-use App\Http\Controllers\Cms\NavigationController;
-use App\Http\Controllers\Cms\PageController as CmsPageController;
 use App\Http\Controllers\Cms\PillarController as CmsPillarController;
 use App\Http\Controllers\Cms\PreviewController;
 use App\Http\Controllers\Cms\ProgramController as CmsProgramController;
@@ -94,13 +96,14 @@ Route::prefix('{locale}')
         Route::get('/publications/{publication}', [PublicationController::class, 'show'])->name('public.publications.show');
 
         Route::get('/transparency', [StaticPageController::class, 'transparency'])->name('public.transparency');
-        Route::get('/partnerships', [StaticPageController::class, 'partnerships'])->name('public.partnerships');
+        Route::get('/partners', [StaticPageController::class, 'partners'])->name('public.partners');
+        Route::get('/partnerships', [StaticPageController::class, 'partners'])->name('public.partnerships');
         Route::get('/get-involved', [StaticPageController::class, 'involve'])->name('public.involve');
         Route::get('/contact', [StaticPageController::class, 'contact'])->name('public.contact');
+        Route::get('/complaints', [StaticPageController::class, 'complaints'])->name('public.complaints');
 
         Route::post('/contact/inquiry', [PublicInquiryController::class, 'contact'])->name('public.inquiry.contact');
         Route::post('/volunteer/inquiry', [PublicInquiryController::class, 'volunteer'])->name('public.inquiry.volunteer');
-        Route::post('/partnership/inquiry', [PublicInquiryController::class, 'partnership'])->name('public.inquiry.partnership');
 
         Route::get('/pages/{page}', [PageController::class, 'show'])->name('public.page');
         Route::get('/media/{uuid}/download', [MediaController::class, 'download'])->name('public.media.download');
@@ -116,17 +119,7 @@ Route::prefix('{locale}')
             // which redirects guests to the real localized `cms.login` route.
             // Account status is enforced before permission evaluation.
             Route::middleware('account.active')->group(function (): void {
-                Route::get('/', DashboardController::class)->middleware('cms:pages.view')->name('dashboard');
-
-                Route::middleware('cms:pages.view')->group(function (): void {
-                    Route::get('/pages', [CmsPageController::class, 'index'])->name('pages.index');
-                    Route::get('/pages/create', [CmsPageController::class, 'create'])->name('pages.create');
-                    Route::post('/pages', [CmsPageController::class, 'store'])->name('pages.store');
-                    Route::get('/pages/{content}/edit', [CmsPageController::class, 'edit'])->name('pages.edit');
-                    Route::put('/pages/{content}', [CmsPageController::class, 'update'])->name('pages.update');
-                    Route::delete('/pages/{content}', [CmsPageController::class, 'destroy'])->name('pages.destroy');
-                    Route::post('/pages/{content}/status', [CmsPageController::class, 'status'])->name('pages.status');
-                });
+                Route::get('/', DashboardController::class)->middleware('cms:pillars.view')->name('dashboard');
 
                 Route::middleware('cms:pillars.view')->group(function (): void {
                     Route::get('/pillars', [CmsPillarController::class, 'index'])->name('pillars.index');
@@ -182,40 +175,58 @@ Route::prefix('{locale}')
                 Route::delete('/media/{media}', [CmsMediaController::class, 'destroy'])->middleware('cms:media.delete')->name('media.destroy');
                 Route::get('/media/{media}/signed', [CmsMediaController::class, 'signed'])->middleware('cms:media.view')->name('media.signed');
 
-                Route::get('/navigation', [NavigationController::class, 'index'])->middleware('cms:navigation.view')->name('navigation.index');
-                Route::put('/navigation/{menu}', [NavigationController::class, 'update'])->middleware('cms:navigation.update')->name('navigation.update');
-
                 Route::get('/homepage', [HomepageController::class, 'index'])->middleware('cms:homepage.view')->name('homepage.index');
                 Route::put('/homepage', [HomepageController::class, 'update'])->middleware('cms:homepage.update')->name('homepage.update');
 
+                Route::prefix('partner-directory')->as('partner-directory.')->middleware('cms:directory_partners.view')->group(function (): void {
+                    Route::get('/', [DirectoryPartnerController::class, 'index'])->name('index');
+                    Route::get('/categories', [DirectoryPartnerCategoryController::class, 'index'])->name('categories.index');
+                    Route::get('/partners/create', [DirectoryPartnerController::class, 'create'])->middleware('cms:directory_partners.create')->name('partners.create');
+                    Route::post('/partners', [DirectoryPartnerController::class, 'store'])->middleware('cms:directory_partners.create')->name('partners.store');
+                    Route::get('/partners/{partner}/edit', [DirectoryPartnerController::class, 'edit'])->name('partners.edit');
+                    Route::put('/partners/{partner}', [DirectoryPartnerController::class, 'update'])->middleware('cms:directory_partners.update')->name('partners.update');
+                    Route::delete('/partners/{partner}', [DirectoryPartnerController::class, 'destroy'])->middleware('cms:directory_partners.delete')->name('partners.destroy');
+                    Route::post('/partners/{partner}/status', [DirectoryPartnerController::class, 'status'])->name('partners.status');
+                    Route::post('/partners/reorder', [DirectoryPartnerController::class, 'reorder'])->middleware('cms:directory_partners.update')->name('partners.reorder');
+
+                    Route::get('/categories/create', [DirectoryPartnerCategoryController::class, 'create'])->middleware('cms:directory_partners.create')->name('categories.create');
+                    Route::post('/categories', [DirectoryPartnerCategoryController::class, 'store'])->middleware('cms:directory_partners.create')->name('categories.store');
+                    Route::get('/categories/{category}/edit', [DirectoryPartnerCategoryController::class, 'edit'])->name('categories.edit');
+                    Route::put('/categories/{category}', [DirectoryPartnerCategoryController::class, 'update'])->middleware('cms:directory_partners.update')->name('categories.update');
+                    Route::delete('/categories/{category}', [DirectoryPartnerCategoryController::class, 'destroy'])->middleware('cms:directory_partners.delete')->name('categories.destroy');
+                    Route::post('/categories/{category}/status', [DirectoryPartnerCategoryController::class, 'status'])->name('categories.status');
+                    Route::post('/categories/reorder', [DirectoryPartnerCategoryController::class, 'reorder'])->middleware('cms:directory_partners.update')->name('categories.reorder');
+                });
+
                 Route::get('/settings', [SettingController::class, 'index'])->middleware('cms:settings.view')->name('settings.index');
                 Route::put('/settings', [SettingController::class, 'update'])->middleware('cms:settings.update')->name('settings.update');
+                Route::post('/settings/image', [SettingController::class, 'uploadImage'])->middleware('cms:settings.update')->name('settings.upload-image');
 
                 Route::get('/preview/{resource}/{content}', PreviewController::class)->name('preview');
 
                 Route::get('/inquiries', [InquiryController::class, 'index'])->middleware('cms:inquiries.view')->name('inquiries.index');
                 Route::get('/inquiries/{type}/{inquiry}', [InquiryController::class, 'show'])
-                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereIn('type', ['contact', 'volunteer'])
                     ->whereNumber('inquiry')
                     ->middleware('cms:inquiries.view')
                     ->name('inquiries.show');
                 Route::put('/inquiries/{type}/{inquiry}/status', [InquiryController::class, 'status'])
-                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereIn('type', ['contact', 'volunteer'])
                     ->whereNumber('inquiry')
                     ->middleware('cms:inquiries.update')
                     ->name('inquiries.status');
                 Route::put('/inquiries/{type}/{inquiry}/assign', [InquiryController::class, 'assign'])
-                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereIn('type', ['contact', 'volunteer'])
                     ->whereNumber('inquiry')
                     ->middleware('cms:inquiries.assign')
                     ->name('inquiries.assign');
                 Route::post('/inquiries/{type}/{inquiry}/notes', [InquiryController::class, 'note'])
-                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereIn('type', ['contact', 'volunteer'])
                     ->whereNumber('inquiry')
                     ->middleware('cms:inquiries.add_internal_note')
                     ->name('inquiries.note');
                 Route::post('/inquiries/{type}/{inquiry}/reply', [InquiryController::class, 'reply'])
-                    ->whereIn('type', ['contact', 'volunteer', 'partnership'])
+                    ->whereIn('type', ['contact', 'volunteer'])
                     ->whereNumber('inquiry')
                     ->middleware('cms:inquiries.reply')
                     ->name('inquiries.reply');
@@ -225,6 +236,8 @@ Route::prefix('{locale}')
                     Route::post('/email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
                 });
                 Route::post('/email-templates', [EmailTemplateController::class, 'store'])->middleware('cms:email_templates.create')->name('email-templates.store');
+                Route::post('/email-templates/{template}/duplicate', [EmailTemplateController::class, 'duplicate'])->middleware('cms:email_templates.create')->name('email-templates.duplicate');
+                Route::patch('/email-templates/{template}/status', [EmailTemplateController::class, 'setStatus'])->middleware('cms:email_templates.update')->name('email-templates.status');
                 Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])->middleware('cms:email_templates.update')->name('email-templates.update');
                 Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])->middleware('cms:email_templates.delete')->name('email-templates.destroy');
             });
@@ -270,25 +283,30 @@ Route::prefix('{locale}')
                 Route::delete('users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
                 Route::patch('users/{user}/status', [UserController::class, 'updateStatus'])->middleware('permission:users.update')->name('users.status');
                 Route::put('users/{user}/roles', [UserController::class, 'syncRoles'])->middleware('permission:users.assign_roles')->name('users.roles');
-                Route::post('users/{user}/reset-password', [UserController::class, 'sendPasswordReset'])->middleware('permission:users.reset_password')->name('users.reset-password');
+                Route::post('users/{user}/reset-password', [UserController::class, 'sendPasswordReset'])->middleware(['permission:users.reset_password', 'throttle:3,1'])->name('users.reset-password');
 
-                Route::get('roles', [RoleController::class, 'index'])->middleware('permission:roles.view')->name('roles.index');
+                // One canonical Roles & Permissions page. The old role and
+                // permission index URLs remain as bookmark-compatible redirects.
+                Route::get('access', [AccessController::class, 'index'])->middleware('can:access.view')->name('access.index');
+                Route::get('roles', [RoleController::class, 'index'])->middleware('can:access.view')->name('roles.index');
                 Route::get('roles/create', [RoleController::class, 'create'])->middleware('permission:roles.create')->name('roles.create');
                 Route::post('roles', [RoleController::class, 'store'])->middleware('permission:roles.create')->name('roles.store');
-                Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->middleware('permission:roles.view')->name('roles.edit');
+                Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->middleware('can:access.view')->name('roles.edit');
                 Route::put('roles/{role}', [RoleController::class, 'update'])->middleware('permission:roles.update')->name('roles.update');
                 Route::delete('roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:roles.delete')->name('roles.destroy');
                 Route::put('roles/{role}/permissions', [RoleController::class, 'syncPermissions'])->middleware('permission:roles.update')->name('roles.permissions');
 
                 Route::get('permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view')->name('permissions.index');
-                Route::get('permissions/create', [PermissionController::class, 'create'])->middleware('permission:permissions.create')->name('permissions.create');
-                Route::post('permissions', [PermissionController::class, 'store'])->middleware('permission:permissions.create')->name('permissions.store');
-                Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])->middleware('permission:permissions.view')->name('permissions.edit');
-                Route::put('permissions/{permission}', [PermissionController::class, 'update'])->middleware('permission:permissions.update')->name('permissions.update');
-                Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:permissions.delete')->name('permissions.destroy');
 
                 Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('permission:audit_logs.view')->name('audit-logs.index');
                 Route::get('audit-logs/export', [AuditLogController::class, 'export'])->middleware('permission:audit_logs.export')->name('audit-logs.export');
+                Route::get('audit-logs/{auditLog}', [AuditLogController::class, 'show'])->middleware('permission:audit_logs.view')->name('audit-logs.show');
+
+                Route::get('audit-archives', [AuditArchiveController::class, 'index'])->middleware('permission:audit_archives.view')->name('audit-archives.index');
+                Route::post('audit-archives', [AuditArchiveController::class, 'store'])->middleware('permission:audit_archives.manage')->name('audit-archives.store');
+                Route::get('audit-archives/{archive}', [AuditArchiveController::class, 'show'])->middleware('permission:audit_archives.view')->name('audit-archives.show');
+                Route::get('audit-archives/{archive}/download', [AuditArchiveController::class, 'download'])->middleware('permission:audit_archives.download')->name('audit-archives.download');
+                Route::post('audit-archives/{archive}/verify', [AuditArchiveController::class, 'verify'])->middleware('permission:audit_archives.manage')->name('audit-archives.verify');
 
                 Route::get('settings', [AdminSettingController::class, 'index'])->middleware('permission:settings.view')->name('settings.index');
                 Route::put('settings', [AdminSettingController::class, 'update'])->middleware('permission:settings.update')->name('settings.update');

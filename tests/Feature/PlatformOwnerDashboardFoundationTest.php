@@ -9,8 +9,10 @@ use App\Models\User;
 use App\Services\AccessManagementService;
 use App\Services\CmsAccess;
 use App\Services\RbacService;
+use App\Support\PermissionCatalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -106,42 +108,30 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
         $this->assertTrue(Gate::forUser($owner)->allows('publishDocument'));
     }
 
-    public function test_permission_forms_reject_all_institutional_authority_keys(): void
+    public function test_unified_access_page_rejects_all_institutional_authority_keys(): void
     {
         $owner = User::factory()->platformOwner()->create();
+        $role = Role::create(['key' => 'authority_assignment_target', 'name' => 'Authority assignment target']);
 
         foreach (['content.approve', 'content.sign-off', 'institutional.appoint', 'governance.ratify', 'future.module.signoff', 'documents.signoff_request', 'content.approvals'] as $key) {
-            $this->actingAs($owner)->post('/ar/admin/permissions', [
+            $this->assertFalse(PermissionCatalog::isSupported($key), $key);
+
+            $permission = Permission::create([
                 'key' => $key,
                 'name' => 'Reserved authority',
                 'module' => 'governance',
-            ])->assertSessionHasErrors('key');
+            ]);
 
-            $this->assertDatabaseMissing('permissions', ['key' => $key]);
+            $this->actingAs($owner)->put("/ar/admin/roles/{$role->id}/permissions", [
+                'permissions' => [$permission->id],
+            ])->assertSessionHasErrors('permissions.0');
+
+            $this->assertFalse($role->permissions()->where('permissions.id', $permission->id)->exists());
         }
 
-        $permission = Permission::create([
-            'key' => 'custom.technical_action',
-            'name' => 'Technical action',
-            'module' => 'custom',
-        ]);
-
-        $this->actingAs($owner)->put("/ar/admin/permissions/{$permission->id}", [
-            'key' => 'content.approval',
-            'name' => 'Reserved authority',
-            'module' => 'governance',
-        ])->assertSessionHasErrors('key');
-
-        $this->actingAs($owner)->put("/ar/admin/permissions/{$permission->id}", [
-            'key' => 'documents.signoff_request',
-            'name' => 'Reserved authority',
-            'module' => 'governance',
-        ])->assertSessionHasErrors('key');
-
-        $this->assertDatabaseHas('permissions', [
-            'id' => $permission->id,
-            'key' => 'custom.technical_action',
-        ]);
+        foreach (['admin.permissions.create', 'admin.permissions.store', 'admin.permissions.edit', 'admin.permissions.update', 'admin.permissions.destroy'] as $route) {
+            $this->assertFalse(Route::has($route), $route);
+        }
     }
 
     public function test_unauthenticated_users_are_redirected_from_every_administrative_surface(): void
@@ -211,12 +201,14 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
                 ->where('authority.institutional_approval.granted', false)
                 ->where('authority.institutional_approval.reason', fn ($value): bool => is_string($value) && $value !== '')
                 ->where('adminNavigation.0.key', 'overview')
-                ->where('adminNavigation.1.key', 'access')
-                ->where('adminNavigation.2.key', 'content')
-                ->where('adminNavigation', fn ($groups): bool => $groups->count() === 3
-                    && collect($groups->firstWhere('key', 'content')['items'])
+                ->where('adminNavigation.1.key', 'content')
+                ->where('adminNavigation.2.key', 'communications')
+                ->where('adminNavigation.3.key', 'identity')
+                ->where('adminNavigation.4.key', 'system')
+                ->where('adminNavigation', fn ($groups): bool => $groups->count() === 5
+                    && collect($groups->firstWhere('key', 'communications')['items'])
                         ->contains(fn ($item): bool => $item['key'] === 'email_templates'))
-                ->missing('adminNavigation.3'));
+                ->missing('adminNavigation.5'));
     }
 
     public function test_navigation_is_filtered_to_permissions_granted_to_a_normal_user(): void
@@ -238,7 +230,7 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
                 ->where('authority.is_platform_owner', false)
                 ->where('authority.institutional_approval.granted', false)
                 ->where('adminNavigation.0.key', 'overview')
-                ->where('adminNavigation.1.key', 'access')
+                ->where('adminNavigation.1.key', 'identity')
                 ->where('adminNavigation', fn ($groups): bool => count($groups) === 2));
     }
 
@@ -299,13 +291,19 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
                 ->where('adminNavigation.0.label', 'Overview'));
     }
 
-    public function test_role_and_permission_mutations_are_audit_logged(): void
+    public function test_role_mutations_are_audit_logged(): void
     {
         $owner = User::factory()->platformOwner()->create();
+        $permission = Permission::create([
+            'key' => 'news.view',
+            'name' => 'View news',
+            'module' => 'website',
+        ]);
 
         $this->actingAs($owner)->post('/ar/admin/roles', [
             'key' => 'audited_role',
             'name' => 'Audited role',
+            'permissions' => [$permission->id],
         ])->assertRedirect();
 
         $role = Role::where('key', 'audited_role')->firstOrFail();
@@ -315,25 +313,13 @@ class PlatformOwnerDashboardFoundationTest extends TestCase
             'name' => 'Audited role updated',
         ])->assertRedirect();
 
+        $this->actingAs($owner)->put("/ar/admin/roles/{$role->id}/permissions", [
+            'permissions' => [],
+        ])->assertRedirect();
+
         $this->actingAs($owner)->delete("/ar/admin/roles/{$role->id}")->assertRedirect();
 
-        $this->actingAs($owner)->post('/ar/admin/permissions', [
-            'key' => 'custom.audited_action',
-            'name' => 'Audited action',
-            'module' => 'custom',
-        ])->assertRedirect();
-
-        $permission = Permission::where('key', 'custom.audited_action')->firstOrFail();
-
-        $this->actingAs($owner)->put("/ar/admin/permissions/{$permission->id}", [
-            'key' => 'custom.audited_action',
-            'name' => 'Audited action updated',
-            'module' => 'custom',
-        ])->assertRedirect();
-
-        $this->actingAs($owner)->delete("/ar/admin/permissions/{$permission->id}")->assertRedirect();
-
-        foreach (['role.created', 'role.updated', 'role.deleted', 'permission.created', 'permission.updated', 'permission.deleted'] as $action) {
+        foreach (['role.created', 'role.updated', 'role.permissions_changed', 'role.deleted'] as $action) {
             $this->assertDatabaseHas('audit_logs', [
                 'action' => $action,
                 'actor_id' => $owner->id,

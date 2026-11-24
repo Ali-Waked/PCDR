@@ -43,7 +43,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $user?->toAccessArray(),
-                'permissions' => $user ? $this->rbac->permissionsFor($user)->all() : [],
+                'permissions' => $user ? $this->rbac->dashboardPermissionsFor($user)->all() : [],
                 'roles' => $user ? $this->rbac->rolesFor($user)->all() : [],
                 'scopes' => $user ? $this->rbac->publicScopesFor($user) : [],
                 'cmsPermissions' => $user ? app(CmsAccess::class)->permissionsFor($user) : [],
@@ -86,6 +86,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success') ?? $request->session()->get('flash.success'),
                 'error' => fn () => $request->session()->get('error') ?? $request->session()->get('flash.error'),
                 'warning' => fn () => $request->session()->get('flash.warning'),
+                'workflow' => fn () => $request->session()->get('flash.workflow'),
             ],
             'settings' => [
                 'public' => $this->settings->publicSettings($locale),

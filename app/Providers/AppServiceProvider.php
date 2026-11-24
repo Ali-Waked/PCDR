@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\AuditArchive;
 use App\Models\AuditLog;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Setting;
 use App\Models\User;
+use App\Policies\AuditArchivePolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
         Role::class => RolePolicy::class,
         Permission::class => PermissionPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
+        AuditArchive::class => AuditArchivePolicy::class,
         Setting::class => SettingPolicy::class,
     ];
 
@@ -60,6 +63,14 @@ class AppServiceProvider extends ServiceProvider
         foreach (array_keys(config('permissions', [])) as $permission) {
             Gate::define($permission, fn (User $user) => App::make(RbacService::class)->has($user, (string) $permission));
         }
+
+        // The unified Roles & Permissions page is reachable with either view
+        // permission. Mutation endpoints retain their own stricter gates.
+        Gate::define('access.view', function (User $user): bool {
+            $rbac = App::make(RbacService::class);
+
+            return $rbac->has($user, 'roles.view') || $rbac->has($user, 'permissions.view');
+        });
 
         RateLimiter::for('login', function (Request $request): Limit {
             $limit = (int) config('settings.definitions.security.login_rate_limit.default', 5);

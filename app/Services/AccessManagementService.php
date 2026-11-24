@@ -16,10 +16,18 @@ final class AccessManagementService
         private readonly SessionInvalidationService $sessions,
     ) {}
 
-    public function setStatus(User $user, string $status): void
+    public function setStatus(User $user, string $status, ?User $actor = null): void
     {
         if (! in_array($status, [User::STATUS_ACTIVE, User::STATUS_INACTIVE, User::STATUS_SUSPENDED], true)) {
             throw new \InvalidArgumentException('Invalid account status.');
+        }
+
+        if ($actor?->is($user) && $status !== User::STATUS_ACTIVE) {
+            throw new \RuntimeException('You cannot change the status of your own account.');
+        }
+
+        if ($user->isPlatformOwner() && $actor !== null && ! $actor->isPlatformOwner()) {
+            throw new \RuntimeException('Only a Platform Owner can change this account.');
         }
 
         if ($user->isPlatformOwner() && $status !== User::STATUS_ACTIVE && $this->activeOwnerCount() <= 1) {
@@ -44,8 +52,12 @@ final class AccessManagementService
         });
     }
 
-    public function delete(User $user): void
+    public function delete(User $user, ?User $actor = null): void
     {
+        if ($actor?->is($user)) {
+            throw new \RuntimeException('You cannot delete your own account.');
+        }
+
         if ($user->isPlatformOwner()) {
             throw new \RuntimeException('The Platform Owner account cannot be deleted.');
         }
@@ -64,6 +76,14 @@ final class AccessManagementService
     /** @param array<int, int> $roleIds */
     public function syncRoles(User $user, array $roleIds, ?User $actor = null): void
     {
+        if ($actor?->is($user)) {
+            throw new \RuntimeException('You cannot change the roles of your own account.');
+        }
+
+        if ($user->isPlatformOwner() && $actor !== null && ! $actor->isPlatformOwner()) {
+            throw new \RuntimeException('Only a Platform Owner can change this account.');
+        }
+
         $roles = Role::whereIn('id', $roleIds)->get();
         $before = ['roles' => $user->roles()->pluck('roles.key')->all()];
 

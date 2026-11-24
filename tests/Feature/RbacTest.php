@@ -9,6 +9,7 @@ use App\Services\AccessManagementService;
 use App\Services\RbacManagementService;
 use App\Services\RbacService;
 use App\Services\ScopeResolver;
+use App\Support\PermissionCatalog;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -24,9 +25,9 @@ class RbacTest extends TestCase
     {
         $role = Role::create(['key' => 'reviewer', 'name' => 'Reviewer']);
         $permission = Permission::create([
-            'key' => 'content.review',
-            'name' => 'Review content',
-            'module' => 'content',
+            'key' => 'news.view',
+            'name' => 'View news',
+            'module' => 'website',
         ]);
         $role->permissions()->attach($permission);
 
@@ -35,11 +36,40 @@ class RbacTest extends TestCase
 
         $rbac = app(RbacService::class);
 
-        $this->assertTrue($rbac->has($user, 'content.review'));
+        $this->assertTrue($rbac->has($user, 'news.view'));
 
         app(RbacManagementService::class)->syncRolePermissions($role, []);
 
-        $this->assertFalse($rbac->has($user, 'content.review'));
+        $this->assertFalse($rbac->has($user, 'news.view'));
+    }
+
+    public function test_historical_custom_permission_remains_effective_but_is_not_dashboard_assignable(): void
+    {
+        $role = Role::create(['key' => 'legacy_holder', 'name' => 'Legacy holder']);
+        $permission = Permission::create([
+            'key' => 'custom.local_review',
+            'name' => 'Local review',
+            'module' => 'custom',
+        ]);
+        $role->permissions()->attach($permission);
+
+        $user = User::factory()->create();
+        app(AccessManagementService::class)->syncRoles($user, [$role->id]);
+
+        $rbac = app(RbacService::class);
+        $management = app(RbacManagementService::class);
+
+        $this->assertTrue($rbac->has($user, 'custom.local_review'));
+        $this->assertFalse(PermissionCatalog::isSupported('custom.local_review'));
+
+        $management->syncRolePermissions($role, []);
+        $this->assertTrue($role->fresh()->permissions()->where('permissions.id', $permission->id)->exists());
+        $this->assertTrue($rbac->has($user, 'custom.local_review'));
+
+        $newRole = Role::create(['key' => 'no_custom_assignment', 'name' => 'No custom assignment']);
+        $management->syncRolePermissions($newRole, [$permission->id]);
+
+        $this->assertSame(0, $newRole->permissions()->count());
     }
 
     public function test_dynamic_custom_permission_is_assignable(): void
@@ -160,7 +190,7 @@ class RbacTest extends TestCase
     {
         Artisan::call('db:seed', ['--class' => 'DatabaseSeeder']);
 
-        $expected = count(config('permissions', []));
+        $expected = count(PermissionCatalog::supported());
 
         $this->assertSame($expected, Permission::count());
         $this->assertSame(0, User::count());

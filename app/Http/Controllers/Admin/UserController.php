@@ -16,6 +16,7 @@ use App\Services\AuditService;
 use App\Services\RbacService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Inertia\Inertia;
@@ -28,6 +29,40 @@ final class UserController extends Controller
         private readonly AuditService $audit,
         private readonly RbacService $rbac,
     ) {}
+
+    /** @return array<string, bool> */
+    private function capabilities(): array
+    {
+        return [
+            'create' => Gate::allows('create', User::class),
+            'update' => Gate::allows('users.update'),
+            'delete' => Gate::allows('users.delete'),
+            'assignRoles' => Gate::allows('users.assign_roles'),
+            'resetPassword' => Gate::allows('users.reset_password'),
+        ];
+    }
+
+    /** @return array<string, bool> */
+    private function targetState(User $user): array
+    {
+        return [
+            'isSelf' => auth()->user()?->is($user) === true,
+            'isProtected' => $user->isPlatformOwner(),
+        ];
+    }
+
+    private function managementBlocker(User $user, ?User $actor): ?string
+    {
+        if ($actor?->is($user) === true) {
+            return (string) __('ui.users_page.protected_self');
+        }
+
+        if ($user->isPlatformOwner() && $actor?->isPlatformOwner() !== true) {
+            return (string) __('ui.users_page.protected_owner');
+        }
+
+        return null;
+    }
 
     public function index(string $locale, Request $request): Response
     {
@@ -49,6 +84,7 @@ final class UserController extends Controller
                 'status' => $user->status,
                 'locale' => $user->locale,
                 'is_platform_owner' => $user->isPlatformOwner(),
+                'is_self' => $user->is(auth()->user()),
                 'roles' => $user->roles->pluck('key')->all(),
                 'last_login_at' => $user->last_login_at?->toISOString(),
             ]);
@@ -56,6 +92,13 @@ final class UserController extends Controller
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
             'filters' => ['search' => $search],
+            'counts' => [
+                'total' => User::query()->count(),
+                'active' => User::query()->where('status', User::STATUS_ACTIVE)->count(),
+                'suspended' => User::query()->where('status', User::STATUS_SUSPENDED)->count(),
+                'owners' => User::query()->where('is_platform_owner', true)->count(),
+            ],
+            'can' => $this->capabilities(),
         ]);
     }
 
@@ -69,9 +112,13 @@ final class UserController extends Controller
                 'status' => $user->status,
                 'locale' => $user->locale,
                 'is_platform_owner' => $user->isPlatformOwner(),
+                'created_at' => $user->created_at?->toISOString(),
+                'last_login_at' => $user->last_login_at?->toISOString(),
                 'roles' => $user->roles()->get(['roles.id', 'roles.key', 'roles.name'])->all(),
             ],
             'availableRoles' => Role::orderBy('name')->get(['id', 'key', 'name']),
+            'can' => $this->capabilities(),
+            ...$this->targetState($user),
         ]);
     }
 
@@ -79,6 +126,7 @@ final class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Create', [
             'availableRoles' => Role::orderBy('name')->get(['id', 'key', 'name']),
+            'can' => $this->capabilities(),
         ]);
     }
 
@@ -95,8 +143,12 @@ final class UserController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        if (! empty($data['roles'])) {
-            $this->access->syncRoles($user, $data['roles'], $request->user());
+        try {
+            if (! empty($data['roles'])) {
+                $this->access->syncRoles($user, $data['roles'], $request->user());
+            }
+        } catch (\RuntimeException $exception) {
+            return back()->with('flash', ['error' => $exception->getMessage()])->withInput();
         }
 
         $this->rbac->invalidate();
@@ -121,16 +173,27 @@ final class UserController extends Controller
                 'roleIds' => $user->roles()->pluck('roles.id')->all(),
             ],
             'availableRoles' => Role::orderBy('name')->get(['id', 'key', 'name']),
+            'can' => $this->capabilities(),
+            ...$this->targetState($user),
         ]);
     }
 
     public function update(string $locale, UpdateUserRequest $request, User $user): RedirectResponse
     {
+        $blocker = $this->managementBlocker($user, $request->user());
+        if ($blocker !== null) {
+            return back()->with('flash', ['error' => $blocker]);
+        }
+
         $data = $request->validated();
         $before = ['name' => $user->name, 'email' => $user->email, 'status' => $user->status];
 
         if ($data['status'] !== $user->status) {
-            $this->access->setStatus($user, $data['status']);
+            try {
+                $this->access->setStatus($user, $data['status'], $request->user());
+            } catch (\RuntimeException $exception) {
+                return back()->with('flash', ['error' => $exception->getMessage()])->withInput();
+            }
         }
 
         $user->update([
@@ -151,7 +214,11 @@ final class UserController extends Controller
 
     public function destroy(string $locale, Request $request, User $user): RedirectResponse
     {
-        $this->access->delete($user);
+        try {
+            $this->access->delete($user, $request->user());
+        } catch (\RuntimeException $exception) {
+            return back()->with('flash', ['error' => $exception->getMessage()]);
+        }
 
         return redirect()->route('admin.users.index', ['locale' => $request->route('locale')])
             ->with('success', __('ui.user_deleted'));
@@ -159,21 +226,49 @@ final class UserController extends Controller
 
     public function updateStatus(string $locale, UpdateUserStatusRequest $request, User $user): RedirectResponse
     {
-        $this->access->setStatus($user, $request->string('status')->toString());
+        $blocker = $this->managementBlocker($user, $request->user());
+        if ($blocker !== null) {
+            return back()->with('flash', ['error' => $blocker]);
+        }
+
+        try {
+            $this->access->setStatus($user, $request->string('status')->toString(), $request->user());
+        } catch (\RuntimeException $exception) {
+            return back()->with('flash', ['error' => $exception->getMessage()]);
+        }
 
         return back()->with('success', __('ui.status_updated'));
     }
 
     public function syncRoles(string $locale, AssignUserRolesRequest $request, User $user): RedirectResponse
     {
-        $this->access->syncRoles($user, $request->input('roles', []), $request->user());
+        $blocker = $this->managementBlocker($user, $request->user());
+        if ($blocker !== null) {
+            return back()->with('flash', ['error' => $blocker]);
+        }
+
+        try {
+            $this->access->syncRoles($user, $request->input('roles', []), $request->user());
+        } catch (\RuntimeException $exception) {
+            return back()->with('flash', ['error' => $exception->getMessage()]);
+        }
 
         return back()->with('success', __('ui.roles_updated'));
     }
 
     public function sendPasswordReset(string $locale, Request $request, User $user): RedirectResponse
     {
-        Password::broker()->sendResetLink(['email' => $user->email]);
+        $blocker = $this->managementBlocker($user, $request->user());
+        if ($blocker !== null) {
+            return back()->with('flash', ['error' => $blocker]);
+        }
+
+        $status = Password::broker()->sendResetLink(['email' => $user->email]);
+
+        if ($status !== Password::RESET_LINK_SENT) {
+            return back()->with('flash', ['error' => __($status)]);
+        }
+
         $this->audit->record('user.password_reset_requested', 'users', (string) $user->id);
 
         return back()->with('success', __('ui.reset_link_sent'));

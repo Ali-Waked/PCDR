@@ -8,14 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreRoleRequest;
 use App\Http\Requests\Admin\SyncRolePermissionsRequest;
 use App\Http\Requests\Admin\UpdateRoleRequest;
-use App\Models\Permission;
 use App\Models\Role;
 use App\Services\AuditService;
 use App\Services\RbacManagementService;
+use App\Support\RolePermissionInput;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 final class RoleController extends Controller
 {
@@ -24,64 +22,45 @@ final class RoleController extends Controller
         private readonly RbacManagementService $rbacManagement,
     ) {}
 
-    public function index(): Response
+    public function index(string $locale): RedirectResponse
     {
-        $roles = Role::withCount(['permissions', 'users'])
-            ->orderBy('is_system', 'desc')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Role $role) => [
-                'id' => $role->id,
-                'key' => $role->key,
-                'name' => $role->name,
-                'description' => $role->description,
-                'is_system' => $role->is_system,
-                'permissions_count' => $role->permissions_count,
-                'users_count' => $role->users_count,
-            ]);
-
-        return Inertia::render('Admin/Roles/Index', ['roles' => $roles]);
+        return redirect()->route('admin.access.index', ['locale' => $locale]);
     }
 
-    public function create(): Response
+    public function create(string $locale): RedirectResponse
     {
-        return Inertia::render('Admin/Roles/Create');
+        return redirect()->route('admin.access.index', ['locale' => $locale, 'create' => 1]);
+    }
+
+    public function edit(string $locale, Role $role): RedirectResponse
+    {
+        return redirect()->route('admin.access.index', [
+            'locale' => $locale,
+            'role' => $role->id,
+            'edit' => 1,
+        ]);
     }
 
     public function store(string $locale, StoreRoleRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $role = Role::create($data);
+        $role = Role::create([
+            'key' => $data['key'],
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+        ]);
+
+        if ($request->has('permissions')) {
+            $this->rbacManagement->syncRolePermissions(
+                $role,
+                RolePermissionInput::normalize($data['permissions'] ?? []),
+            );
+        }
+
         $this->audit->record('role.created', 'roles', (string) $role->id, null, ['key' => $role->key]);
 
-        return redirect()->route('admin.roles.edit', ['locale' => $request->route('locale'), 'role' => $role->id])
+        return redirect()->route('admin.access.index', ['locale' => $locale])
             ->with('success', __('ui.role_created'));
-    }
-
-    public function edit(string $locale, Role $role): Response
-    {
-        $permissions = Permission::where('is_retired', false)
-            ->orderBy('module')
-            ->orderBy('key')
-            ->get(['id', 'key', 'name', 'module', 'is_protected'])
-            ->groupBy('module')
-            ->map(fn ($group, string $module) => ['module' => $module, 'items' => $group->values()->all()])
-            ->values()
-            ->all();
-
-        return Inertia::render('Admin/Roles/Edit', [
-            'role' => [
-                'id' => $role->id,
-                'key' => $role->key,
-                'name' => $role->name,
-                'description' => $role->description,
-                'is_system' => $role->is_system,
-                'permissionIds' => $role->permissions()->pluck('permissions.id')->all(),
-                'scopes' => $role->scopes()->get(['resource_key', 'scope_type'])->all(),
-                'users' => $role->users()->get(['users.id', 'users.name', 'users.email'])->all(),
-            ],
-            'permissionGroups' => $permissions,
-        ]);
     }
 
     public function update(string $locale, UpdateRoleRequest $request, Role $role): RedirectResponse
@@ -93,7 +72,19 @@ final class RoleController extends Controller
             abort(422, __('ui.system_role_key_locked'));
         }
 
-        $role->update($data);
+        $role->update([
+            'key' => $data['key'],
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+        ]);
+
+        if ($request->has('permissions')) {
+            $this->rbacManagement->syncRolePermissions(
+                $role,
+                RolePermissionInput::normalize($data['permissions'] ?? []),
+            );
+        }
+
         $this->audit->record('role.updated', 'roles', (string) $role->id, $before, [
             'key' => $role->key,
             'name' => $role->name,
@@ -111,7 +102,7 @@ final class RoleController extends Controller
         $this->audit->record('role.deleted', 'roles', (string) $role->id, ['key' => $role->key]);
         $role->delete();
 
-        return redirect()->route('admin.roles.index', ['locale' => $request->route('locale')])
+        return redirect()->route('admin.access.index', ['locale' => $request->route('locale')])
             ->with('success', __('ui.role_deleted'));
     }
 

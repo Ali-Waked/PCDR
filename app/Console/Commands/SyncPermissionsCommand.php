@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Models\Permission;
 use App\Services\AuditService;
 use App\Services\RbacService;
+use App\Support\PermissionCatalog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -14,21 +15,17 @@ final class SyncPermissionsCommand extends Command
 {
     protected $signature = 'pcdr:permissions:sync';
 
-    protected $description = 'Synchronize the code-owned permission catalog into the database';
+    protected $description = 'Synchronize supported code-defined permissions into the database';
 
     public function handle(AuditService $audit, RbacService $rbac): int
     {
-        $catalog = config('permissions', []);
         $created = 0;
-        $retired = 0;
+        $updated = 0;
 
-        DB::transaction(function () use ($catalog, &$created, &$retired, $audit, $rbac): void {
-            foreach ($catalog as $key => $definition) {
+        DB::transaction(function () use (&$created, &$updated, $audit, $rbac): void {
+            foreach (PermissionCatalog::supported() as $key => $definition) {
                 $permission = Permission::firstOrNew(['key' => $key]);
-
-                if (! $permission->exists) {
-                    $created++;
-                }
+                $isNew = ! $permission->exists;
 
                 $permission->fill([
                     'name' => $definition['label'] ?? $key,
@@ -36,21 +33,27 @@ final class SyncPermissionsCommand extends Command
                     'description' => $definition['description'] ?? null,
                     'is_protected' => (bool) ($definition['protected'] ?? false),
                     'is_retired' => false,
-                ])->save();
-            }
+                ]);
 
-            $retired = Permission::whereNotIn('key', array_keys($catalog))
-                ->where('is_retired', false)
-                ->update(['is_retired' => true]);
+                if ($permission->isDirty()) {
+                    $permission->save();
+
+                    if ($isNew) {
+                        $created++;
+                    } else {
+                        $updated++;
+                    }
+                }
+            }
 
             $rbac->invalidate();
             $audit->record('permissions.synced', 'permissions', null, null, [
                 'created' => $created,
-                'retired' => $retired,
+                'updated' => $updated,
             ]);
         });
 
-        $this->info("Permissions synced: {$created} created, {$retired} retired.");
+        $this->info("Permissions synced: {$created} created, {$updated} updated.");
 
         return self::SUCCESS;
     }
